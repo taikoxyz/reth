@@ -135,7 +135,7 @@ impl<Ext: clap::Args + fmt::Debug> NodeCommand<Ext> {
         L: FnOnce(WithLaunchContext<NodeBuilder<Arc<DatabaseEnv>>>, Ext) -> Fut,
         Fut: Future<Output = eyre::Result<()>>,
     {
-        tracing::info!(target: "reth::cli", version = ?version::SHORT_VERSION, "Starting reth");
+        tracing::info!(target: "reth::cli", version = ?version::SHORT_VERSION, "Brecht Starting reth");
 
         let Self {
             datadir,

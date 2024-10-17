@@ -176,7 +176,7 @@ impl LaunchContext {
         if let Err(err) = ThreadPoolBuilder::new()
             .num_threads(num_threads)
             .thread_name(|i| format!("reth-rayon-{i}"))
-            .build_global()
+            .build()
         {
             error!(%err, "Failed to build global thread pool")
         }

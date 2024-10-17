@@ -13,6 +13,9 @@ default-run = "reth"
 workspace = true
 
 [dependencies]
+
+gwyneth.workspace = true
+
 # reth
 reth-chainspec.workspace = true
 reth-config.workspace = true
@@ -26,6 +29,7 @@ reth-evm.workspace = true
 reth-revm.workspace = true
 reth-stages.workspace = true
 reth-execution-types.workspace = true
+reth-execution-errors.workspace = true
 reth-errors.workspace = true
 reth-transaction-pool.workspace = true
 reth-beacon-consensus.workspace = true
@@ -147,6 +151,8 @@ optimism = [
 
 # no-op feature flag for switching between the `optimism` and default functionality in CI matrices
 ethereum = []
+
+gwyneth = ["reth-payload-primitives/gwyneth"]
 
 [[bin]]
 name = "reth"

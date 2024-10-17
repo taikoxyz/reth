@@ -49,3 +49,7 @@ optimism = [
     "reth-beacon-consensus/optimism",
     "reth-ethereum-forks/optimism"
 ]
+gwyneth = [
+    "reth-engine-primitives/gwyneth",
+    "reth-beacon-consensus/gwyneth",
+]

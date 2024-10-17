@@ -19,6 +19,7 @@ use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_execution_types::ExecutionOutcome;
 use reth_fs_util as fs;
 use reth_node_api::PayloadBuilderAttributes;
+//use reth_node_api::PayloadBuilderAttributes;
 use reth_payload_builder::database::CachedReads;
 use reth_primitives::{
     constants::eip4844::LoadKzgSettingsError, revm_primitives::KzgSettings, Address,
@@ -30,7 +31,10 @@ use reth_provider::{
     ProviderFactory, StageCheckpointReader, StateProviderFactory,
 };
 use reth_prune::PruneModes;
-use reth_revm::{database::StateProviderDatabase, primitives::EnvKzgSettings};
+use reth_revm::{
+    database::{StateProviderDatabase, SyncStateProviderDatabase},
+    primitives::EnvKzgSettings,
+};
 use reth_rpc_types::engine::{BlobsBundleV1, PayloadAttributes};
 use reth_stages::StageId;
 use reth_transaction_pool::{
@@ -115,6 +119,7 @@ impl Command {
 
     /// Execute `debug in-memory-merkle` command
     pub async fn execute(self, ctx: CliContext) -> eyre::Result<()> {
+        // Brecht: good end to end block building code
         let Environment { provider_factory, .. } = self.env.init(AccessRights::RW)?;
 
         let consensus: Arc<dyn Consensus> =
@@ -270,13 +275,19 @@ impl Command {
                 let block_with_senders =
                     SealedBlockWithSenders::new(block.clone(), senders).unwrap();
 
-                let db = StateProviderDatabase::new(blockchain_db.latest()?);
+                println!("debug_cmd build");
+
+                let chain_id = provider_factory.chain_spec().chain.id();
+                let db = SyncStateProviderDatabase::new(
+                    Some(chain_id),
+                    StateProviderDatabase::new(blockchain_db.latest()?),
+                );
                 let executor = block_executor!(provider_factory.chain_spec()).executor(db);
 
                 let block_execution_output =
                     executor.execute((&block_with_senders.clone().unseal(), U256::MAX).into())?;
                 let execution_outcome =
-                    ExecutionOutcome::from((block_execution_output, block.number));
+                    ExecutionOutcome::from((block_execution_output, chain_id, block.number));
                 debug!(target: "reth::cli", ?execution_outcome, "Executed block");
 
                 let hashed_post_state = execution_outcome.hash_state_slow();

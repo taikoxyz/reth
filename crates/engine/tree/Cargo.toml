@@ -86,3 +86,9 @@ test-utils = [
   "reth-static-file",
   "reth-tracing",
 ]
+gwyneth = [
+  "reth-payload-primitives/gwyneth",
+  "reth-beacon-consensus/gwyneth",
+  "reth-engine-primitives/gwyneth",
+  "reth-payload-builder/gwyneth",
+]

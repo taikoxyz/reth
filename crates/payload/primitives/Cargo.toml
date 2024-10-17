@@ -26,3 +26,6 @@ tokio = { workspace = true, features = ["sync"] }
 # misc
 thiserror.workspace = true
 serde.workspace = true
+
+[features]
+gwyneth = []

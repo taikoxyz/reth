@@ -39,3 +39,7 @@ tracing.workspace = true
 
 [features]
 optimism = ["reth-provider/optimism"]
+gwyneth = [
+    "reth-beacon-consensus/gwyneth",
+    "reth-engine-primitives/gwyneth",
+]

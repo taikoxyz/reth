@@ -1082,6 +1082,7 @@ where
         payload: ExecutionPayload,
         cancun_fields: Option<CancunPayloadFields>,
     ) -> Result<Either<PayloadStatus, SealedBlock>, BeaconOnNewPayloadError> {
+        println!("BeaconConsensusEngine:on_new_payload");
         self.metrics.new_payload_messages.increment(1);
 
         // Ensures that the given payload does not violate any consensus rules that concern the
@@ -1601,6 +1602,7 @@ where
         match action {
             BlockchainTreeAction::MakeForkchoiceHeadCanonical { state, attrs, tx } => {
                 let start = Instant::now();
+                // Brecht: reorg
                 let result = self.blockchain.make_canonical(state.head_block_hash);
                 let elapsed = self.record_make_canonical_latency(start, &result);
                 match self
@@ -2213,6 +2215,7 @@ mod tests {
             assert_matches!(engine_rx.try_recv(), Err(TryRecvError::Empty));
         }
 
+        // Brecht fork choice update
         #[tokio::test]
         async fn valid_forkchoice() {
             let mut rng = generators::rng();

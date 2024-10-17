@@ -5,81 +5,69 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-#[cfg(all(feature = "optimism", not(test)))]
-compile_error!("Cannot build the `reth` binary with the `optimism` feature flag enabled. Did you mean to build `op-reth`?");
+use gwyneth::{engine_api::RpcServerArgsExEx, GwynethNode};
+use reth::args::{DiscoveryArgs, NetworkArgs, RpcServerArgs};
+use reth_chainspec::ChainSpecBuilder;
+use reth_node_builder::{NodeBuilder, NodeConfig, NodeHandle};
+use reth_node_ethereum::EthereumNode;
+use reth_tasks::TaskManager;
 
-/// clap [Args] for Engine related arguments.
-use clap::Args;
+fn main() -> eyre::Result<()> {
+    reth::cli::Cli::parse_args().run(|builder, _| async move {
+        let tasks = TaskManager::current();
+        let exec = tasks.executor();
 
-/// Parameters for configuring the engine
-#[derive(Debug, Clone, Args, PartialEq, Eq, Default)]
-#[command(next_help_heading = "Engine")]
-pub struct EngineArgs {
-    /// Enable the engine2 experimental features on reth binary
-    #[arg(long = "engine.experimental", default_value = "false")]
-    pub experimental: bool,
-}
+        let network_config = NetworkArgs {
+            discovery: DiscoveryArgs { disable_discovery: true, ..DiscoveryArgs::default() },
+            ..NetworkArgs::default()
+        };
 
-#[cfg(not(feature = "optimism"))]
-fn main() {
-    use clap::Parser;
-    use reth::cli::Cli;
-    use reth_node_builder::EngineNodeLauncher;
-    use reth_node_ethereum::{node::EthereumAddOns, EthereumNode};
-    use reth_provider::providers::BlockchainProvider2;
+        let chain_spec = ChainSpecBuilder::default()
+            .chain(gwyneth::exex::CHAIN_ID.into())
+            .genesis(
+                serde_json::from_str(include_str!(
+                    "../../../crates/ethereum/node/tests/assets/genesis.json"
+                ))
+                .unwrap(),
+            )
+            .cancun_activated()
+            .build();
 
-    reth_cli_util::sigsegv_handler::install();
+        let node_config = NodeConfig::test()
+            .with_chain(chain_spec.clone())
+            .with_network(network_config.clone())
+            .with_unused_ports()
+            .with_rpc(RpcServerArgs::default().with_unused_ports().with_static_l2_rpc_ip_and_port(chain_spec.chain.id()))
+            .set_dev(true);
 
-    // Enable backtraces unless a RUST_BACKTRACE value has already been explicitly provided.
-    if std::env::var_os("RUST_BACKTRACE").is_none() {
-        std::env::set_var("RUST_BACKTRACE", "1");
-    }
+        let NodeHandle { node: gwyneth_node, node_exit_future: _ } =
+            NodeBuilder::new(node_config.clone())
+                .gwyneth_node(exec.clone(), chain_spec.chain.id())
+                .node(GwynethNode::default())
+                .launch()
+                .await?;
 
-    if let Err(err) = Cli::<EngineArgs>::parse().run(|builder, engine_args| async move {
-        let enable_engine2 = engine_args.experimental;
-        match enable_engine2 {
-            true => {
-                let handle = builder
-                    .with_types_and_provider::<EthereumNode, BlockchainProvider2<_>>()
-                    .with_components(EthereumNode::components())
-                    .with_add_ons::<EthereumAddOns>()
-                    .launch_with_fn(|builder| {
-                        let launcher = EngineNodeLauncher::new(
-                            builder.task_executor().clone(),
-                            builder.config().datadir(),
-                        );
-                        builder.launch_with(launcher)
-                    })
-                    .await?;
-                handle.node_exit_future.await
-            }
-            false => {
-                let handle = builder.launch_node(EthereumNode::default()).await?;
-                handle.node_exit_future.await
-            }
-        }
-    }) {
-        eprintln!("Error: {err:?}");
-        std::process::exit(1);
-    }
+        let handle = builder
+            .node(EthereumNode::default())
+            .install_exex("Rollup", move |ctx| async {
+                Ok(gwyneth::exex::Rollup::new(ctx, gwyneth_node).await?.start())
+            })
+            .launch()
+            .await?;
+
+        handle.wait_for_node_exit().await
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use clap::Parser;
+    use clap::{Args, Parser};
 
     /// A helper type to parse Args more easily
     #[derive(Parser)]
     struct CommandParser<T: Args> {
         #[command(flatten)]
         args: T,
-    }
-
-    #[test]
-    fn test_parse_engine_args() {
-        let default_args = EngineArgs::default();
-        let args = CommandParser::<EngineArgs>::parse_from(["reth"]).args;
-        assert_eq!(args, default_args);
     }
 }

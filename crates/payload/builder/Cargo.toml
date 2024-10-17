@@ -20,6 +20,7 @@ reth-errors.workspace = true
 reth-provider.workspace = true
 reth-payload-primitives.workspace = true
 reth-ethereum-engine-primitives.workspace = true
+reth-revm.workspace = true
 
 # async
 tokio = { workspace = true, features = ["sync"] }
@@ -40,3 +41,4 @@ revm.workspace = true
 
 [features]
 test-utils = []
+gwyneth = ["reth-payload-primitives/gwyneth"]

@@ -17,7 +17,7 @@ use reth_node_builder::{
     components::NodeComponentsBuilder, rpc::EthApiBuilderProvider, FullNodeTypesAdapter, Node,
     NodeAdapter, NodeAddOns, NodeComponents, NodeTypes, RethFullAdapter,
 };
-use reth_provider::providers::BlockchainProvider;
+use reth_provider::{providers::BlockchainProvider, StateProviderFactory};
 use tracing::{span, Level};
 use wallet::Wallet;
 
@@ -92,6 +92,8 @@ where
             .node(Default::default())
             .launch()
             .await?;
+
+        //node.state_by_block_id(block_id)
 
         let mut node = NodeTestContext::new(node).await?;
 

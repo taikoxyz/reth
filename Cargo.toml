@@ -142,7 +142,7 @@ members = [
     "examples/stateful-precompile/",
     "examples/txpool-tracing/",
     "testing/ef-tests/",
-    "testing/testing-utils",
+    "testing/testing-utils", "crates/gwyneth",
 ]
 default-members = ["bin/reth"]
 
@@ -253,12 +253,12 @@ opt-level = 3
 lto = "thin"
 
 [profile.release]
-opt-level = 3
+opt-level = 1
 lto = "thin"
 debug = "line-tables-only"
 strip = true
 panic = "unwind"
-codegen-units = 16
+codegen-units = 8
 
 # Use the `--profile profiling` flag to show symbols in release mode.
 # e.g. `cargo build --profile profiling`
@@ -277,6 +277,8 @@ lto = "fat"
 codegen-units = 1
 
 [workspace.dependencies]
+gwyneth = { path = "crates/gwyneth" }
+
 # reth
 reth = { path = "bin/reth" }
 reth-auto-seal-consensus = { path = "crates/consensus/auto-seal" }
@@ -407,10 +409,10 @@ revm-primitives = { version = "9.0.0", features = [
 
 # eth
 alloy-chains = "0.1.18"
-alloy-dyn-abi = "0.8.0"
-alloy-primitives = { version = "0.8.0", default-features = false }
+alloy-dyn-abi = "0.8.2"
+alloy-primitives = { version = "0.8.2", default-features = false }
 alloy-rlp = "0.3.4"
-alloy-sol-types = "0.8.0"
+alloy-sol-types = "0.8.2"
 alloy-trie = { version = "0.5", default-features = false }
 
 alloy-consensus = { version = "0.3.0", default-features = false }
@@ -561,4 +563,11 @@ proptest-derive = "0.5"
 serial_test = "3"
 similar-asserts = "1.5.0"
 tempfile = "3.8"
-test-fuzz = "5"
+test-fuzz = "5" 
+
+[patch.crates-io]
+revm = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
+revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
+revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
+revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
+revm-inspectors = { git = "https://github.com/taikoxyz/revm-inspectors.git", branch = "main-rbuilder" }
