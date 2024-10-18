@@ -31,7 +31,8 @@ use reth_transaction_pool::{
 use RollupContract::{BlockProposed, RollupContractEvents};
 
 const ROLLUP_CONTRACT_ADDRESS: Address = address!("9fCF7D13d10dEdF17d0f24C62f0cf4ED462f65b7");
-pub const CHAIN_ID: u64 = 167010;
+pub const CHAIN_ID_A: u64 = 167010;
+pub const CHAIN_ID_B: u64 = 267010;
 const INITIAL_TIMESTAMP: u64 = 1710338135;
 
 pub type GwynethFullNode = FullNode<
@@ -69,18 +70,22 @@ sol!(RollupContract, "TaikoL1.json");
 
 pub struct Rollup<Node: reth_node_api::FullNodeComponents> {
     ctx: ExExContext<Node>,
-    node: GwynethFullNode,
-    engine_api: EngineApiContext<GwynethEngineTypes>,
+    nodes: Vec<GwynethFullNode>,
+    engine_apis: Vec<EngineApiContext<GwynethEngineTypes>>,
 }
 
 impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
-    pub async fn new(ctx: ExExContext<Node>, node: GwynethFullNode) -> eyre::Result<Self> {
-        let engine_api = EngineApiContext {
-            engine_api_client: node.auth_server_handle().http_client(),
-            canonical_stream: node.provider.canonical_state_stream(),
-            _marker: PhantomData::<GwynethEngineTypes>,
-        };
-        Ok(Self { ctx, node, /* payload_event_stream, */ engine_api })
+    pub async fn new(ctx: ExExContext<Node>, nodes: Vec<GwynethFullNode>) -> eyre::Result<Self> {
+        let mut engine_apis = Vec::new();
+        for node in &nodes {
+            let engine_api = EngineApiContext {
+                engine_api_client: node.auth_server_handle().http_client(),
+                canonical_stream: node.provider.canonical_state_stream(),
+                _marker: PhantomData::<GwynethEngineTypes>,
+            };
+            engine_apis.push(engine_api);
+        }
+        Ok(Self { ctx, nodes, /* payload_event_stream, */ engine_apis })
     }
 
     pub async fn start(mut self) -> eyre::Result<()> {
@@ -91,7 +96,13 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
             }
 
             if let Some(committed_chain) = notification.committed_chain() {
-                self.commit(&committed_chain).await?;
+                let nodes = &self.nodes;
+                let engine_apis = &self.engine_apis;
+                for i in 0..nodes.len() {
+                    let node = &nodes[i];
+                    let engine_api = &engine_apis[i];
+                    self.commit(&committed_chain, node, engine_api).await?;
+                }
                 self.ctx.events.send(ExExEvent::FinishedHeight(committed_chain.tip().number))?;
             }
         }
@@ -103,13 +114,14 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
     ///
     /// This function decodes all transactions to the rollup contract into events, executes the
     /// corresponding actions and inserts the results into the database.
-    pub async fn commit(&mut self, chain: &Chain) -> eyre::Result<()> {
+    pub async fn commit(
+        &mut self,
+        chain: &Chain,
+        node: &GwynethFullNode,
+        engine_api: &EngineApiContext<GwynethEngineTypes>,
+    ) -> eyre::Result<()> {
         let events = decode_chain_into_rollup_events(chain);
         for (block, _, event) in events {
-            // TODO: Don't emit ProposeBlock event but directely
-            //  read the function call RollupContractCalls to extract Txs
-            // let _call = RollupContractCalls::abi_decode(tx.input(), true)?;
-
             if let RollupContractEvents::BlockProposed(BlockProposed {
                 blockId: block_number,
                 meta,
@@ -148,15 +160,16 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let payload_id = builder_attrs.inner.payload_id();
                 let parrent_beacon_block_root =
                     builder_attrs.inner.parent_beacon_block_root.unwrap();
+                
                 // trigger new payload building draining the pool
-                self.node.payload_builder.new_payload(builder_attrs).await.unwrap();
+                node.payload_builder.new_payload(builder_attrs).await.unwrap();
+                
                 // wait for the payload builder to have finished building
                 let mut payload =
                     EthBuiltPayload::new(payload_id, SealedBlock::default(), U256::ZERO);
                 loop {
-                    let result = self.node.payload_builder.best_payload(payload_id).await;
+                    let result = node.payload_builder.best_payload(payload_id).await;
 
-                    // TODO: There seems to be no result when there's an empty tx list
                     if let Some(result) = result {
                         if let Ok(new_payload) = result {
                             payload = new_payload;
@@ -174,11 +187,12 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     }
                     break;
                 }
+                
                 // trigger resolve payload via engine api
-                self.engine_api.get_payload_v3_value(payload_id).await?;
+                engine_api.get_payload_v3_value(payload_id).await?;
+                
                 // submit payload to engine api
-                let block_hash = self
-                    .engine_api
+                let block_hash = engine_api
                     .submit_payload(
                         payload.clone(),
                         parrent_beacon_block_root,
@@ -188,7 +202,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     .await?;
 
                 // trigger forkchoice update via engine api to commit the block to the blockchain
-                self.engine_api.update_forkchoice(block_hash, block_hash).await?;
+                engine_api.update_forkchoice(block_hash, block_hash).await?;
             }
         }
 
