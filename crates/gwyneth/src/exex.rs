@@ -31,8 +31,7 @@ use reth_transaction_pool::{
 use RollupContract::{BlockProposed, RollupContractEvents};
 
 const ROLLUP_CONTRACT_ADDRESS: Address = address!("9fCF7D13d10dEdF17d0f24C62f0cf4ED462f65b7");
-pub const CHAIN_ID_A: u64 = 167010;
-pub const CHAIN_ID_B: u64 = 267010;
+pub const BASE_CHAIN_ID: u64 = 167010;
 const INITIAL_TIMESTAMP: u64 = 1710338135;
 
 pub type GwynethFullNode = FullNode<
@@ -89,19 +88,14 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
     }
 
     pub async fn start(mut self) -> eyre::Result<()> {
-        // Process all new chain state notifications
         while let Some(notification) = self.ctx.notifications.recv().await {
             if let Some(reverted_chain) = notification.reverted_chain() {
                 self.revert(&reverted_chain)?;
             }
 
             if let Some(committed_chain) = notification.committed_chain() {
-                let nodes = &self.nodes;
-                let engine_apis = &self.engine_apis;
-                for i in 0..nodes.len() {
-                    let node = &nodes[i];
-                    let engine_api = &engine_apis[i];
-                    self.commit(&committed_chain, node, engine_api).await?;
+                for i in 0..self.nodes.len() {
+                    self.commit(&committed_chain, i).await?;
                 }
                 self.ctx.events.send(ExExEvent::FinishedHeight(committed_chain.tip().number))?;
             }
@@ -110,16 +104,10 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
         Ok(())
     }
 
-    /// Process a new chain commit.
-    ///
-    /// This function decodes all transactions to the rollup contract into events, executes the
-    /// corresponding actions and inserts the results into the database.
-    pub async fn commit(
-        &mut self,
-        chain: &Chain,
-        node: &GwynethFullNode,
-        engine_api: &EngineApiContext<GwynethEngineTypes>,
-    ) -> eyre::Result<()> {
+    pub async fn commit(&mut self, chain: &Chain, node_idx: usize) -> eyre::Result<()> {
+        let node = &self.nodes[node_idx];
+        let engine_api = &self.engine_apis[node_idx];
+
         let events = decode_chain_into_rollup_events(chain);
         for (block, _, event) in events {
             if let RollupContractEvents::BlockProposed(BlockProposed {

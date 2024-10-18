@@ -113,34 +113,21 @@ impl PayloadEnvelopeExt for ExecutionPayloadEnvelopeV3 {
     }
 }
 pub trait RpcServerArgsExEx {
-    fn with_static_l2_rpc_ip_and_port(self, chain_id: u64, suffix: char) -> Self;
+    fn with_static_l2_rpc_ip_and_port(self, chain_id: u64) -> Self;
 }
 
 impl RpcServerArgsExEx for RpcServerArgs {
-    fn with_static_l2_rpc_ip_and_port(mut self, chain_id: u64, suffix: char) -> Self {
+    fn with_static_l2_rpc_ip_and_port(mut self, chain_id: u64) -> Self {
         self.http = true;
         self.http_addr = Ipv4Addr::new(0, 0, 0, 0).into();
 
-        // Set HTTP and WS ports based on suffix
-        match suffix {
-            'A' => {
-                self.http_port = 10110u16;
-                self.ws_port = 10111u16;
-            },
-            'B' => {
-                self.http_port = 20110u16;
-                self.ws_port = 20111u16;
-            },
-            'C' => {
-                self.http_port = 30110u16;
-                self.ws_port = 30111u16;
-            },
-            // Obviously add more if needed more chain
-            _ => panic!("Unsupported suffix: {}", suffix),
-        }
+        // Calculate HTTP and WS ports based on chain_id
+        let port_offset = ((chain_id - 167010) / 100000) as u16;
+        self.http_port = 10110 + (port_offset * 10000);
+        self.ws_port = 10111 + (port_offset * 10000);
 
         // Set IPC path
-        self.ipcpath = format!("{}-{}-{}", constants::DEFAULT_IPC_ENDPOINT, chain_id, suffix);
+        self.ipcpath = format!("{}-{}", constants::DEFAULT_IPC_ENDPOINT, chain_id);
 
         self
     }

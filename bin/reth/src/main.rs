@@ -11,14 +11,13 @@ use reth_node_builder::{NodeBuilder, NodeConfig, NodeHandle};
 use reth_node_ethereum::EthereumNode;
 use reth_tasks::TaskManager;
 
-// Define a list of suffixes for chain IDs and RPC ports
-const SUFFIXES: [char; 2] = ['A', 'B'/* , 'C'*/]; // Add more suffixes as needed, like C
+const BASE_CHAIN_ID: u64 = gwyneth::exex::BASE_CHAIN_ID; // Base chain ID for L2s
+const NUM_L2_CHAINS: u64 = 2; // Number of L2 chains to create
 
 fn main() -> eyre::Result<()> {
     reth::cli::Cli::parse_args().run(|builder, _| async move {
         let tasks = TaskManager::current();
         let exec = tasks.executor();
-
         let network_config = NetworkArgs {
             discovery: DiscoveryArgs { disable_discovery: true, ..DiscoveryArgs::default() },
             ..NetworkArgs::default()
@@ -26,13 +25,8 @@ fn main() -> eyre::Result<()> {
 
         let mut gwyneth_nodes = Vec::new();
 
-        for suffix in SUFFIXES.iter() {
-            let chain_id = match suffix {
-                'A' => gwyneth::exex::CHAIN_ID_A,
-                'B' => gwyneth::exex::CHAIN_ID_B,
-                // 'C' => gwyneth::exex::CHAIN_ID_C, // Add this constant in your exex.rs
-                _ => panic!("Unsupported chain ID suffix"),
-            };
+        for i in 0..NUM_L2_CHAINS {
+            let chain_id = BASE_CHAIN_ID + (i * 100000); // Increment by 100000 for each L2
 
             let chain_spec = ChainSpecBuilder::default()
                 .chain(chain_id.into())
@@ -52,7 +46,7 @@ fn main() -> eyre::Result<()> {
                 .with_rpc(
                     RpcServerArgs::default()
                         .with_unused_ports()
-                        .with_static_l2_rpc_ip_and_port(chain_spec.chain.id(), *suffix)
+                        .with_static_l2_rpc_ip_and_port(chain_id)
                 );
 
             let NodeHandle { node: gwyneth_node, node_exit_future: _ } =
