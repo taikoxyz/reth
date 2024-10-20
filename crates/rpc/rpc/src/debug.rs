@@ -395,6 +395,9 @@ where
                             .await?;
                         return Ok(frame)
                     }
+                    GethDebugBuiltInTracerType::FlatCallTracer => {
+                        return Err(EthApiError::Unsupported("FlatCallTracer is not supported").into())
+                    }
                 },
                 #[cfg(not(feature = "js-tracer"))]
                 GethDebugTracerType::JsTracer(_) => {

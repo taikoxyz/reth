@@ -570,4 +570,4 @@ revm = { path = "../revm/crates/revm" }
 revm-primitives = { path = "../revm/crates/primitives" }
 revm-interpreter = { path = "../revm/crates/interpreter" }
 revm-precompile = { path = "../revm/crates/precompile" }
-revm-inspectors = { git = "https://github.com/taikoxyz/revm-inspectors.git", branch = "main-rbuilder" }
+revm-inspectors = { path = "../revm-inspectors" }
