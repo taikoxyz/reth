@@ -105,9 +105,6 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
     }
 
     pub async fn commit(&mut self, chain: &Chain, node_idx: usize) -> eyre::Result<()> {
-        let node = &self.nodes[node_idx];
-        let engine_api = &self.engine_apis[node_idx];
-
         let events = decode_chain_into_rollup_events(chain);
         for (block, _, event) in events {
             if let RollupContractEvents::BlockProposed(BlockProposed {
@@ -148,15 +145,15 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let payload_id = builder_attrs.inner.payload_id();
                 let parrent_beacon_block_root =
                     builder_attrs.inner.parent_beacon_block_root.unwrap();
-                
+
                 // trigger new payload building draining the pool
-                node.payload_builder.new_payload(builder_attrs).await.unwrap();
-                
+                self.nodes[node_idx].payload_builder.new_payload(builder_attrs).await.unwrap();
+
                 // wait for the payload builder to have finished building
                 let mut payload =
                     EthBuiltPayload::new(payload_id, SealedBlock::default(), U256::ZERO);
                 loop {
-                    let result = node.payload_builder.best_payload(payload_id).await;
+                    let result = self.nodes[node_idx].payload_builder.best_payload(payload_id).await;
 
                     if let Some(result) = result {
                         if let Ok(new_payload) = result {
@@ -175,12 +172,12 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     }
                     break;
                 }
-                
+
                 // trigger resolve payload via engine api
-                engine_api.get_payload_v3_value(payload_id).await?;
-                
+                self.engine_apis[node_idx].get_payload_v3_value(payload_id).await?;
+
                 // submit payload to engine api
-                let block_hash = engine_api
+                let block_hash = self.engine_apis[node_idx]
                     .submit_payload(
                         payload.clone(),
                         parrent_beacon_block_root,
@@ -190,7 +187,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     .await?;
 
                 // trigger forkchoice update via engine api to commit the block to the blockchain
-                engine_api.update_forkchoice(block_hash, block_hash).await?;
+                self.engine_apis[node_idx].update_forkchoice(block_hash, block_hash).await?;
             }
         }
 
