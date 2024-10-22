@@ -117,6 +117,14 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
                 println!("transactions: {:?}", transactions);
 
+                let all_transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
+                let node_chain_id = BASE_CHAIN_ID + node_idx as u64;
+                
+                let filtered_transactions: Vec<TransactionSigned> = all_transactions
+                    .into_iter()
+                    .filter(|tx| tx.chain_id() == Some(node_chain_id))
+                    .collect();
+
                 let attrs = GwynethPayloadAttributes {
                     inner: EthPayloadAttributes {
                         timestamp: block.timestamp,
@@ -125,7 +133,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                         withdrawals: Some(vec![]),
                         parent_beacon_block_root: Some(B256::ZERO),
                     },
-                    transactions: Some(transactions.clone()),
+                    transactions: Some(filtered_transactions.clone()),
                     gas_limit: None,
                 };
 
