@@ -118,12 +118,17 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 println!("transactions: {:?}", transactions);
 
                 let all_transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
-                let node_chain_id = BASE_CHAIN_ID + node_idx as u64;
-                
+                let node_chain_id = BASE_CHAIN_ID + (node_idx as u64) * 100000;
+
                 let filtered_transactions: Vec<TransactionSigned> = all_transactions
                     .into_iter()
                     .filter(|tx| tx.chain_id() == Some(node_chain_id))
                     .collect();
+
+                if filtered_transactions.len() == 0 {
+                    println!("no transactions for chain: {}", node_chain_id);
+                    continue;
+                }
 
                 let attrs = GwynethPayloadAttributes {
                     inner: EthPayloadAttributes {
