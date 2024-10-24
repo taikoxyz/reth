@@ -17,6 +17,8 @@ use reth_rpc_types::{
 use std::{marker::PhantomData, net::Ipv4Addr};
 use reth_rpc_builder::constants;
 
+use crate::exex::BASE_CHAIN_ID;
+
 /// Helper for engine api operations
 pub struct EngineApiContext<E> {
     pub canonical_stream: CanonStateNotificationStream,
@@ -119,12 +121,16 @@ pub trait RpcServerArgsExEx {
 impl RpcServerArgsExEx for RpcServerArgs {
     fn with_static_l2_rpc_ip_and_port(mut self, chain_id: u64) -> Self {
         self.http = true;
-        // On the instance the program is running, we wanna have 10111 exposed as the (exex) L2's
-        // RPC port.
         self.http_addr = Ipv4Addr::new(0, 0, 0, 0).into();
-        self.http_port = 10110u16;
-        self.ws_port = 10111u16;
+
+        // Calculate HTTP and WS ports based on chain_id
+        let port_offset = (chain_id - BASE_CHAIN_ID) as u16;
+        self.http_port = 10110 + (port_offset * 100);
+        self.ws_port = 10111 + (port_offset * 100);
+
+        // Set IPC path
         self.ipcpath = format!("{}-{}", constants::DEFAULT_IPC_ENDPOINT, chain_id);
+
         self
     }
 }
