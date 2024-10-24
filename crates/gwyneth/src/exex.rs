@@ -118,7 +118,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 println!("transactions: {:?}", transactions);
 
                 let all_transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
-                let node_chain_id = BASE_CHAIN_ID + (node_idx as u64) * 100000;
+                let node_chain_id = BASE_CHAIN_ID + (node_idx as u64);
 
                 let filtered_transactions: Vec<TransactionSigned> = all_transactions
                     .into_iter()

@@ -12,7 +12,7 @@ use reth_node_ethereum::EthereumNode;
 use reth_tasks::TaskManager;
 
 const BASE_CHAIN_ID: u64 = gwyneth::exex::BASE_CHAIN_ID; // Base chain ID for L2s
-const NUM_L2_CHAINS: u64 = 2; // Number of L2 chains to create
+const NUM_L2_CHAINS: u64 = 2; // Number of L2 chains to create. Todo: Shall come from config */
 
 fn main() -> eyre::Result<()> {
     reth::cli::Cli::parse_args().run(|builder, _| async move {
@@ -26,7 +26,7 @@ fn main() -> eyre::Result<()> {
         let mut gwyneth_nodes = Vec::new();
 
         for i in 0..NUM_L2_CHAINS {
-            let chain_id = BASE_CHAIN_ID + (i * 100000); // Increment by 100000 for each L2
+            let chain_id = BASE_CHAIN_ID + i; // Increment by 1 for each L2
 
             let chain_spec = ChainSpecBuilder::default()
                 .chain(chain_id.into())
