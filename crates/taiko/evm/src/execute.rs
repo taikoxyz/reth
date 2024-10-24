@@ -42,7 +42,7 @@ use taiko_reth_beacon_consensus::{
 use alloc::{sync::Arc, vec, vec::Vec};
 use std::io;
 use std::io::Write;
-use tracing::debug;
+use tracing::{debug, info};
 
 use reth_evm::execute::TaskResult;
 use reth_primitives::transaction::TransactionSignedList;
@@ -449,8 +449,7 @@ where
             let mut tx_list: Vec<TransactionSigned> = vec![];
             let mut buf_len: u64 = 0;
 
-            let length = block.body.len();
-            for i in 0..length {
+            for i in 0..block.body.len() {
                 let transaction = block.body.get(i).unwrap();
                 let sender = block.senders.get(i).unwrap();
                 let block_available_gas = block.header.gas_limit - cumulative_gas_used;
