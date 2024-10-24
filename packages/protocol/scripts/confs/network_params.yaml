@@ -9,6 +9,7 @@ participants:
     el_image: taiko_reth
     cl_type: teku
     cl_image: consensys/teku:latest
+    el_extra_params: ["--num_of_l2s", "2"]
 network_params:
   network_id: '160010'
 additional_services:
