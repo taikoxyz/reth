@@ -21,6 +21,14 @@ Block explorer: http://127.0.0.1:64003
 ```
 
 ```
+chain_id: 167011
+name: Gwyneth-2
+rpc: http://127.0.0.1:32006
+Currency: ETH
+Block explorer: http://127.0.0.1:64005
+```
+
+```
 chain_id: 160010
 name: Gwyneth L1
 rpc: http://127.0.0.1:32002
@@ -34,6 +42,16 @@ Add test accounts that have some ETH to play with:
 - 0x614561D2d143621E126e87831AEF287678B442b8 (private key: 53321db7c1e331d93a11a41d16f004d7ff63972ec8ec7c25db329728ceeb1710)
 
 Rabby/Brave wallet works, but some issues with nonces so you may have to manually input the correct nonce.
+
+# How to add extra layer2s ?
+
+In order to add extra layer 2 networks, you need to increase the the `NUM_L2_CHAINS` in the main function [here](https://github.com/taikoxyz/gwyneth/blob/5f6d3a6ffcf0ea359e4c52bbd94a251aef28b54c/bin/reth/src/main.rs#L15). (Later on it will be a configurational setting - no code !)
+
+If you want infrastructure support too, namingly:
+
+1. Exposing the jspn rpc port to the host machine (since everything is running in Docker with Kurtosis), you need to specify as a config param like [here](https://github.com/taikoxyz/gwyneth/blob/5f6d3a6ffcf0ea359e4c52bbd94a251aef28b54c/packages/protocol/scripts/confs/network_params.yaml#L6). (By default, if you dont specify this param, the first Layer2 port - which is 10110 - will be exposed to the host anyways. You only need to add this param if you are exposing more than 1 ports to the outter world.)
+2. Blockscout support: [Here](https://github.com/taikoxyz/gwyneth/blob/5f6d3a6ffcf0ea359e4c52bbd94a251aef28b54c/packages/protocol/scripts/confs/network_params.yaml#L16) you can see a pattern, how to shoot up blockscout service too. If you want 3 layer2 explorers, just use the service name `blockscout_l2_3`.
+
 
 # reth
 
