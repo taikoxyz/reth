@@ -42,7 +42,7 @@ use taiko_reth_beacon_consensus::{
 use alloc::{sync::Arc, vec, vec::Vec};
 use std::io;
 use std::io::Write;
-use tracing::{debug, info};
+use tracing::debug;
 
 use reth_evm::execute::TaskResult;
 use reth_primitives::transaction::TransactionSignedList;
