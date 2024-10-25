@@ -109,9 +109,7 @@ where
                         max_transactions_lists,
                         base_fee,
                     );
-                    if res.is_ok() {
-                        let _ = tx.send(res);
-                    }
+                    let _ = tx.send(res);
                 }
             }
         }
