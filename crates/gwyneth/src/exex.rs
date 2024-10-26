@@ -8,7 +8,7 @@ use crate::{
     GwynethPayloadBuilderAttributes,
 };
 use reth_consensus::Consensus;
-use reth_db::{test_utils::TempDatabase, DatabaseEnv};
+use reth_db::DatabaseEnv;
 use reth_ethereum_engine_primitives::EthPayloadAttributes;
 use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::Chain;
@@ -38,19 +38,19 @@ pub type GwynethFullNode = FullNode<
     NodeAdapter<
         FullNodeTypesAdapter<
             GwynethNode,
-            Arc<TempDatabase<DatabaseEnv>>,
-            BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+            Arc<DatabaseEnv>,
+            BlockchainProvider<Arc<DatabaseEnv>>,
         >,
         Components<
             FullNodeTypesAdapter<
                 GwynethNode,
-                Arc<TempDatabase<DatabaseEnv>>,
-                BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+                Arc<DatabaseEnv>,
+                BlockchainProvider<Arc<DatabaseEnv>>,
             >,
             Pool<
                 TransactionValidationTaskExecutor<
                     EthTransactionValidator<
-                        BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+                        BlockchainProvider<Arc<DatabaseEnv>>,
                         EthPooledTransaction,
                     >,
                 >,

@@ -127,9 +127,12 @@ where
     ) {
         trace!(endpoint = ?self.endpoint, "starting ipc server");
 
+        println!("****************");
         if cfg!(unix) {
+            println!("Unix");
             // ensure the file does not exist
             if std::fs::remove_file(&self.endpoint).is_ok() {
+                println!("Removed existing IPC endpoint file");
                 debug!(endpoint = ?self.endpoint, "removed existing IPC endpoint file");
             }
         }

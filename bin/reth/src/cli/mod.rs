@@ -89,6 +89,23 @@ impl Cli {
     }
 }
 
+
+impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
+    /// Parsers only the default CLI arguments
+    pub fn parse_args_l2() -> Self {
+        Self::parse()
+    }
+
+    /// Parsers only the default CLI arguments from the given iterator
+    pub fn try_parse_args_from_l2<I, T>(itr: I) -> Result<Self, clap::error::Error>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        Self::try_parse_from(itr)
+    }
+}
+
 impl<Ext: clap::Args + fmt::Debug> Cli<Ext> {
     /// Execute the configured cli command.
     ///
@@ -242,10 +259,11 @@ mod tests {
     use super::*;
     use crate::args::ColorMode;
     use clap::CommandFactory;
+    use node::L2Args;
 
     #[test]
     fn parse_color_mode() {
-        let reth = Cli::try_parse_args_from(["reth", "node", "--color", "always"]).unwrap();
+        let reth = Cli::<NoArgs>::try_parse_args_from(["reth", "node", "--color", "always"]).unwrap();
         assert_eq!(reth.logs.color, ColorMode::Always);
     }
 
@@ -256,7 +274,7 @@ mod tests {
     fn test_parse_help_all_subcommands() {
         let reth = Cli::<NoArgs>::command();
         for sub_command in reth.get_subcommands() {
-            let err = Cli::try_parse_args_from(["reth", sub_command.get_name(), "--help"])
+            let err = Cli::<NoArgs>::try_parse_args_from(["reth", sub_command.get_name(), "--help"])
                 .err()
                 .unwrap_or_else(|| {
                     panic!("Failed to parse help message {}", sub_command.get_name())
@@ -272,7 +290,7 @@ mod tests {
     /// name
     #[test]
     fn parse_logs_path() {
-        let mut reth = Cli::try_parse_args_from(["reth", "node"]).unwrap();
+        let mut reth = Cli::<NoArgs>::try_parse_args_from(["reth", "node"]).unwrap();
         reth.logs.log_file_directory =
             reth.logs.log_file_directory.join(reth.chain.chain.to_string());
         let log_dir = reth.logs.log_file_directory;
@@ -282,7 +300,7 @@ mod tests {
         let mut iter = SUPPORTED_CHAINS.iter();
         iter.next();
         for chain in iter {
-            let mut reth = Cli::try_parse_args_from(["reth", "node", "--chain", chain]).unwrap();
+            let mut reth = Cli::<NoArgs>::try_parse_args_from(["reth", "node", "--chain", chain]).unwrap();
             reth.logs.log_file_directory =
                 reth.logs.log_file_directory.join(reth.chain.chain.to_string());
             let log_dir = reth.logs.log_file_directory;
@@ -296,13 +314,29 @@ mod tests {
         let temp_dir = tempfile::tempdir().unwrap();
 
         std::env::set_var("RUST_LOG", "info,evm=debug");
-        let reth = Cli::try_parse_args_from([
+        let reth = Cli::<NoArgs>::try_parse_args_from([
             "reth",
             "init",
             "--datadir",
             temp_dir.path().to_str().unwrap(),
             "--log.file.filter",
             "debug,net=trace",
+        ])
+        .unwrap();
+        assert!(reth.run(|_, _| async move { Ok(()) }).is_ok());
+    }
+
+    #[test]
+    fn parse_l2_chains() {
+        let reth = Cli::<L2Args>::try_parse_args_from_l2([
+            "reth", 
+            "node",
+            "--l2.chain_ids", 
+            "160010", 
+            "160011", 
+            "--l2.datadirs", 
+            "path/one", 
+            "path/two"
         ])
         .unwrap();
         assert!(reth.run(|_, _| async move { Ok(()) }).is_ok());

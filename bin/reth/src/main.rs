@@ -4,18 +4,21 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+use std::sync::Arc;
+
 use gwyneth::{engine_api::RpcServerArgsExEx, GwynethNode};
 use reth::args::{DiscoveryArgs, NetworkArgs, RpcServerArgs};
 use reth_chainspec::ChainSpecBuilder;
+use reth_cli_commands::node::L2Args;
+use reth_db::init_db;
 use reth_node_builder::{NodeBuilder, NodeConfig, NodeHandle};
 use reth_node_ethereum::EthereumNode;
 use reth_tasks::TaskManager;
 
-const BASE_CHAIN_ID: u64 = gwyneth::exex::BASE_CHAIN_ID; // Base chain ID for L2s
-const NUM_L2_CHAINS: u64 = 2; // Number of L2 chains to create. Todo: Shall come from config */
-
 fn main() -> eyre::Result<()> {
-    reth::cli::Cli::parse_args().run(|builder, _| async move {
+    println!("WTF");
+    reth::cli::Cli::<L2Args>::parse_args_l2().run(|builder, ext| async move {
+        println!("Starting reth node with custom exex \n {:?}", ext);
         let tasks = TaskManager::current();
         let exec = tasks.executor();
         let network_config = NetworkArgs {
@@ -25,9 +28,13 @@ fn main() -> eyre::Result<()> {
 
         let mut gwyneth_nodes = Vec::new();
 
-        for i in 0..NUM_L2_CHAINS {
-            let chain_id = BASE_CHAIN_ID + i; // Increment by 1 for each L2
 
+        // Assuming chain_ids & datadirs are mandetory
+        // If ports and ipc are not supported we used the default ways to derive 
+        assert_eq!(ext.chain_ids.len(), ext.datadirs.len());
+        assert!(ext.chain_ids.len() > 0);
+
+        for (idx, (chain_id, datadir)) in ext.chain_ids.into_iter().zip(ext.datadirs).enumerate() {
             let chain_spec = ChainSpecBuilder::default()
                 .chain(chain_id.into())
                 .genesis(
@@ -46,12 +53,15 @@ fn main() -> eyre::Result<()> {
                 .with_rpc(
                     RpcServerArgs::default()
                         .with_unused_ports()
-                        .with_static_l2_rpc_ip_and_port(chain_id)
+                        .with_ports_and_ipc(ext.ports.get(idx), ext.ipc_path.clone(), chain_id)
                 );
+            
+            let db = Arc::new(init_db(datadir, reth_db::mdbx::DatabaseArguments::default())?);
 
             let NodeHandle { node: gwyneth_node, node_exit_future: _ } =
                 NodeBuilder::new(node_config.clone())
-                    .gwyneth_node(exec.clone(), chain_spec.chain.id())
+                    .with_database(db)
+                    .with_launch_context(exec.clone())
                     .node(GwynethNode::default())
                     .launch()
                     .await?;

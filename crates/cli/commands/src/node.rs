@@ -1,6 +1,6 @@
 //! Main node command for launching a node
 
-use clap::{value_parser, Args, Parser};
+use clap::{builder::Str, value_parser, Args, Parser};
 use reth_chainspec::ChainSpec;
 use reth_cli_runner::CliContext;
 use reth_cli_util::parse_socket_address;
@@ -199,6 +199,22 @@ impl<Ext: clap::Args + fmt::Debug> NodeCommand<Ext> {
 #[non_exhaustive]
 pub struct NoArgs;
 
+#[derive(Debug, Clone, Default, Args, PartialEq, Eq)]
+pub struct L2Args {
+    #[arg(long = "l2.chain_ids", required = true, num_args = 1..,)]
+    pub chain_ids: Vec<u64>,
+
+    #[arg(long = "l2.datadirs", required = true, num_args = 1..,)]
+    pub datadirs: Vec<PathBuf>,
+
+    #[arg(long = "l2.ports", num_args = 1..,)]
+    pub ports: Vec<u16>,
+
+    #[arg(long = "l2.ipc_path")]
+    pub ipc_path: String,
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -220,6 +236,40 @@ mod tests {
             let args: NodeCommand = NodeCommand::<NoArgs>::parse_from(["reth", "--chain", chain]);
             assert_eq!(args.chain.chain, chain.parse::<reth_chainspec::Chain>().unwrap());
         }
+    }
+
+    #[test]
+    fn parse_common_node_command_l2_args() {
+        let args = NodeCommand::<L2Args>::parse_from([
+            "reth", 
+            "--l2.chain_ids", 
+            "160010", 
+            "160011", 
+            "--l2.datadirs", 
+            "path/one", 
+            "path/two",
+            "--l2.ports",
+            "1234",
+            "2345",
+            "--l2.ipc_path",
+            "/tmp/ipc",
+        ]);
+        assert_eq!(
+            args.ext, 
+            L2Args {
+                chain_ids: vec![160010, 160011], 
+                datadirs: vec!["path/one".into(), "path/two".into()],
+                ports: vec![1234, 2345],
+                ipc_path: "/tmp/ipc".into(),
+            })
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_l2_args() {
+        let args = NodeCommand::<L2Args>::try_parse_from([
+            "reth", 
+        ]).unwrap();
     }
 
     #[test]
