@@ -173,6 +173,31 @@ impl<DB> NodeBuilder<DB> {
         WithLaunchContext { builder: self, task_executor }
     }
 
+    /// Creates a Gwyneth node
+    pub fn gwyneth_node(
+        mut self,
+        task_executor: TaskExecutor,
+        datadir: PathBuf,
+    ) -> WithLaunchContext<NodeBuilder<Arc<reth_db::test_utils::TempDatabase<reth_db::DatabaseEnv>>>>
+    {
+        let path = reth_node_core::dirs::MaybePlatformPath::<DataDirPath>::from(datadir);
+        self.config = self.config.with_datadir_args(reth_node_core::args::DatadirArgs {
+            datadir: path.clone(),
+            ..Default::default()
+        });
+
+        let data_dir =
+            path.unwrap_or_chain_default(self.config.chain.chain, self.config.datadir.clone());
+
+        println!("data_dir: {:?}", data_dir);
+
+        let db = reth_db::test_utils::create_test_rw_db_with_path(data_dir.db());
+
+        WithLaunchContext { builder: self.with_database(db), task_executor }
+    }
+
+
+
 
 
     /// Creates an _ephemeral_ preconfigured node for testing purposes.

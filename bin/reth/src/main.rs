@@ -7,7 +7,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use std::sync::Arc;
 
 use gwyneth::{engine_api::RpcServerArgsExEx, GwynethNode};
-use reth::args::{DiscoveryArgs, NetworkArgs, RpcServerArgs};
+use reth::{args::{DiscoveryArgs, NetworkArgs, RpcServerArgs}, dirs::ChainPath};
 use reth_chainspec::ChainSpecBuilder;
 use reth_cli_commands::node::L2Args;
 use reth_db::init_db;
@@ -45,7 +45,7 @@ fn main() -> eyre::Result<()> {
                 )
                 .cancun_activated()
                 .build();
-
+            
             let node_config = NodeConfig::test()
                 .with_chain(chain_spec.clone())
                 .with_network(network_config.clone())
@@ -56,12 +56,11 @@ fn main() -> eyre::Result<()> {
                         .with_ports_and_ipc(ext.ports.get(idx), ext.ipc_path.clone(), chain_id)
                 );
             
-            let db = Arc::new(init_db(datadir, reth_db::mdbx::DatabaseArguments::default())?);
+            // let db = Arc::new(init_db(node_config.datadir().db(), reth_db::mdbx::DatabaseArguments::default())?);
 
             let NodeHandle { node: gwyneth_node, node_exit_future: _ } =
                 NodeBuilder::new(node_config.clone())
-                    .with_database(db)
-                    .with_launch_context(exec.clone())
+                    .gwyneth_node(exec.clone(), datadir)
                     .node(GwynethNode::default())
                     .launch()
                     .await?;
