@@ -96,6 +96,7 @@ where
                     });
                 local_txs.extend(remote_txs);
                 debug!(target: "taiko::proposer", txs = ?local_txs.len(), "Proposer filter best transactions");
+
                 // miner returned a set of transaction that we feed to the producer
                 this.queued.push_back((trigger_args, local_txs));
             };
@@ -111,7 +112,6 @@ where
 
                 let client = this.provider.clone();
                 let chain_spec = Arc::clone(&this.chain_spec);
-                let pool = this.pool.clone();
                 let executor = this.block_executor.clone();
 
                 // Create the mining future that creates a block, notifies the engine that drives
@@ -144,10 +144,6 @@ where
                         max_transactions_lists,
                         base_fee,
                     );
-                    if res.is_ok() {
-                        // clear all transactions from pool
-                        pool.remove_transactions(txs.iter().map(|tx| tx.hash()).collect());
-                    }
                     let _ = tx.send(res);
                 }));
             }
