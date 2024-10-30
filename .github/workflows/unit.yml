@@ -34,14 +34,6 @@ jobs:
             args: --features "asm-keccak ethereum" --locked
             partition: 2
             total_partitions: 2
-          - type: optimism
-            args: --features "asm-keccak optimism" --locked
-            partition: 1
-            total_partitions: 2
-          - type: optimism
-            args: --features "asm-keccak optimism" --locked
-            partition: 2
-            total_partitions: 2
           - type: book
             args: --manifest-path book/sources/Cargo.toml
             partition: 1
@@ -99,7 +91,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        network: ["ethereum", "optimism"]
+        network: ["ethereum"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

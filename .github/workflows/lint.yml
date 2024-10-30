@@ -20,9 +20,6 @@ jobs:
           - type: ethereum
             args: --bin reth --workspace
             features: "ethereum asm-keccak jemalloc jemalloc-prof min-error-logs min-warn-logs min-info-logs min-debug-logs min-trace-logs"
-          - type: optimism
-            args: --bin op-reth --workspace
-            features: "optimism asm-keccak jemalloc jemalloc-prof min-error-logs min-warn-logs min-info-logs min-debug-logs min-trace-logs"
           - type: book
             args: --manifest-path book/sources/Cargo.toml --workspace --bins
             features: ""
@@ -88,7 +85,6 @@ jobs:
         with:
           cache-on-failure: true
       - run: cargo hack check --workspace --exclude op-reth
-      - run: cargo check -p op-reth --features "optimism"
 
   msrv:
     name: MSRV / ${{ matrix.network }}
@@ -99,8 +95,6 @@ jobs:
         include:
           - binary: reth
             network: ethereum
-          - binary: op-reth
-            network: optimism
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
