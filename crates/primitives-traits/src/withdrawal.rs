@@ -1,18 +1,16 @@
 //! [EIP-4895](https://eips.ethereum.org/EIPS/eip-4895) Withdrawal types.
 
+use alloc::vec::Vec;
 use alloy_rlp::{RlpDecodableWrapper, RlpEncodableWrapper};
 use derive_more::{AsRef, Deref, DerefMut, From, IntoIterator};
-use reth_codecs::{main_codec, Compact};
-
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
+use reth_codecs::{add_arbitrary_tests, Compact};
 
 /// Re-export from `alloy_eips`.
 #[doc(inline)]
 pub use alloy_eips::eip4895::Withdrawal;
+use serde::{Deserialize, Serialize};
 
 /// Represents a collection of Withdrawals.
-#[main_codec]
 #[derive(
     Debug,
     Clone,
@@ -27,7 +25,12 @@ pub use alloy_eips::eip4895::Withdrawal;
     IntoIterator,
     RlpEncodableWrapper,
     RlpDecodableWrapper,
+    Serialize,
+    Deserialize,
+    Compact,
 )]
+#[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
+#[add_arbitrary_tests(compact)]
 #[as_ref(forward)]
 pub struct Withdrawals(Vec<Withdrawal>);
 
@@ -65,6 +68,23 @@ impl Withdrawals {
     }
 }
 
+impl<'a> IntoIterator for &'a Withdrawals {
+    type Item = &'a Withdrawal;
+    type IntoIter = core::slice::Iter<'a, Withdrawal>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut Withdrawals {
+    type Item = &'a mut Withdrawal;
+    type IntoIter = core::slice::IterMut<'a, Withdrawal>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,8 +95,21 @@ mod tests {
 
     /// This type is kept for compatibility tests after the codec support was added to alloy-eips
     /// Withdrawal type natively
-    #[main_codec]
-    #[derive(Debug, Clone, PartialEq, Eq, Default, Hash, RlpEncodable, RlpDecodable)]
+    #[derive(
+        Debug,
+        Clone,
+        PartialEq,
+        Eq,
+        Default,
+        Hash,
+        RlpEncodable,
+        RlpDecodable,
+        Serialize,
+        Deserialize,
+        Compact,
+    )]
+    #[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
+    #[add_arbitrary_tests(compact)]
     struct RethWithdrawal {
         /// Monotonically increasing identifier issued by consensus layer.
         index: u64,
@@ -113,7 +146,7 @@ mod tests {
             // Convert to buffer and then create alloy_access_list from buffer and
             // compare
             let mut compacted_reth_withdrawal = Vec::<u8>::new();
-            let len = withdrawal.clone().to_compact(&mut compacted_reth_withdrawal);
+            let len = withdrawal.to_compact(&mut compacted_reth_withdrawal);
 
             // decode the compacted buffer to AccessList
             let alloy_withdrawal = Withdrawal::from_compact(&compacted_reth_withdrawal, len).0;
