@@ -4,10 +4,10 @@ name: deny
 
 on:
   push:
-    branches: [main]
+    branches: [v1.1.0-taiko]
     paths: [Cargo.lock]
   pull_request:
-    branches: [main]
+    branches: [v1.1.0-taiko]
     paths: [Cargo.lock]
   merge_group:
 

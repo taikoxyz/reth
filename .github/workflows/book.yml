@@ -4,9 +4,9 @@ name: book
 
 on:
   push:
-    branches: [main]
+    branches: [v1.1.0-taiko]
   pull_request:
-    branches: [main]
+    branches: [v1.1.0-taiko]
   merge_group:
 
 jobs:

@@ -4,7 +4,7 @@ on:
   pull_request:
   merge_group:
   push:
-    branches: [main]
+    branches: [v1.1.0-taiko]
 
 env:
   CARGO_TERM_COLOR: always

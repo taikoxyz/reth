@@ -4,7 +4,7 @@ on:
   pull_request:
   merge_group:
   push:
-    branches: [main]
+    branches: [v1.1.0-taiko]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,8 +19,6 @@ jobs:
         include:
           - binary: reth
             network: ethereum
-          - binary: op-reth
-            network: optimism
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@clippy
@@ -83,8 +81,6 @@ jobs:
         include:
           - binary: reth
             network: ethereum
-          - binary: op-reth
-            network: optimism
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
