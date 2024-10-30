@@ -31,6 +31,7 @@ EF_TESTS_DIR := ./testing/ef-tests/ethereum-tests
 
 # The docker image name
 DOCKER_IMAGE_NAME ?= ghcr.io/paradigmxyz/reth
+TAIKO_DOCKER_IMAGE_NAME ?= us-docker.pkg.dev/evmchain/images/taiko-reth
 
 # Features in reth/op-reth binary crate other than "ethereum" and "optimism"
 BIN_OTHER_FEATURES := asm-keccak jemalloc jemalloc-prof min-error-logs min-warn-logs min-info-logs min-debug-logs min-trace-logs
@@ -57,6 +58,13 @@ install-op: ## Build and install the op-reth binary under `~/.cargo/bin`.
 		--profile "$(PROFILE)" \
 		$(CARGO_INSTALL_EXTRA_FLAGS)
 
+.PHONY: install-taiko
+install-taiko: ## Build and install the op-reth binary under `~/.cargo/bin`.
+	cargo install --path bin/reth --bin taiko-reth --force --locked \
+		--features "taiko,$(FEATURES)" \
+		--profile "$(PROFILE)" \
+		$(CARGO_INSTALL_EXTRA_FLAGS)
+
 .PHONY: build
 build: ## Build the reth binary into `target` directory.
 	cargo build --bin reth --features "$(FEATURES)" --profile "$(PROFILE)"
@@ -69,12 +77,19 @@ build-debug: ## Build the reth binary into `target/debug` directory.
 build-op: ## Build the op-reth binary into `target` directory.
 	cargo build --bin op-reth --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
 
+.PHONY: build-taiko
+build-taiko: ## Build the op-reth binary into `target` directory.
+	cargo build --bin taiko-reth --features "taiko,$(FEATURES)" --profile "$(PROFILE)"
+
 # Builds the reth binary natively.
 build-native-%:
 	cargo build --bin reth --target $* --features "$(FEATURES)" --profile "$(PROFILE)"
 
 op-build-native-%:
 	cargo build --bin op-reth --target $* --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
+
+taiko-build-native-%:
+	cargo build --bin op-reth --target $* --features "taiko,$(FEATURES)" --profile "$(PROFILE)"
 
 # The following commands use `cross` to build a cross-compile.
 #
@@ -108,6 +123,10 @@ op-build-%:
 	RUSTFLAGS="-C link-arg=-lgcc -Clink-arg=-static-libgcc" \
 		cross build --bin op-reth --target $* --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
 
+taiko-build-%:
+	RUSTFLAGS="-C link-arg=-lgcc -Clink-arg=-static-libgcc" \
+		cross build --bin taiko-reth --target $* --features "taiko,$(FEATURES)" --profile "$(PROFILE)"
+
 # Unfortunately we can't easily use cross to build for Darwin because of licensing issues.
 # If we wanted to, we would need to build a custom Docker image with the SDK available.
 #
@@ -122,6 +141,11 @@ op-build-x86_64-apple-darwin:
 	$(MAKE) op-build-native-x86_64-apple-darwin
 op-build-aarch64-apple-darwin:
 	$(MAKE) op-build-native-aarch64-apple-darwin
+
+taiko-build-x86_64-apple-darwin:
+	$(MAKE) taiko-build-native-x86_64-apple-darwin
+taiko-build-aarch64-apple-darwin:
+	$(MAKE) taiko-build-native-aarch64-apple-darwin
 
 # Create a `.tar.gz` containing a binary for a specific target.
 define tarball_release_binary
@@ -279,6 +303,53 @@ endef
 
 ##@ Other
 
+
+##@ Taiko docker
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-push
+taiko-docker-build-push: ## Build and push a cross-arch Docker image tagged with the latest git tag.
+	$(call taiko_docker_build_push,$(GIT_TAG),$(GIT_TAG))
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-push-latest
+taiko-docker-build-push-latest: ## Build and push a cross-arch Docker image tagged with the latest git tag and `latest`.
+	$(call taiko_docker_build_push,$(GIT_TAG),latest)
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --name cross-builder`
+.PHONY: taiko-docker-build-push-nightly
+taiko-docker-build-push-nightly: ## Build and push cross-arch Docker image tagged with the latest git tag with a `-nightly` suffix, and `latest-nightly`.
+	$(call taiko_docker_build_push,$(GIT_TAG)-nightly,latest-nightly)
+
+# Create a cross-arch Docker image with the given tags and push it
+define taiko_docker_build_push
+	$(MAKE) taiko-build-x86_64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/amd64
+	cp $(BUILD_PATH)/x86_64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/amd64/taiko-reth
+
+	$(MAKE) taiko-build-aarch64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/arm64
+	cp $(BUILD_PATH)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
+
+	docker buildx build --file ./DockerfileTaiko.cross . \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(1) \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(2) \
+		--provenance=false \
+		--push
+endef
+
+##@ Other
+
 .PHONY: clean
 clean: ## Perform a `cargo` clean and remove the binary and test vectors directories.
 	cargo clean
@@ -346,6 +417,18 @@ lint-op-reth:
 	--features "optimism $(BIN_OTHER_FEATURES)" \
 	-- -D warnings
 
+
+lint-taiko-reth:
+	cargo +nightly clippy \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib \
+	--examples \
+	--tests \
+	--benches \
+	--features "taiko $(BIN_OTHER_FEATURES)" \
+	-- -D warnings
+
 lint-other-targets:
 	cargo +nightly clippy \
 	--workspace \
@@ -369,6 +452,7 @@ lint:
 	make fmt && \
 	make lint-reth && \
 	make lint-op-reth && \
+	make lint-taiko-reth && \
 	make lint-other-targets && \
 	make lint-codespell
 
@@ -400,6 +484,21 @@ fix-lint-op-reth:
 	--allow-dirty \
 	-- -D warnings
 
+
+fix-lint-taiko-reth:
+	cargo +nightly clippy \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib \
+	--examples \
+	--tests \
+	--benches \
+	--features "taiko $(BIN_OTHER_FEATURES)" \
+	--fix \
+	--allow-staged \
+	--allow-dirty \
+	-- -D warnings
+
 fix-lint-other-targets:
 	cargo +nightly clippy \
 	--workspace \
@@ -416,6 +515,7 @@ fix-lint-other-targets:
 fix-lint:
 	make fix-lint-reth && \
 	make fix-lint-op-reth && \
+	make fix-lint-taiko-reth && \
 	make fix-lint-other-targets && \
 	make fmt
 
@@ -448,6 +548,15 @@ test-op-reth:
 	--benches \
 	--features "optimism $(BIN_OTHER_FEATURES)"
 
+test-taiko-reth:
+	cargo test \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib --examples \
+	--tests \
+	--benches \
+	--features "taiko $(BIN_OTHER_FEATURES)"
+
 test-other-targets:
 	cargo test \
 	--workspace \
@@ -464,6 +573,7 @@ test-doc:
 test:
 	make test-reth && \
 	make test-op-reth && \
+	make test-taiko-reth && \
 	make test-doc && \
 	make test-other-targets
 
