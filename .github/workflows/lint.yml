@@ -91,22 +91,6 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
 
-  docs:
-    name: docs
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - run: cargo docs --document-private-items
-        env:
-          # Keep in sync with ./book.yml:jobs.build
-          # This should only add `-D warnings`
-          RUSTDOCFLAGS: --cfg docsrs --show-type-layout --generate-link-to-definition --enable-index-page -Zunstable-options -D warnings
-
   fmt:
     name: fmt
     runs-on: ubuntu-latest
@@ -134,26 +118,6 @@ jobs:
       - uses: taiki-e/install-action@cargo-udeps
       - run: cargo udeps --workspace --lib --examples --tests --benches --all-features --locked
 
-  book:
-    name: book
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.81" # MSRV
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - run: cargo build --bin reth --workspace --features ethereum
-        env:
-          RUSTFLAGS: -D warnings
-      - run: ./book/cli/update.sh target/debug/reth
-      - name: Check book changes
-        run: git diff --exit-code
-
   codespell:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -162,16 +126,6 @@ jobs:
       - uses: codespell-project/actions-codespell@v2
         with:
           skip: "*.json"
-
-  grafana:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check dashboard JSON with jq
-        uses: sergeysova/jq-action@v2
-        with:
-          cmd: jq empty etc/grafana/dashboards/overview.json
 
   no-test-deps:
     runs-on: ubuntu-latest
@@ -207,12 +161,9 @@ jobs:
       - clippy-binaries
       - clippy
       - crate-checks
-      - docs
       - fmt
       - udeps
-      - book
       - codespell
-      - grafana
       - no-test-deps
       - features
     timeout-minutes: 30

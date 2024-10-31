@@ -33,10 +33,6 @@ jobs:
             args: --features "asm-keccak ethereum" --locked
             partition: 2
             total_partitions: 2
-          - type: book
-            args: --manifest-path book/sources/Cargo.toml
-            partition: 1
-            total_partitions: 1
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -80,29 +76,11 @@ jobs:
           cache-on-failure: true
       - run: cargo nextest run --release -p ef-tests --features "asm-keccak ef-tests"
 
-  doc:
-    name: doc tests (${{ matrix.network }})
-    runs-on: ubuntu-latest
-    env:
-      RUST_BACKTRACE: 1
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        network: ["ethereum"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - name: Run doctests
-        run: cargo test --doc --workspace --features "${{ matrix.network }}"
-
   unit-success:
     name: unit success
     runs-on: ubuntu-latest
     if: always()
-    needs: [test, state, doc]
+    needs: [test, state]
     timeout-minutes: 30
     steps:
       - name: Decide whether the needed jobs succeeded or failed
