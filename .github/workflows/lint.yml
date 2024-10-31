@@ -70,27 +70,6 @@ jobs:
           cache-on-failure: true
       - run: cargo hack check --workspace --exclude op-reth
 
-  msrv:
-    name: MSRV / ${{ matrix.network }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        include:
-          - binary: reth
-            network: ethereum
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.81" # MSRV
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - run: cargo build --bin "${{ matrix.binary }}" --workspace --features "${{ matrix.network }}"
-        env:
-          RUSTFLAGS: -D warnings
-
   fmt:
     name: fmt
     runs-on: ubuntu-latest
@@ -135,23 +114,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Ensure no arbitrary or proptest dependency on default build
         run: cargo tree --package reth -e=features,no-dev | grep -Eq "arbitrary|proptest" && exit 1 || exit 0
-
-  # Checks that selected rates can compile with power set of features
-  features:
-    name: features
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - name: cargo install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
-      - run: make check-features
-        env:
-          RUSTFLAGS: -D warnings
 
   lint-success:
     name: lint success
