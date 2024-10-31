@@ -42,7 +42,3 @@ jobs:
         run: make PROFILE=maxperf docker-build-push-latest
       - name: Build and push reth image
         run: make PROFILE=maxperf docker-build-push
-      - name: Build and push op-reth image, tag as "latest"
-        run: make IMAGE_NAME=$OP_IMAGE_NAME DOCKER_IMAGE_NAME=$OP_DOCKER_IMAGE_NAME PROFILE=maxperf op-docker-build-push-latest
-      - name: Build and push op-reth image
-        run: make IMAGE_NAME=$OP_IMAGE_NAME DOCKER_IMAGE_NAME=$OP_DOCKER_IMAGE_NAME PROFILE=maxperf op-docker-build-push
