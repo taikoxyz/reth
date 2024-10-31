@@ -19,6 +19,8 @@ jobs:
         include:
           - binary: reth
             network: ethereum
+          - binary: op-reth
+            network: optimism
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@clippy
@@ -81,6 +83,8 @@ jobs:
         include:
           - binary: reth
             network: ethereum
+          - binary: op-reth
+            network: optimism
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
