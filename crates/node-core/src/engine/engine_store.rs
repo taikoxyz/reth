@@ -4,7 +4,9 @@ use futures::{Stream, StreamExt};
 use reth_beacon_consensus::BeaconEngineMessage;
 use reth_engine_primitives::EngineTypes;
 use reth_fs_util as fs;
-use reth_rpc_types::engine::{CancunPayloadFields, ForkchoiceState};
+use reth_rpc_types::{
+    engine::{CancunPayloadFields, ForkchoiceState},
+};
 #[cfg(not(feature = "taiko"))]
 use reth_rpc_types::ExecutionPayload;
 use serde::{Deserialize, Serialize};
