@@ -2031,7 +2031,7 @@ impl TransportRpcModules {
     /// Returns [Ok(false)] if no ws transport is configured.
     pub fn merge_ws(&mut self, other: impl Into<Methods>) -> Result<bool, RegisterMethodError> {
         if let Some(ref mut ws) = self.ws {
-            return ws.merge(other.into()).map(|_| true);
+            return ws.merge(other.into()).map(|_| true)
         }
         Ok(false)
     }

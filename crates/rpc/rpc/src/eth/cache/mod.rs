@@ -25,7 +25,6 @@ use tokio::sync::{
     oneshot, Semaphore,
 };
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use tracing::debug;
 
 mod config;
 pub use config::*;
@@ -362,7 +361,6 @@ where
     }
 
     fn on_reorg_block(&mut self, block_hash: B256, res: ProviderResult<Option<BlockWithSenders>>) {
-        debug!(target:"rpc::cache", "reorg block: {:?}", block_hash);
         if let Some(queued) = self.full_block_cache.remove(&block_hash) {
             // send the response to queued senders
             for tx in queued {
@@ -422,7 +420,7 @@ where
                         CacheAction::GetBlockWithSenders { block_hash, response_tx } => {
                             if let Some(block) = this.full_block_cache.get(&block_hash).cloned() {
                                 let _ = response_tx.send(Ok(Some(block)));
-                                continue;
+                                continue
                             }
 
                             // block is not in the cache, request it if this is the first consumer
@@ -450,7 +448,7 @@ where
                             // check if block is cached
                             if let Some(block) = this.full_block_cache.get(&block_hash) {
                                 let _ = response_tx.send(Ok(Some(block.body.clone())));
-                                continue;
+                                continue
                             }
 
                             // block is not in the cache, request it if this is the first consumer
@@ -478,7 +476,7 @@ where
                             // check if block is cached
                             if let Some(receipts) = this.receipts_cache.get(&block_hash).cloned() {
                                 let _ = response_tx.send(Ok(Some(receipts)));
-                                continue;
+                                continue
                             }
 
                             // block is not in the cache, request it if this is the first consumer
@@ -502,7 +500,7 @@ where
                             // check if env data is cached
                             if let Some(env) = this.evm_env_cache.get(&block_hash).cloned() {
                                 let _ = response_tx.send(Ok(env));
-                                continue;
+                                continue
                             }
 
                             // env data is not in the cache, request it if this is the first

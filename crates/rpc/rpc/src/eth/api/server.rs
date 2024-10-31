@@ -328,7 +328,7 @@ where
     /// Handler for: `eth_blobBaseFee`
     async fn blob_base_fee(&self) -> Result<U256> {
         trace!(target: "rpc::eth", "Serving eth_blobBaseFee");
-        return Ok(Self::blob_base_fee(self).await?);
+        return Ok(Self::blob_base_fee(self).await?)
     }
 
     // FeeHistory is calculated based on lazy evaluation of fees for historical blocks, and further
