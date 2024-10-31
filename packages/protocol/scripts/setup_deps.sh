@@ -178,6 +178,14 @@ echo "Running forge foundry script..."
 FORGE_OUTPUT=$(eval $FORGE_COMMAND | tee /dev/tty)
 echo "Script execution completed."
 
+# Extract the path to run-latest.json
+RUN_LATEST_PATH=$(echo "$FORGE_OUTPUT" | grep "Transactions saved to:" | sed 's/Transactions saved to: //')
+
+# Run the verification script
+echo "Starting contract verification..."
+BLOCKSCOUT_PORT=$(cat /tmp/kurtosis_blockscout_port)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+"$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
 
 # Ensure the log file exists in the current working directory
 touch ./rbuilder.log
@@ -217,12 +225,3 @@ else
     kill $FILE_LOG_PID
     exit 1
 fi
-
-# Extract the path to run-latest.json
-RUN_LATEST_PATH=$(echo "$FORGE_OUTPUT" | grep "Transactions saved to:" | sed 's/Transactions saved to: //')
-
-# Run the verification script
-echo "Starting contract verification..."
-BLOCKSCOUT_PORT=$(cat /tmp/kurtosis_blockscout_port)
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-"$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
