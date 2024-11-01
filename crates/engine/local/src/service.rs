@@ -127,6 +127,7 @@ where
             <N::Engine as PayloadTypes>::PayloadBuilderAttributes::try_new(
                 parent,
                 payload_attributes,
+                Default::default(),
             )
             .map_err(|_| eyre::eyre!("failed to fetch payload attributes"))?;
 
