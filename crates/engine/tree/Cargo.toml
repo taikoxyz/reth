@@ -72,6 +72,7 @@ reth-stages = { workspace = true, features = ["test-utils"] }
 reth-static-file.workspace = true
 reth-tracing.workspace = true
 reth-chainspec.workspace = true
+reth-payload-primitives.workspace = true
 
 alloy-rlp.workspace = true
 

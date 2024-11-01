@@ -323,9 +323,10 @@ where
 }
 
 /// The version of Engine API message.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum EngineApiMessageVersion {
     /// Version 1
+    #[default]
     V1,
     /// Version 2
     ///

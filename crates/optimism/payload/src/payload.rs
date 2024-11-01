@@ -13,7 +13,7 @@ use reth_chain_state::ExecutedBlock;
 use reth_chainspec::EthereumHardforks;
 use reth_optimism_chainspec::OpChainSpec;
 use reth_payload_builder::EthPayloadBuilderAttributes;
-use reth_payload_primitives::{BuiltPayload, PayloadBuilderAttributes};
+use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadBuilderAttributes};
 use reth_primitives::{
     transaction::WithEncoded, BlobTransactionSidecar, SealedBlock, TransactionSigned, Withdrawals,
 };

@@ -30,6 +30,7 @@ use reth_static_file::StaticFileProducer;
 use reth_tasks::TaskExecutor;
 use reth_transaction_pool::noop::NoopTransactionPool;
 use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::default::Default;
 use tokio::sync::oneshot;
 use tracing::*;
 
@@ -167,7 +168,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
             match message {
                 StoredEngineApiMessage::ForkchoiceUpdated { state, payload_attrs } => {
                     let response =
-                        beacon_engine_handle.fork_choice_updated(state, payload_attrs).await?;
+                        beacon_engine_handle.fork_choice_updated(state, payload_attrs, Default::default()).await?;
                     debug!(target: "reth::cli", ?response, "Received for forkchoice updated");
                 }
                 StoredEngineApiMessage::NewPayload { payload, cancun_fields } => {

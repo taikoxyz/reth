@@ -106,8 +106,8 @@ impl PayloadBuilderAttributes for CustomPayloadBuilderAttributes {
     type RpcPayloadAttributes = CustomPayloadAttributes;
     type Error = Infallible;
 
-    fn try_new(parent: B256, attributes: CustomPayloadAttributes) -> Result<Self, Infallible> {
-        Ok(Self(EthPayloadBuilderAttributes::new(parent, attributes.inner)))
+    fn try_new(parent: B256, attributes: CustomPayloadAttributes, version: EngineApiMessageVersion) -> Result<Self, Infallible> {
+        Ok(Self(EthPayloadBuilderAttributes::new(parent, attributes.inner, version)))
     }
 
     fn payload_id(&self) -> PayloadId {

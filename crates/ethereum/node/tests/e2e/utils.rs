@@ -16,5 +16,5 @@ pub(crate) fn eth_payload_attributes(timestamp: u64) -> EthPayloadBuilderAttribu
         withdrawals: Some(vec![]),
         parent_beacon_block_root: Some(B256::ZERO),
     };
-    EthPayloadBuilderAttributes::new(B256::ZERO, attributes)
+    EthPayloadBuilderAttributes::new(B256::ZERO, attributes, Default::default())
 }

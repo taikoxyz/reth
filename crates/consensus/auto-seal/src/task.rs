@@ -161,6 +161,8 @@ where
                                     state,
                                     payload_attrs: None,
                                     tx,
+                                    version: Default::default(),
+                                    debug: false,
                                 });
                                 debug!(target: "consensus::auto", ?state, "Sent fork choice update");
 

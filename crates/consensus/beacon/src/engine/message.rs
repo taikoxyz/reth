@@ -6,7 +6,7 @@ use alloy_rpc_types_engine::{
 use futures::{future::Either, FutureExt};
 use reth_engine_primitives::EngineTypes;
 use reth_errors::RethResult;
-use reth_payload_primitives::PayloadBuilderError;
+use reth_payload_primitives::{EngineApiMessageVersion, PayloadBuilderError};
 use std::{
     fmt::Display,
     future::Future,
@@ -157,6 +157,10 @@ pub enum BeaconEngineMessage<Engine: EngineTypes> {
         payload_attrs: Option<Engine::PayloadAttributes>,
         /// The sender for returning forkchoice updated result.
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
+        /// The api version.
+        version: EngineApiMessageVersion,
+        /// Send from the debug api server.
+        debug: bool,
     },
     /// Message with exchanged transition configuration.
     TransitionConfigurationExchanged,
@@ -174,13 +178,14 @@ impl<Engine: EngineTypes> Display for BeaconEngineMessage<Engine> {
                     payload.block_hash()
                 )
             }
-            Self::ForkchoiceUpdated { state, payload_attrs, .. } => {
+            Self::ForkchoiceUpdated { state, payload_attrs, version, .. } => {
                 // we don't want to print the entire payload attributes, because for OP this
                 // includes all txs
                 write!(
                     f,
-                    "ForkchoiceUpdated {{ state: {state:?}, has_payload_attributes: {} }}",
-                    payload_attrs.is_some()
+                    "ForkchoiceUpdated {{ state: {state:?}, has_payload_attributes: {}, version: {} }}",
+                    payload_attrs.is_some(),
+                    version,
                 )
             }
             Self::TransitionConfigurationExchanged => {

@@ -30,7 +30,7 @@ use reth_engine_primitives::EngineTypes;
 use reth_errors::{ConsensusError, ProviderResult};
 use reth_evm::execute::BlockExecutorProvider;
 use reth_payload_builder::PayloadBuilderHandle;
-use reth_payload_primitives::{PayloadAttributes, PayloadBuilder, PayloadBuilderAttributes};
+use reth_payload_primitives::{EngineApiMessageVersion, PayloadAttributes, PayloadBuilder, PayloadBuilderAttributes};
 use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{
     Block, GotExpected, Header, SealedBlock, SealedBlockWithSenders, SealedHeader,
@@ -971,6 +971,7 @@ where
         &mut self,
         state: ForkchoiceState,
         attrs: Option<T::PayloadAttributes>,
+        version: EngineApiMessageVersion,
     ) -> ProviderResult<TreeOutcome<OnForkChoiceUpdated>> {
         trace!(target: "engine::tree", ?attrs, "invoked forkchoice update");
         self.metrics.engine.forkchoice_updated_messages.increment(1);
@@ -1020,7 +1021,7 @@ where
                         // to return an error
                         ProviderError::HeaderNotFound(state.head_block_hash.into())
                     })?;
-                let updated = self.process_payload_attributes(attr, &tip, state);
+                let updated = self.process_payload_attributes(attr, &tip, state, version);
                 return Ok(TreeOutcome::new(updated))
             }
 
@@ -1040,7 +1041,7 @@ where
             }
 
             if let Some(attr) = attrs {
-                let updated = self.process_payload_attributes(attr, &tip, state);
+                let updated = self.process_payload_attributes(attr, &tip, state, version);
                 return Ok(TreeOutcome::new(updated))
             }
 
@@ -1056,7 +1057,7 @@ where
             if self.engine_kind.is_opstack() {
                 if let Some(attr) = attrs {
                     debug!(target: "engine::tree", head = canonical_header.number, "handling payload attributes for canonical head");
-                    let updated = self.process_payload_attributes(attr, &canonical_header, state);
+                    let updated = self.process_payload_attributes(attr, &canonical_header, state, version);
                     return Ok(TreeOutcome::new(updated))
                 }
             }
@@ -1207,8 +1208,8 @@ where
                     }
                     EngineApiRequest::Beacon(request) => {
                         match request {
-                            BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx } => {
-                                let mut output = self.on_forkchoice_updated(state, payload_attrs);
+                            BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx, version, .. } => {
+                                let mut output = self.on_forkchoice_updated(state, payload_attrs, version);
 
                                 if let Ok(res) = &mut output {
                                     // track last received forkchoice state
@@ -2482,6 +2483,7 @@ where
         attrs: T::PayloadAttributes,
         head: &Header,
         state: ForkchoiceState,
+        version: EngineApiMessageVersion,
     ) -> OnForkChoiceUpdated {
         // 7. Client software MUST ensure that payloadAttributes.timestamp is greater than timestamp
         //    of a block referenced by forkchoiceState.headBlockHash. If this condition isn't held
@@ -2499,6 +2501,7 @@ where
         match <T::PayloadBuilderAttributes as PayloadBuilderAttributes>::try_new(
             state.head_block_hash,
             attrs,
+            version,
         ) {
             Ok(attributes) => {
                 // send the payload to the builder and return the receiver for the pending payload
@@ -2584,7 +2587,9 @@ mod tests {
         str::FromStr,
         sync::mpsc::{channel, Sender},
     };
+    use std::default::Default;
     use tokio::sync::mpsc::unbounded_channel;
+    use reth_db::mdbx::EnvironmentKind::Default;
 
     /// This is a test channel that allows you to `release` any value that is in the channel.
     ///
@@ -2805,6 +2810,8 @@ mod tests {
                         state: fcu_state,
                         payload_attrs: None,
                         tx,
+                        version: Default::default(),
+                        debug: false,
                     }
                     .into(),
                 ))
@@ -3094,6 +3101,8 @@ mod tests {
                     },
                     payload_attrs: None,
                     tx,
+                    version: Default::default(),
+                    debug: false,
                 }
                 .into(),
             ))

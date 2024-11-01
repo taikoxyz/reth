@@ -12,6 +12,7 @@ use reth_engine_primitives::EngineTypes;
 use reth_errors::RethResult;
 use reth_tokio_util::{EventSender, EventStream};
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
+use reth_payload_primitives::EngineApiMessageVersion;
 
 /// A _shareable_ beacon consensus frontend type. Used to interact with the spawned beacon consensus
 /// engine task.
@@ -60,9 +61,10 @@ where
         &self,
         state: ForkchoiceState,
         payload_attrs: Option<Engine::PayloadAttributes>,
+        version: EngineApiMessageVersion,
     ) -> Result<ForkchoiceUpdated, BeaconForkChoiceUpdateError> {
         Ok(self
-            .send_fork_choice_updated(state, payload_attrs)
+            .send_fork_choice_updated(state, payload_attrs, version, false)
             .map_err(|_| BeaconForkChoiceUpdateError::EngineUnavailable)
             .await??
             .await?)
@@ -74,12 +76,16 @@ where
         &self,
         state: ForkchoiceState,
         payload_attrs: Option<Engine::PayloadAttributes>,
+        version: EngineApiMessageVersion,
+        debug: bool,
     ) -> oneshot::Receiver<RethResult<OnForkChoiceUpdated>> {
         let (tx, rx) = oneshot::channel();
         let _ = self.to_engine.send(BeaconEngineMessage::ForkchoiceUpdated {
             state,
             payload_attrs,
             tx,
+            version,
+            debug,
         });
         rx
     }

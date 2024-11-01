@@ -8,7 +8,7 @@ use alloy_rpc_types_engine::{
     ExecutionPayloadV1, PayloadAttributes, PayloadId,
 };
 use reth_chain_state::ExecutedBlock;
-use reth_payload_primitives::{BuiltPayload, PayloadBuilderAttributes};
+use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadBuilderAttributes};
 use reth_primitives::{SealedBlock, Withdrawals};
 use reth_rpc_types_compat::engine::payload::{
     block_to_payload_v1, block_to_payload_v3, block_to_payload_v4,
@@ -193,8 +193,8 @@ impl EthPayloadBuilderAttributes {
     /// Creates a new payload builder for the given parent block and the attributes.
     ///
     /// Derives the unique [`PayloadId`] for the given parent and attributes
-    pub fn new(parent: B256, attributes: PayloadAttributes) -> Self {
-        let id = payload_id(&parent, &attributes);
+    pub fn new(parent: B256, attributes: PayloadAttributes, version: EngineApiMessageVersion) -> Self {
+        let id = payload_id(&parent, &attributes, version);
 
         Self {
             id,
@@ -215,8 +215,8 @@ impl PayloadBuilderAttributes for EthPayloadBuilderAttributes {
     /// Creates a new payload builder for the given parent block and the attributes.
     ///
     /// Derives the unique [`PayloadId`] for the given parent and attributes
-    fn try_new(parent: B256, attributes: PayloadAttributes) -> Result<Self, Infallible> {
-        Ok(Self::new(parent, attributes))
+    fn try_new(parent: B256, attributes: PayloadAttributes, version: EngineApiMessageVersion) -> Result<Self, Infallible> {
+        Ok(Self::new(parent, attributes, version))
     }
 
     fn payload_id(&self) -> PayloadId {
@@ -251,7 +251,7 @@ impl PayloadBuilderAttributes for EthPayloadBuilderAttributes {
 /// Generates the payload id for the configured payload from the [`PayloadAttributes`].
 ///
 /// Returns an 8-byte identifier by hashing the payload components with sha256 hash.
-pub(crate) fn payload_id(parent: &B256, attributes: &PayloadAttributes) -> PayloadId {
+pub(crate) fn payload_id(parent: &B256, attributes: &PayloadAttributes, version: EngineApiMessageVersion) -> PayloadId {
     use sha2::Digest;
     let mut hasher = sha2::Sha256::new();
     hasher.update(parent.as_slice());
@@ -269,6 +269,8 @@ pub(crate) fn payload_id(parent: &B256, attributes: &PayloadAttributes) -> Paylo
     }
 
     let out = hasher.finalize();
+    let mut out_bytes: [u8; 8] = out.as_slice()[..8].try_into().expect("sufficient length");
+    out_bytes[0] = version as u8;
     PayloadId::new(out.as_slice()[..8].try_into().expect("sufficient length"))
 }
 
