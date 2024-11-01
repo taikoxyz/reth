@@ -2589,7 +2589,6 @@ mod tests {
     };
     use std::default::Default;
     use tokio::sync::mpsc::unbounded_channel;
-    use reth_db::mdbx::EnvironmentKind::Default;
 
     /// This is a test channel that allows you to `release` any value that is in the channel.
     ///
