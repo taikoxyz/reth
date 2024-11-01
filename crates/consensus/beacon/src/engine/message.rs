@@ -178,14 +178,13 @@ impl<Engine: EngineTypes> Display for BeaconEngineMessage<Engine> {
                     payload.block_hash()
                 )
             }
-            Self::ForkchoiceUpdated { state, payload_attrs, version, .. } => {
+            Self::ForkchoiceUpdated { state, payload_attrs, .. } => {
                 // we don't want to print the entire payload attributes, because for OP this
                 // includes all txs
                 write!(
                     f,
-                    "ForkchoiceUpdated {{ state: {state:?}, has_payload_attributes: {}, version: {} }}",
+                    "ForkchoiceUpdated {{ state: {state:?}, has_payload_attributes: {} }}",
                     payload_attrs.is_some(),
-                    version,
                 )
             }
             Self::TransitionConfigurationExchanged => {
