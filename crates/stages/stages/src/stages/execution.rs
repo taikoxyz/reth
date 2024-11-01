@@ -275,8 +275,8 @@ where
             // Execute the block
             let execute_start = Instant::now();
 
-            self.metrics.metered_one((&block, td).into(), |input| {
-                let sealed = block.header.clone().seal_slow();
+            self.metrics.metered_one((&mut block.clone(), td).into(), |input| {
+                let sealed = block.clone().header.clone().seal_slow();
                 let (header, seal) = sealed.into_parts();
 
                 executor.execute_and_verify_one(input).map_err(|error| StageError::Block {

@@ -142,7 +142,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
             provider.header_td_by_number(merkle_block_number)?.unwrap_or_default();
         let block_execution_output = executor.execute(
             (
-                &block
+                &mut block
                     .clone()
                     .unseal()
                     .with_recovered_senders()

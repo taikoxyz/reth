@@ -2174,10 +2174,10 @@ where
         let block_number = block.number;
         let block_hash = block.hash();
         let sealed_block = Arc::new(block.block.clone());
-        let block = block.unseal();
+        let mut block = block.unseal();
 
         let exec_time = Instant::now();
-        let output = self.metrics.executor.execute_metered(executor, (&block, U256::MAX).into())?;
+        let output = self.metrics.executor.execute_metered(executor, (&mut block, U256::MAX).into())?;
 
         trace!(target: "engine::tree", elapsed=?exec_time.elapsed(), ?block_number, "Executed block");
         if let Err(err) = self.consensus.validate_block_post_execution(

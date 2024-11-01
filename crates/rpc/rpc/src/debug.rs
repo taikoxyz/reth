@@ -613,7 +613,7 @@ where
 
                 let _ = block_executor
                     .execute_with_state_closure(
-                        (&block.clone().unseal(), block.difficulty).into(),
+                        (&mut block.clone().unseal(), block.difficulty).into(),
                         |statedb| {
                             codes = statedb
                                 .cache

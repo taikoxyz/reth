@@ -158,7 +158,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                     provider_rw.static_file_provider().clone(),
                 ),
             ));
-            executor.execute_and_verify_one((&sealed_block.clone().unseal(), td).into())?;
+            executor.execute_and_verify_one((&mut sealed_block.clone().unseal(), td).into())?;
             let execution_outcome = executor.finalize();
 
             let mut storage_writer = UnifiedStorageWriter::from_database(&provider_rw);

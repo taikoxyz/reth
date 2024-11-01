@@ -367,7 +367,7 @@ where
     ///
     /// State changes are committed to the database.
     fn execute(mut self, input: Self::Input<'_>) -> Result<Self::Output, Self::Error> {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let (receipts, gas_used) = self.execute_without_verification(block, total_difficulty)?;
 
         // NOTE: we need to merge keep the reverts for the bundle retention
@@ -389,7 +389,7 @@ where
     where
         F: FnMut(&State<DB>),
     {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let (receipts, gas_used) = self.execute_without_verification(block, total_difficulty)?;
 
         // NOTE: we need to merge keep the reverts for the bundle retention
@@ -412,7 +412,7 @@ where
     where
         F: OnStateHook,
     {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let (receipts, gas_used) = self.execute_without_verification_with_state_hook(
             block,
             total_difficulty,
@@ -464,7 +464,7 @@ where
     type Error = BlockExecutionError;
 
     fn execute_and_verify_one(&mut self, input: Self::Input<'_>) -> Result<(), Self::Error> {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         if self.batch_record.first_block().is_none() {
             self.batch_record.set_first_block(block.number);

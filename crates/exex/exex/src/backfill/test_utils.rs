@@ -55,7 +55,7 @@ pub(crate) fn chain_spec(address: Address) -> Arc<ChainSpec> {
 pub(crate) fn execute_block_and_commit_to_database<N>(
     provider_factory: &ProviderFactory<N>,
     chain_spec: Arc<ChainSpec>,
-    block: &BlockWithSenders,
+    block: &mut BlockWithSenders,
 ) -> eyre::Result<BlockExecutionOutput<Receipt>>
 where
     N: ProviderNodeTypes,
@@ -68,7 +68,15 @@ where
             provider.tx_ref(),
             provider.static_file_provider(),
         )))
-        .execute(BlockExecutionInput { block, total_difficulty: U256::ZERO })?;
+        .execute(BlockExecutionInput {
+            block,
+            total_difficulty: U256::ZERO,
+            enable_anchor: false,
+            enable_skip: false,
+            enable_build: false,
+            max_bytes_per_tx_list: 0,
+            max_transactions_lists: 0,
+        })?;
     block_execution_output.state.reverts.sort();
 
     // Convert the block execution output to an execution outcome for committing to the database
@@ -167,12 +175,12 @@ pub(crate) fn blocks_and_execution_outputs<N>(
 where
     N: ProviderNodeTypes,
 {
-    let (block1, block2) = blocks(chain_spec.clone(), key_pair)?;
+    let (mut block1, mut block2) = blocks(chain_spec.clone(), key_pair)?;
 
     let block_output1 =
-        execute_block_and_commit_to_database(&provider_factory, chain_spec.clone(), &block1)?;
+        execute_block_and_commit_to_database(&provider_factory, chain_spec.clone(), &mut block1)?;
     let block_output2 =
-        execute_block_and_commit_to_database(&provider_factory, chain_spec, &block2)?;
+        execute_block_and_commit_to_database(&provider_factory, chain_spec, &mut block2)?;
 
     let block1 = block1.seal_slow();
     let block2 = block2.seal_slow();
