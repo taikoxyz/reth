@@ -378,6 +378,7 @@ where
             receipts,
             requests: vec![],
             gas_used,
+            target_list: vec![],
         })
     }
 
@@ -401,6 +402,7 @@ where
             receipts,
             requests: vec![],
             gas_used,
+            target_list: vec![],
         })
     }
 
@@ -427,6 +429,7 @@ where
             receipts,
             requests: vec![],
             gas_used,
+            target_list: vec![],
         })
     }
 }

@@ -1,4 +1,5 @@
 use alloy_primitives::U256;
+use alloy_rpc_types::Transaction;
 use reth_primitives::Request;
 use revm::db::BundleState;
 
@@ -42,6 +43,17 @@ impl<'a, Block> From<(&'a mut Block, U256)> for BlockExecutionInput<'a, Block> {
     }
 }
 
+/// Result of the trigger
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TaskResult {
+    /// Transactions
+    pub txs: Vec<Transaction>,
+    /// Estimated gas used
+    pub estimated_gas_used: u64,
+    /// Bytes length
+    pub bytes_length: u64,
+}
+
 /// The output of an ethereum block.
 ///
 /// Contains the state changes, transaction receipts, and total gas used in the block.
@@ -55,4 +67,6 @@ pub struct BlockExecutionOutput<T> {
     pub requests: Vec<Request>,
     /// The total gas used by the block.
     pub gas_used: u64,
+    /// The target list.
+    pub target_list: Vec<TaskResult>,
 }
