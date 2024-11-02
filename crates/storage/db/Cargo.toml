@@ -64,6 +64,9 @@ tempfile.workspace = true
 test-fuzz.workspace = true
 parking_lot.workspace = true
 
+# taiko
+taiko-reth-primitives.workspace = true
+
 pprof = { workspace = true, features = [
     "flamegraph",
     "frame-pointer",

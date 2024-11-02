@@ -39,6 +39,7 @@ use reth_stages_types::StageCheckpoint;
 use reth_trie_common::{BranchNodeCompact, StorageTrieEntry, StoredNibbles, StoredNibblesSubKey};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use taiko_reth_primitives::{HeadL1OriginKey, L1Origin};
 
 /// Enum for the types of tables present in libmdbx.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -409,6 +410,12 @@ tables! {
 
     /// Stores generic chain state info, like the last finalized block.
     table ChainState<Key = ChainStateKey, Value = BlockNumber>;
+
+    /// Stores the l1 origin of the block
+    table L1Origins<Key = BlockNumber, Value = L1Origin>;
+
+    /// Stores the latest l1 origin
+    table HeadL1Origin<Key = HeadL1OriginKey, Value = BlockNumber>;
 }
 
 /// Keys for the `ChainState` table.
