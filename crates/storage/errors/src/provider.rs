@@ -146,6 +146,14 @@ pub enum ProviderError {
     StorageLockError(StorageLockError),
     /// Storage writer error.
     UnifiedStorageWriterError(UnifiedStorageWriterError),
+
+    /// L1 origin error
+    #[error("not found")]
+    L1OriginNotFound(BlockNumber),
+
+    /// Head L1 origin error
+    #[error("not found")]
+    HeadL1OriginNotFound,
 }
 
 impl From<DatabaseError> for ProviderError {
