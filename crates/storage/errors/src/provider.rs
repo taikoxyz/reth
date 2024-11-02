@@ -148,11 +148,11 @@ pub enum ProviderError {
     UnifiedStorageWriterError(UnifiedStorageWriterError),
 
     /// L1 origin error
-    #[error("not found")]
+    #[display("l1 origin")]
     L1OriginNotFound(BlockNumber),
 
     /// Head L1 origin error
-    #[error("not found")]
+    #[display("l2 origin head")]
     HeadL1OriginNotFound,
 }
 
