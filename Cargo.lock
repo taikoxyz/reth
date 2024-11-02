@@ -341,9 +341,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-primitives"
-version = "0.8.7"
+version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ecb848c43f6b06ae3de2e4a67496cbbabd78ae87db0f1248934f15d76192c6a"
+checksum = "8edae627382349b56cd6a7a2106f4fd69b243a9233e560c55c2e03cabb7e1d3c"
 dependencies = [
  "alloy-rlp",
  "arbitrary",
@@ -10427,6 +10427,34 @@ dependencies = [
  "memchr",
  "ntapi",
  "windows 0.57.0",
+]
+
+[[package]]
+name = "taiko-reth-engine-primitives"
+version = "1.1.0"
+dependencies = [
+ "alloy-eips 0.4.2",
+ "alloy-primitives",
+ "alloy-rpc-types 0.4.2",
+ "alloy-rpc-types-engine 0.4.2",
+ "reth-chainspec",
+ "reth-engine-primitives",
+ "reth-ethereum-engine-primitives",
+ "reth-payload-primitives",
+ "reth-primitives",
+ "reth-rpc-types-compat",
+ "serde_with",
+ "sha2 0.10.8",
+ "taiko-reth-primitives",
+]
+
+[[package]]
+name = "taiko-reth-primitives"
+version = "1.1.0"
+dependencies = [
+ "alloy-primitives",
+ "reth-db-api",
+ "serde",
 ]
 
 [[package]]

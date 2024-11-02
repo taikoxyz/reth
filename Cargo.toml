@@ -116,6 +116,8 @@ members = [
     "crates/storage/nippy-jar/",
     "crates/storage/provider/",
     "crates/storage/storage-api/",
+    "crates/taiko/primitives",
+    "crates/taiko/engine-primitives",
     "crates/tasks/",
     "crates/tokio-util/",
     "crates/tracing/",
@@ -405,6 +407,10 @@ reth-trie = { path = "crates/trie/trie" }
 reth-trie-common = { path = "crates/trie/common" }
 reth-trie-db = { path = "crates/trie/db" }
 reth-trie-parallel = { path = "crates/trie/parallel" }
+
+# taiko
+taiko-reth-primitives = { path = "crates/taiko/primitives" }
+taiko-reth-engine-primitives = { path = "crates/taiko/engine-primitives" }
 
 # revm
 revm = { version = "14.0.3", features = [
