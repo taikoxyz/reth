@@ -6,7 +6,6 @@ rust-version.workspace = true
 license.workspace = true
 homepage.workspace = true
 repository.workspace = true
-exclude.workspace = true
 description = "Taiko primitive types"
 
 [dependencies]
@@ -14,6 +13,7 @@ description = "Taiko primitive types"
 reth-db-api.workspace = true
 alloy-primitives.workspace = true
 serde.workspace = true
+alloy-rlp.workspace = true
 
 [lints]
 workspace = true

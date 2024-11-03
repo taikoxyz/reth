@@ -1,4 +1,5 @@
 use alloy_primitives::{B256, U256};
+use alloy_rlp::{RlpDecodable, RlpEncodable};
 use serde::{Deserialize, Serialize};
 use reth_db_api::DatabaseError;
 use reth_db_api::table::{Decode, Encode};
@@ -28,10 +29,12 @@ impl Decode for HeadL1OriginKey {
 }
 
 /// L1Origin represents a L1Origin of a L2 block.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, RlpDecodable, RlpEncodable, Serialize, Deserialize)]
+#[rlp(rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct L1Origin {
     /// The block number of the l2 block
+    #[rlp(rename = "blockID")]
     #[serde(rename = "blockID")]
     pub block_id: U256,
     /// The hash of the l2 block

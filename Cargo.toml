@@ -148,6 +148,8 @@ members = [
     "examples/txpool-tracing/",
     "testing/ef-tests/",
     "testing/testing-utils",
+    "crates/taiko/primitives",
+    "crates/taiko/engine-primitives",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]

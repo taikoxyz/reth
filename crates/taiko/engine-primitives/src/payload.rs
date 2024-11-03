@@ -1,16 +1,22 @@
 use alloy_eips::eip4844::BlobTransactionSidecar;
 use alloy_eips::eip4895::Withdrawal;
 use alloy_primitives::{Address, Bytes, B256};
-use alloy_primitives::private::alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
-use alloy_primitives::private::serde::{Deserialize, Serialize};
+use alloy_primitives::private::alloy_rlp::{Encodable};
 use alloy_primitives::ruint::aliases::U256;
+use alloy_rlp::{RlpDecodable, RlpEncodable};
 use alloy_rpc_types::engine::{ExecutionPayloadEnvelopeV4, PayloadAttributes, PayloadId};
 use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadEnvelopeV3, ExecutionPayloadV1, ExecutionPayloadV2};
-use serde_with::serde_as;
+use serde::{Serialize, Deserialize};
+use serde_with::{serde_as, base64::Base64};
 use reth_ethereum_engine_primitives::EthPayloadBuilderAttributes;
 use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion};
 use reth_primitives::SealedBlock;
-use reth_rpc_types_compat::engine::payload::{block_to_payload_v1, block_to_payload_v2, block_to_payload_v3, block_to_payload_v4};
+use reth_rpc_types_compat::engine::payload::{
+    block_to_payload_v1,
+    block_to_payload_v2,
+    block_to_payload_v3,
+    block_to_payload_v4,
+};
 use taiko_reth_primitives::L1Origin;
 
 /// Taiko Payload Attributes
