@@ -195,6 +195,7 @@ where
                 return Ok(Some(BlockStatus::Valid(BlockAttachment::Canonical)));
             }
 
+            #[cfg(not(feature = "taiko"))]
             return Err(BlockchainTreeError::PendingBlockIsFinalized {
                 last_finalized: last_finalized_block,
             }
@@ -214,6 +215,7 @@ where
             }))
         }
 
+        #[cfg(feature = "taiko")]
         Ok(None)
     }
 
