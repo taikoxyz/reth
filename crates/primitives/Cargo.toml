@@ -119,6 +119,7 @@ optimism = [
     "reth-codecs?/optimism",
     "revm-primitives/optimism",
 ]
+taiko = ["reth-chainspec/taiko", "revm-primitives/taiko"]
 alloy-compat = [
     "dep:alloy-rpc-types",
     "dep:alloy-serde",

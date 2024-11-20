@@ -10,7 +10,7 @@ use alloy_eips::{
     eip2930::AccessList,
 };
 use alloy_primitives::{Bytes, TxHash};
-use alloy_rlp::{Decodable, Encodable, Error as RlpError, Header};
+use alloy_rlp::{encode_list, list_length, Decodable, Encodable, Error as RlpError, Header};
 use core::mem;
 use derive_more::{AsRef, Deref};
 use once_cell::sync::Lazy;
@@ -1450,6 +1450,28 @@ impl<'a> arbitrary::Arbitrary<'a> for TransactionSigned {
             if transaction.is_deposit() { optimism_deposit_tx_signature() } else { signature };
 
         Ok(Self::from_transaction_and_signature(transaction, signature))
+    }
+}
+
+/// List of signed transactions reference.
+#[derive(Debug)]
+pub struct TransactionSignedList<'a>(pub &'a [TransactionSigned]);
+
+impl Encodable for TransactionSignedList<'_> {
+    /// This encodes the transaction _with_ the signature, and an rlp header.
+    ///
+    /// For legacy transactions, it encodes the transaction data:
+    /// `rlp(tx-data)`
+    ///
+    /// For EIP-2718 typed transactions, it encodes the transaction type followed by the rlp of the
+    /// transaction:
+    /// `rlp(tx-type || rlp(tx-data))`
+    fn encode(&self, out: &mut dyn bytes::BufMut) {
+        encode_list(self.0, out)
+    }
+
+    fn length(&self) -> usize {
+        list_length(self.0)
     }
 }
 
