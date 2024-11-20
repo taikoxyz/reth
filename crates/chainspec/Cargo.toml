@@ -32,9 +32,10 @@ auto_impl.workspace = true
 once_cell.workspace = true
 serde_json.workspace = true
 derive_more.workspace = true
-serde = { version = "1.0.214", features = ["derive"] }
-strum = "0.26.3"
-num_enum = "0.7.3"
+serde = { workspace = true, features = ["derive"], optional = true }
+schemars = { version = "0.8.21", optional = true }
+strum = { workspace = true, optional = true }
+num_enum = { version = "0.7.3", optional = true }
 revm-primitives.workspace = true
 taiko-reth-forks.workspace = true
 
@@ -55,6 +56,12 @@ std = [
     "alloy-primitives/std",
     "alloy-trie/std",
 ]
+taiko = [
+    "dep:strum",
+    "dep:num_enum",
+    "serde",
+]
 arbitrary = ["alloy-chains/arbitrary"]
+serde = ["dep:serde"]
+schema = ["dep:schemars"]
 test-utils = []
-taiko = []
