@@ -6707,13 +6707,18 @@ dependencies = [
  "alloy-trie",
  "auto_impl",
  "derive_more 1.0.0",
+ "num_enum",
  "once_cell",
  "reth-ethereum-forks",
  "reth-network-peers",
  "reth-optimism-forks",
  "reth-primitives-traits",
  "reth-trie-common",
+ "revm-primitives",
+ "serde",
  "serde_json",
+ "strum",
+ "taiko-reth-forks",
 ]
 
 [[package]]
@@ -10532,6 +10537,17 @@ dependencies = [
  "serde_with 1.14.0",
  "sha2 0.10.8",
  "taiko-reth-primitives",
+]
+
+[[package]]
+name = "taiko-reth-forks"
+version = "1.1.0"
+dependencies = [
+ "alloy-chains",
+ "alloy-primitives",
+ "once_cell",
+ "reth-ethereum-forks",
+ "serde",
 ]
 
 [[package]]

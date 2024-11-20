@@ -150,6 +150,7 @@ members = [
     "testing/testing-utils",
     "crates/taiko/primitives",
     "crates/taiko/engine-primitives",
+    "crates/taiko/hardforks",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]
@@ -413,6 +414,7 @@ reth-trie-parallel = { path = "crates/trie/parallel" }
 # taiko
 taiko-reth-primitives = { path = "crates/taiko/primitives" }
 taiko-reth-engine-primitives = { path = "crates/taiko/engine-primitives" }
+taiko-reth-forks = { path = "crates/taiko/hardforks" }
 
 # revm
 revm = { version = "14.0.3", features = [

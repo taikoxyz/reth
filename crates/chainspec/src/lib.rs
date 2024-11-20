@@ -5,7 +5,6 @@
     html_favicon_url = "https://avatars0.githubusercontent.com/u/97369466?s=256",
     issue_tracker_base_url = "https://github.com/paradigmxyz/reth/issues/"
 )]
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -20,6 +19,11 @@ mod api;
 mod info;
 /// The chain spec module.
 mod spec;
+#[cfg(feature = "taiko")]
+pub mod taiko;
+
+#[cfg(feature = "taiko")]
+pub use spec::{TAIKO_HEKLA, TAIKO_INTERNAL_L2_A, TAIKO_MAINNET, TAIKO_TESTNET};
 
 pub use alloy_chains::{Chain, ChainKind, NamedChain};
 /// Re-export for convenience

@@ -23,8 +23,11 @@ use reth_primitives_traits::{
     Header, SealedHeader,
 };
 use reth_trie_common::root::state_root_ref_unhashed;
-
+use taiko_reth_forks::hardfork::TaikoHardfork;
 use crate::{constants::MAINNET_DEPOSIT_CONTRACT, once_cell_set, EthChainSpec};
+
+#[cfg(feature = "taiko")]
+use crate::taiko::{get_taiko_genesis, TaikoNamedChain, HEKLA_ONTAKE_BLOCK, INTERNAL_DEVNET_ONTAKE_BLOCK, MAINNET_ONTAKE_BLOCK};
 
 /// The Ethereum mainnet spec
 pub static MAINNET: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
@@ -118,7 +121,59 @@ pub static DEV: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
         deposit_contract: None, // TODO: do we even have?
         ..Default::default()
     }
-    .into()
+        .into()
+});
+
+/// The Taiko internal L2 A spec
+#[cfg(feature = "taiko")]
+pub static TAIKO_INTERNAL_L2_A: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
+    ChainSpec {
+        chain: TaikoNamedChain::TaikoInternalL2a.into(),
+        genesis: get_taiko_genesis(TaikoNamedChain::TaikoInternalL2a),
+        hardforks: TaikoHardfork::internal_l2_a(),
+        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams {
+            max_change_denominator: 8,
+            elasticity_multiplier: 2,
+        }),
+        ..Default::default()
+    }.into()
+});
+
+/// The Taiko testnet spec
+#[cfg(feature = "taiko")]
+pub static TAIKO_TESTNET: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
+    ChainSpec {
+        chain: TaikoNamedChain::Katla.into(),
+        genesis: get_taiko_genesis(TaikoNamedChain::Katla),
+        hardforks: TaikoHardfork::testnet(),
+        base_fee_params: BaseFeeParamsKind::Constant(BaseFeeParams {
+            max_change_denominator: 8,
+            elasticity_multiplier: 2,
+        }),
+        ..Default::default()
+    }.into()
+});
+
+/// The Taiko A7 spec
+#[cfg(feature = "taiko")]
+pub static TAIKO_HEKLA: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
+    ChainSpec {
+        chain: TaikoNamedChain::Hekla.into(),
+        genesis: get_taiko_genesis(TaikoNamedChain::Hekla),
+        hardforks: TaikoHardfork::hekla(),
+        ..Default::default()
+    }.into()
+});
+
+/// The Taiko Mainnet spec
+#[cfg(feature = "taiko")]
+pub static TAIKO_MAINNET: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
+    ChainSpec {
+        chain: TaikoNamedChain::Mainnet.into(),
+        genesis: get_taiko_genesis(TaikoNamedChain::Mainnet),
+        hardforks: TaikoHardfork::mainnet(),
+        ..Default::default()
+    }.into()
 });
 
 /// A wrapper around [`BaseFeeParams`] that allows for specifying constant or dynamic EIP-1559
@@ -254,6 +309,20 @@ impl ChainSpec {
         self.chain.is_optimism()
     }
 
+    /// Returns `true` if this is a Taiko chain.
+    #[inline]
+    #[cfg(not(feature = "taiko"))]
+    pub const fn is_taiko(&self) -> bool {
+        let id = self.chain.id();
+        id >= 167000 && id <= 168000
+    }
+
+    /// Returns `true` if ontake fork is active at the given block number.
+    #[inline]
+    pub fn is_ontake_fork(&self, block_number: u64) -> bool {
+        self.is_fork_active_at_block(TaikoHardfork::Ontake, block_number)
+    }
+
     /// Returns `true` if this chain is Optimism mainnet.
     #[inline]
     pub fn is_optimism_mainnet(&self) -> bool {
@@ -347,7 +416,7 @@ impl ChainSpec {
                 // given timestamp.
                 for (fork, params) in bf_params.iter().rev() {
                     if self.hardforks.is_fork_active_at_timestamp(fork.clone(), timestamp) {
-                        return *params
+                        return *params;
                     }
                 }
 
@@ -366,7 +435,7 @@ impl ChainSpec {
                 // given timestamp.
                 for (fork, params) in bf_params.iter().rev() {
                     if self.hardforks.is_fork_active_at_block(fork.clone(), block_number) {
-                        return *params
+                        return *params;
                     }
                 }
 
@@ -481,7 +550,7 @@ impl ChainSpec {
                 } else {
                     // we can return here because this block fork is not active, so we set the
                     // `next` value
-                    return ForkId { hash: forkhash, next: block }
+                    return ForkId { hash: forkhash, next: block };
                 }
             }
         }
@@ -502,7 +571,7 @@ impl ChainSpec {
                 // can safely return here because we have already handled all block forks and
                 // have handled all active timestamp forks, and set the next value to the
                 // timestamp that is known but not active yet
-                return ForkId { hash: forkhash, next: timestamp }
+                return ForkId { hash: forkhash, next: timestamp };
             }
         }
 
@@ -546,17 +615,17 @@ impl ChainSpec {
                     ForkCondition::TTD { fork_block, .. } => {
                         // handle Sepolia merge netsplit case
                         if fork_block.is_some() {
-                            return *fork_block
+                            return *fork_block;
                         }
                         // ensure curr_cond is indeed ForkCondition::Block and return block_num
                         if let ForkCondition::Block(block_num) = curr_cond {
-                            return Some(block_num)
+                            return Some(block_num);
                         }
                     }
                     ForkCondition::Timestamp(_) => {
                         // ensure curr_cond is indeed ForkCondition::Block and return block_num
                         if let ForkCondition::Block(block_num) = curr_cond {
-                            return Some(block_num)
+                            return Some(block_num);
                         }
                     }
                     ForkCondition::Block(_) | ForkCondition::Never => continue,
@@ -590,6 +659,14 @@ impl ChainSpec {
 
 impl From<Genesis> for ChainSpec {
     fn from(genesis: Genesis) -> Self {
+        #[cfg(feature = "taiko")]
+        let ontake_block = match TaikoNamedChain::try_from(genesis.config.chain_id) {
+            Ok(TaikoNamedChain::TaikoInternalL2a) => Some(INTERNAL_DEVNET_ONTAKE_BLOCK),
+            Ok(TaikoNamedChain::Hekla) => Some(HEKLA_ONTAKE_BLOCK),
+            Ok(TaikoNamedChain::Mainnet) => Some(MAINNET_ONTAKE_BLOCK),
+            _ => None,
+        };
+
         // Block-based hardforks
         let hardfork_opts = [
             (EthereumHardfork::Homestead.boxed(), genesis.config.homestead_block),
@@ -605,6 +682,8 @@ impl From<Genesis> for ChainSpec {
             (EthereumHardfork::London.boxed(), genesis.config.london_block),
             (EthereumHardfork::ArrowGlacier.boxed(), genesis.config.arrow_glacier_block),
             (EthereumHardfork::GrayGlacier.boxed(), genesis.config.gray_glacier_block),
+                #[cfg(feature = "taiko")]
+            (TaikoHardfork::Hekla.boxed(), ontake_block),
         ];
         let mut hardforks = hardfork_opts
             .into_iter()
@@ -682,7 +761,7 @@ impl Hardforks for ChainSpec {
         self.hardforks.fork(fork)
     }
 
-    fn forks_iter(&self) -> impl Iterator<Item = (&dyn Hardfork, ForkCondition)> {
+    fn forks_iter(&self) -> impl Iterator<Item=(&dyn Hardfork, ForkCondition)> {
         self.hardforks.forks_iter()
     }
 
