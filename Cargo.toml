@@ -566,8 +566,9 @@ tempfile = "3.8"
 test-fuzz = "5" 
 
 [patch.crates-io]
-revm = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
-revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
-revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
-revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "v43-gwyneth" }
+revm = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
+revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
+revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
+revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
 revm-inspectors = { git = "https://github.com/taikoxyz/revm-inspectors.git", branch = "main-rbuilder" }
+# local patches trial-errors: revm-inspectors = { path = "../../revm-inspectors/revm-inspectors"}

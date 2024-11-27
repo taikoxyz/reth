@@ -15,6 +15,8 @@ use reth_primitives::{
     transaction::AccessListResult,
     Bytes, TransactionSignedEcRecovered, TxKind, B256, U256,
 };
+
+use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS};
 use reth_provider::{ChainSpecProvider, StateProvider};
 use reth_revm::{
     database::{CachedDBSyncStateProvider, StateProviderDatabase, SyncStateProviderDatabase},
@@ -919,7 +921,9 @@ pub trait Call: LoadState + SpawnBlocking {
                 .try_into_unique_input()
                 .map_err(Self::Error::from_eth_err)?
                 .unwrap_or_default(),
-            chain_id,
+            chain_ids: Some((0..NUM_L2_CHAINS)
+                .map(|i| BASE_CHAIN_ID + i)
+                .collect::<Vec<u64>>()),
             access_list: access_list.unwrap_or_default().into(),
             // EIP-4844 fields
             blob_hashes: blob_versioned_hashes.unwrap_or_default(),

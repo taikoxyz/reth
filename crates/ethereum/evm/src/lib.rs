@@ -57,7 +57,7 @@ impl ConfigureEvmEnv for EthEvmConfig {
             },
         );
 
-        cfg_env.chain_id = chain_spec.chain().id();
+        //cfg_env.chain_id = chain_spec.chain().id();
         cfg_env.perf_analyse_created_bytecodes = AnalysisKind::Analyse;
 
         cfg_env.handler_cfg.spec_id = spec_id;
@@ -88,7 +88,7 @@ impl ConfigureEvmEnv for EthEvmConfig {
             // call, and that the call will not count against the block's gas limit
             gas_price: U256::ZERO,
             // The chain ID check is not relevant here and is disabled if set to None
-            chain_id: None,
+            chain_ids: None,
             // Setting the gas priority fee to None ensures the effective gas price is derived from
             // the `gas_price` field, which we need to be zero
             gas_priority_fee: None,

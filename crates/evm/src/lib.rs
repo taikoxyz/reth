@@ -29,6 +29,9 @@ pub mod noop;
 pub mod provider;
 pub mod system_calls;
 
+
+use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS};
+
 #[cfg(any(test, feature = "test-utils"))]
 /// test helpers for mocking executor
 pub mod test_utils;
@@ -60,7 +63,9 @@ pub trait ConfigureEvm: ConfigureEvmEnv {
         let mut evm = self.evm(db);
         evm.modify_spec_id(env.spec_id());
         evm.context.evm.env = env.env;
-        evm.tx_mut().chain_id = Some(evm.cfg().chain_id);
+        evm.tx_mut().chain_ids = Some((0..NUM_L2_CHAINS)
+        .map(|i| BASE_CHAIN_ID + i)
+        .collect());
 
         evm
     }
