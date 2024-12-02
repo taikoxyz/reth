@@ -16,7 +16,7 @@ use reth_primitives::{
     Bytes, TransactionSignedEcRecovered, TxKind, B256, U256,
 };
 
-use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS};
+use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS, L1_CHAIN_ID};
 use reth_provider::{ChainSpecProvider, StateProvider};
 use reth_revm::{
     database::{CachedDBSyncStateProvider, StateProviderDatabase, SyncStateProviderDatabase},
@@ -921,8 +921,9 @@ pub trait Call: LoadState + SpawnBlocking {
                 .try_into_unique_input()
                 .map_err(Self::Error::from_eth_err)?
                 .unwrap_or_default(),
-            chain_ids: Some((0..NUM_L2_CHAINS)
-                .map(|i| BASE_CHAIN_ID + i)
+                chain_ids: Some(std::iter::once(L1_CHAIN_ID)
+                .chain((0..NUM_L2_CHAINS)
+                .map(|i| BASE_CHAIN_ID + i))
                 .collect::<Vec<u64>>()),
             access_list: access_list.unwrap_or_default().into(),
             // EIP-4844 fields

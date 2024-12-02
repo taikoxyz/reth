@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 // Hard code for now.
 const BASE_CHAIN_ID: u64 = 167010; // Low level crate, should not depend on gwyneth but we need this info, just hard-code now!
 const NUM_L2_CHAINS: u64 = 2;
+const L1_CHAIN_ID: u64 = 160010;
 
 /// Implements behaviour to fill a [`TxEnv`] from another transaction.
 pub trait FillTxEnv {
@@ -23,8 +24,9 @@ impl FillTxEnv for TransactionSigned {
             envelope
         };
 
-        let chain_ids = Some((0..NUM_L2_CHAINS)
-        .map(|i| BASE_CHAIN_ID + i)
+        let chain_ids = Some(std::iter::once(L1_CHAIN_ID)
+        .chain((0..NUM_L2_CHAINS)
+        .map(|i| BASE_CHAIN_ID + i))
         .collect::<Vec<u64>>());
         
         let chain_id = self
