@@ -34,3 +34,8 @@ pin-project.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+
+[features]
+taiko = [
+    "reth-transaction-pool/taiko"
+]

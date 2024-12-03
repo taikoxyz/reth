@@ -96,3 +96,6 @@ test-utils = [
     "reth-ethereum-engine-primitives",
     "alloy-consensus",
 ]
+taiko = [
+    "reth-evm/taiko"
+]

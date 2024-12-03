@@ -12,6 +12,11 @@ description = "Reth RPC implementation"
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-provider = { workspace = true, optional = true }
+taiko-reth-primitives = { workspace = true, optional = true }
+taiko-reth-proposer-consensus = { workspace = true, optional = true }
+
 # reth
 reth-chainspec.workspace = true
 reth-primitives = { workspace = true, features = ["secp256k1"] }
@@ -102,4 +107,13 @@ optimism = [
     "reth-primitives/optimism",
     "reth-provider/optimism",
     "reth-revm/optimism",
+]
+taiko = [
+    "reth-primitives/taiko",
+    "reth-revm/taiko",
+    "reth-rpc-api/taiko",
+    "reth-rpc-engine-api/taiko",
+    "dep:taiko-reth-provider",
+    "dep:taiko-reth-primitives",
+    "dep:taiko-reth-proposer-consensus",
 ]

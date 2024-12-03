@@ -11,6 +11,9 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-engine-primitives = { workspace = true, optional = true }
+
 # reth
 reth-chainspec.workspace = true
 reth-primitives.workspace = true
@@ -35,6 +38,8 @@ reth-network-peers.workspace = true
 reth-consensus-common.workspace = true
 reth-prune-types.workspace = true
 reth-stages-types.workspace = true
+reth-rpc.workspace = true
+reth-beacon-consensus.workspace = true
 
 # ethereum
 alloy-primitives.workspace = true
@@ -82,6 +87,13 @@ optimism = [
 # Features for vergen to generate correct env vars
 jemalloc = []
 asm-keccak = []
+taiko = [
+    "reth-rpc/taiko",
+    "reth-primitives/taiko",
+    "reth-chainspec/taiko",
+    "reth-beacon-consensus/taiko",
+    "dep:taiko-reth-engine-primitives",
+]
 
 [build-dependencies]
 vergen = { version = "8.0.0", features = ["build", "cargo", "git", "gitcl"] }

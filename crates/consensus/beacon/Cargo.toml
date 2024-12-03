@@ -11,6 +11,10 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-engine-primitives = { workspace = true, optional = true }
+taiko-reth-payload-validator = { workspace = true, optional = true }
+
 # reth
 reth-ethereum-consensus.workspace = true
 reth-blockchain-tree-api.workspace = true
@@ -73,6 +77,8 @@ reth-exex-types.workspace = true
 reth-prune-types.workspace = true
 reth-chainspec.workspace = true
 alloy-genesis.workspace = true
+reth-rpc-api.workspace = true
+reth-rpc.workspace = true
 
 assert_matches.workspace = true
 
@@ -82,4 +88,10 @@ optimism = [
     "reth-provider/optimism",
     "reth-blockchain-tree/optimism",
     "reth-chainspec"
+]
+taiko = [
+    "reth-rpc/taiko",
+    "reth-primitives/taiko",
+    "dep:taiko-reth-engine-primitives",
+    "dep:taiko-reth-payload-validator",
 ]

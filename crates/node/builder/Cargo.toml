@@ -94,5 +94,11 @@ tracing.workspace = true
 tempfile.workspace = true
 
 [features]
+taiko = [
+    "reth-rpc-api/taiko",
+    "reth-node-core/taiko",
+    "reth-node-api/taiko",
+    "reth-rpc-builder/taiko",
+]
 default = []
 test-utils = ["reth-db/test-utils"]

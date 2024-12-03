@@ -11,6 +11,9 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-provider = { workspace = true, optional = true }
+
 # reth
 reth-evm.workspace = true
 reth-provider.workspace = true
@@ -23,3 +26,6 @@ reth-rpc-eth-api.workspace = true
 reth-network-api.workspace = true
 reth-node-types.workspace = true
 reth-primitives.workspace = true
+
+[features]
+taiko = ["dep:taiko-reth-provider"]

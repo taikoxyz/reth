@@ -22,3 +22,8 @@ alloy-primitives.workspace = true
 
 # misc
 serde.workspace = true
+
+[features]
+taiko = [
+    "reth-payload-primitives/taiko"
+]

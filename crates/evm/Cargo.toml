@@ -40,3 +40,6 @@ parking_lot.workspace = true
 default = ["std"]
 std = ["dep:metrics", "dep:reth-metrics"]
 test-utils = ["dep:parking_lot"]
+taiko = [
+    #    "revm/taiko"
+]

@@ -146,6 +146,16 @@ members = [
     "examples/txpool-tracing/",
     "testing/ef-tests/",
     "testing/testing-utils",
+    "crates/taiko/consensus/consensus",
+    "crates/taiko/consensus/proposer",
+    "crates/taiko/engine-primitives",
+    "crates/taiko/evm",
+    "crates/taiko/hardforks",
+    "crates/taiko/node",
+    "crates/taiko/payload/builder",
+    "crates/taiko/payload/validator",
+    "crates/taiko/primitives",
+    "crates/taiko/storage",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]
@@ -405,6 +415,17 @@ reth-trie = { path = "crates/trie/trie" }
 reth-trie-common = { path = "crates/trie/common" }
 reth-trie-db = { path = "crates/trie/db" }
 reth-trie-parallel = { path = "crates/trie/parallel" }
+
+taiko-reth-beacon-consensus = { path = "crates/taiko/consensus/consensus" }
+taiko-reth-proposer-consensus = { path = "crates/taiko/consensus/proposer" }
+taiko-reth-primitives = { path = "crates/taiko/primitives" }
+taiko-reth-provider = { path = "crates/taiko/storage" }
+taiko-reth-evm = { path = "crates/taiko/evm" }
+taiko-reth-payload-builder = { path = "crates/taiko/payload/builder" }
+taiko-reth-payload-validator = { path = "crates/taiko/payload/validator" }
+taiko-reth-engine-primitives = { path = "crates/taiko/engine-primitives" }
+taiko-reth-node = { path = "crates/taiko/node" }
+taiko-reth-forks = { path = "crates/taiko/hardforks" }
 
 # revm
 revm = { version = "14.0.3", features = [

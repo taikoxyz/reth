@@ -12,6 +12,9 @@ description = "Database primitives used in reth."
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-primitives.workspace = true
+
 # reth
 reth-db-api.workspace = true
 reth-primitives = { workspace = true, features = ["reth-codec"] }

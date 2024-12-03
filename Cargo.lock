@@ -6390,6 +6390,8 @@ dependencies = [
  "reth-provider",
  "reth-prune",
  "reth-prune-types",
+ "reth-rpc",
+ "reth-rpc-api",
  "reth-rpc-types-compat",
  "reth-stages",
  "reth-stages-api",
@@ -6399,6 +6401,8 @@ dependencies = [
  "reth-tokio-util",
  "reth-tracing",
  "schnellru",
+ "taiko-reth-engine-primitives",
+ "taiko-reth-payload-validator",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -6527,16 +6531,21 @@ dependencies = [
  "alloy-genesis",
  "alloy-primitives",
  "alloy-rlp",
+ "alloy-serde",
  "alloy-trie",
  "auto_impl",
  "derive_more 1.0.0",
+ "num_enum",
  "once_cell",
  "reth-ethereum-forks",
  "reth-network-peers",
  "reth-optimism-forks",
  "reth-primitives-traits",
  "reth-trie-common",
+ "revm-primitives",
+ "serde",
  "serde_json",
+ "strum",
 ]
 
 [[package]]
@@ -6772,6 +6781,7 @@ dependencies = [
  "serde_json",
  "strum",
  "sysinfo",
+ "taiko-reth-primitives",
  "tempfile",
  "test-fuzz",
  "thiserror",
@@ -7793,6 +7803,7 @@ dependencies = [
  "reth-rpc-eth-api",
  "reth-tasks",
  "reth-transaction-pool",
+ "taiko-reth-provider",
 ]
 
 [[package]]
@@ -7874,6 +7885,7 @@ dependencies = [
  "humantime",
  "proptest",
  "rand 0.8.5",
+ "reth-beacon-consensus",
  "reth-chainspec",
  "reth-cli-util",
  "reth-config",
@@ -7887,6 +7899,7 @@ dependencies = [
  "reth-network-peers",
  "reth-primitives",
  "reth-prune-types",
+ "reth-rpc",
  "reth-rpc-api",
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
@@ -7901,6 +7914,7 @@ dependencies = [
  "serde",
  "shellexpand",
  "strum",
+ "taiko-reth-engine-primitives",
  "tempfile",
  "thiserror",
  "tokio",
@@ -8562,6 +8576,9 @@ dependencies = [
  "revm-primitives",
  "serde",
  "serde_json",
+ "taiko-reth-primitives",
+ "taiko-reth-proposer-consensus",
+ "taiko-reth-provider",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -8594,6 +8611,7 @@ dependencies = [
  "reth-primitives",
  "reth-rpc-eth-api",
  "serde_json",
+ "taiko-reth-primitives",
 ]
 
 [[package]]
@@ -8660,6 +8678,7 @@ dependencies = [
  "reth-transaction-pool",
  "serde",
  "serde_json",
+ "taiko-reth-provider",
  "thiserror",
  "tokio",
  "tower 0.4.13",
@@ -8698,6 +8717,7 @@ dependencies = [
  "reth-tokio-util",
  "reth-transaction-pool",
  "serde",
+ "taiko-reth-engine-primitives",
  "thiserror",
  "tokio",
  "tracing",
@@ -10306,6 +10326,69 @@ dependencies = [
  "memchr",
  "ntapi",
  "windows 0.57.0",
+]
+
+[[package]]
+name = "taiko-reth-beacon-consensus"
+version = "1.1.0"
+
+[[package]]
+name = "taiko-reth-engine-primitives"
+version = "1.1.0"
+dependencies = [
+ "reth-ethereum-engine-primitives",
+ "taiko-reth-primitives",
+]
+
+[[package]]
+name = "taiko-reth-evm"
+version = "1.1.0"
+dependencies = [
+ "taiko-reth-beacon-consensus",
+]
+
+[[package]]
+name = "taiko-reth-forks"
+version = "1.1.0"
+
+[[package]]
+name = "taiko-reth-node"
+version = "1.1.0"
+dependencies = [
+ "taiko-reth-beacon-consensus",
+ "taiko-reth-engine-primitives",
+ "taiko-reth-evm",
+ "taiko-reth-payload-builder",
+]
+
+[[package]]
+name = "taiko-reth-payload-builder"
+version = "1.1.0"
+dependencies = [
+ "taiko-reth-beacon-consensus",
+ "taiko-reth-engine-primitives",
+ "taiko-reth-evm",
+ "taiko-reth-primitives",
+ "taiko-reth-provider",
+]
+
+[[package]]
+name = "taiko-reth-payload-validator"
+version = "1.1.0"
+
+[[package]]
+name = "taiko-reth-primitives"
+version = "1.1.0"
+
+[[package]]
+name = "taiko-reth-proposer-consensus"
+version = "1.1.0"
+
+[[package]]
+name = "taiko-reth-provider"
+version = "1.1.0"
+dependencies = [
+ "taiko-reth-primitives",
 ]
 
 [[package]]

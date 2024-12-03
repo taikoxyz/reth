@@ -12,6 +12,9 @@ description = "Implementation of Engine API"
 workspace = true
 
 [dependencies]
+# taiko
+taiko-reth-engine-primitives = { workspace = true, optional = true }
+
 # reth
 reth-chainspec.workspace = true
 reth-primitives.workspace = true
@@ -56,3 +59,12 @@ reth-testing-utils.workspace = true
 alloy-rlp.workspace = true
 
 assert_matches.workspace = true
+
+[features]
+taiko = [
+    "dep:taiko-reth-engine-primitives",
+    "reth-beacon-consensus/taiko",
+    "reth-primitives/taiko",
+    "reth-chainspec/taiko",
+    "reth-evm/taiko",
+]

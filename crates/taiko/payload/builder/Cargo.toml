@@ -1,0 +1,20 @@
+[package]
+name = "taiko-reth-payload-builder"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+# taiko
+taiko-reth-evm.workspace = true
+taiko-reth-engine-primitives.workspace = true
+taiko-reth-primitives.workspace = true
+taiko-reth-provider.workspace = true
+taiko-reth-beacon-consensus.workspace = true
+
+[lints]
+workspace = true
