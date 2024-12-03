@@ -39,5 +39,5 @@ test-utils = ["dep:reth-trie"]
 optimism = ["revm/optimism"]
 serde = ["revm/serde"]
 taiko = [
-#    "revm/taiko"
+    "revm/taiko"
 ]
