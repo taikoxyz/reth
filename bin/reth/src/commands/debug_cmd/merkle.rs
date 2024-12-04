@@ -144,7 +144,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
 
         for block in blocks.into_iter().rev() {
             let block_number = block.number;
-            let sealed_block = block
+            let mut sealed_block = block
                 .try_seal_with_senders()
                 .map_err(|block| eyre::eyre!("Error sealing block with senders: {block:?}"))?;
             trace!(target: "reth::cli", block_number, "Executing block");
@@ -158,7 +158,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                     provider_rw.static_file_provider().clone(),
                 ),
             ));
-            executor.execute_and_verify_one((&sealed_block.clone().unseal(), td).into())?;
+            executor.execute_and_verify_one((&mut sealed_block.clone().unseal(), td).into())?;
             let execution_outcome = executor.finalize();
 
             let mut storage_writer = UnifiedStorageWriter::from_database(&provider_rw);

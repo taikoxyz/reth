@@ -261,7 +261,7 @@ where
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
 
             // we need the block's transactions but we don't need the transaction hashes
-            let block = provider
+            let mut block = provider
                 .block_with_senders(block_number.into(), TransactionVariant::NoHash)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
 
@@ -275,7 +275,7 @@ where
             // Execute the block
             let execute_start = Instant::now();
 
-            self.metrics.metered_one((&block, td).into(), |input| {
+            self.metrics.metered_one((&mut block.clone(), td).into(), |input| {
                 let sealed = block.header.clone().seal_slow();
                 let (header, seal) = sealed.into_parts();
 

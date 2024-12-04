@@ -6,20 +6,20 @@ use revm::db::BundleState;
 #[derive(Debug)]
 pub struct BlockExecutionInput<'a, Block> {
     /// The block to execute.
-    pub block: &'a Block,
+    pub block: &'a mut Block,
     /// The total difficulty of the block.
     pub total_difficulty: U256,
 }
 
 impl<'a, Block> BlockExecutionInput<'a, Block> {
     /// Creates a new input.
-    pub const fn new(block: &'a Block, total_difficulty: U256) -> Self {
+    pub fn new(block: &'a mut Block, total_difficulty: U256) -> Self {
         Self { block, total_difficulty }
     }
 }
 
-impl<'a, Block> From<(&'a Block, U256)> for BlockExecutionInput<'a, Block> {
-    fn from((block, total_difficulty): (&'a Block, U256)) -> Self {
+impl<'a, Block> From<(&'a mut Block, U256)> for BlockExecutionInput<'a, Block> {
+    fn from((block, total_difficulty): (&'a mut Block, U256)) -> Self {
         Self::new(block, total_difficulty)
     }
 }

@@ -253,7 +253,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                 consensus.validate_block_pre_execution(block)?;
 
                 let senders = block.senders().expect("sender recovery failed");
-                let block_with_senders =
+                let mut block_with_senders =
                     SealedBlockWithSenders::new(block.clone(), senders).unwrap();
 
                 let db = StateProviderDatabase::new(blockchain_db.latest()?);
@@ -261,7 +261,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                     EthExecutorProvider::ethereum(provider_factory.chain_spec()).executor(db);
 
                 let block_execution_output =
-                    executor.execute((&block_with_senders.clone().unseal(), U256::MAX).into())?;
+                    executor.execute((&mut block_with_senders.clone().unseal(), U256::MAX).into())?;
                 let execution_outcome =
                     ExecutionOutcome::from((block_execution_output, block.number));
                 debug!(target: "reth::cli", ?execution_outcome, "Executed block");

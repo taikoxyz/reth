@@ -596,7 +596,7 @@ where
         block_id: BlockNumberOrTag,
     ) -> Result<ExecutionWitness, Eth::Error> {
         let this = self.clone();
-        let block = this
+        let mut block = this
             .eth_api()
             .block_with_senders(block_id.into())
             .await?
@@ -613,7 +613,7 @@ where
 
                 let _ = block_executor
                     .execute_with_state_closure(
-                        (&block.clone().unseal(), block.difficulty).into(),
+                        (&mut block.clone().unseal(), block.difficulty).into(),
                         |statedb| {
                             codes = statedb
                                 .cache

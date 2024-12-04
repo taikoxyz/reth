@@ -111,10 +111,10 @@ where
             // Unseal the block for execution
             let (block, senders) = block.into_components();
             let (unsealed_header, hash) = block.header.split();
-            let block =
+            let mut block =
                 Block { header: unsealed_header, body: block.body }.with_senders_unchecked(senders);
 
-            executor.execute_and_verify_one((&block, td).into())?;
+            executor.execute_and_verify_one((&mut block, td).into())?;
             execution_duration += execute_start.elapsed();
 
             // TODO(alexey): report gas metrics using `block.header.gas_used`
@@ -196,7 +196,7 @@ where
             .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
 
         // Fetch the block with senders for execution.
-        let block_with_senders = self
+        let mut block_with_senders = self
             .provider
             .block_with_senders(block_number.into(), TransactionVariant::WithHash)?
             .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
@@ -208,7 +208,7 @@ where
 
         trace!(target: "exex::backfill", number = block_number, txs = block_with_senders.block.body.transactions.len(), "Executing block");
 
-        let block_execution_output = executor.execute((&block_with_senders, td).into())?;
+        let block_execution_output = executor.execute((&mut block_with_senders, td).into())?;
 
         Ok((block_with_senders, block_execution_output))
     }

@@ -78,7 +78,7 @@ impl ExecutorMetrics {
             Error = Error,
         >,
     {
-        let output = self.metered(input.block, || {
+        let output = self.metered(&input.block.clone(), || {
             executor.execute_with_state_closure(input, |state: &revm::db::State<DB>| {
                 // Update the metrics for the number of accounts, storage slots and bytecodes
                 // loaded
@@ -120,6 +120,9 @@ impl ExecutorMetrics {
     where
         F: FnOnce(BlockExecutionInput<'_, BlockWithSenders>) -> R,
     {
-        self.metered(input.block, || f(input))
+        self.metered(input.block, || f(BlockExecutionInput {
+            block: &mut input.block.clone(),
+            total_difficulty: Default::default(),
+        }))
     }
 }

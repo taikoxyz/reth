@@ -124,7 +124,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
 
         let client = fetch_client.clone();
         let chain = provider_factory.chain_spec();
-        let block = (move || get_single_body(client.clone(), Arc::clone(&chain), header.clone()))
+        let mut block = (move || get_single_body(client.clone(), Arc::clone(&chain), header.clone()))
             .retry(backoff)
             .notify(
                 |err, _| warn!(target: "reth::cli", "Error requesting body: {err}. Retrying..."),
@@ -142,7 +142,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
             provider.header_td_by_number(merkle_block_number)?.unwrap_or_default();
         let block_execution_output = executor.execute(
             (
-                &block
+                &mut block
                     .clone()
                     .unseal()
                     .with_recovered_senders()
