@@ -257,6 +257,6 @@ mod tests {
         let provider = TestExecutorProvider;
         let db = CacheDB::<EmptyDBTyped<ProviderError>>::default();
         let executor = provider.executor(db);
-        let _ = executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
+        let _ = executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
     }
 }

@@ -9,12 +9,30 @@ pub struct BlockExecutionInput<'a, Block> {
     pub block: &'a mut Block,
     /// The total difficulty of the block.
     pub total_difficulty: U256,
+    /// Enable anchor transaction.
+    pub enable_anchor: bool,
+    /// Enable skip invalid transaction.
+    pub enable_skip: bool,
+    /// Enable build transaction lists.
+    pub enable_build: bool,
+    /// Max compressed bytes.
+    pub max_bytes_per_tx_list: u64,
+    /// Max length of transactions list.
+    pub max_transactions_lists: u64,
 }
 
 impl<'a, Block> BlockExecutionInput<'a, Block> {
     /// Creates a new input.
     pub fn new(block: &'a mut Block, total_difficulty: U256) -> Self {
-        Self { block, total_difficulty }
+        Self {
+            block,
+            total_difficulty,
+            enable_anchor: false,
+            enable_skip: false,
+            enable_build: false,
+            max_bytes_per_tx_list: 0,
+            max_transactions_lists: 0,
+        }
     }
 }
 
