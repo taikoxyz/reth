@@ -156,6 +156,7 @@ members = [
     "crates/taiko/payload/validator",
     "crates/taiko/primitives",
     "crates/taiko/storage",
+    "crates/taiko/chainspec",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]
@@ -426,6 +427,7 @@ taiko-reth-payload-validator = { path = "crates/taiko/payload/validator" }
 taiko-reth-engine-primitives = { path = "crates/taiko/engine-primitives" }
 taiko-reth-node = { path = "crates/taiko/node" }
 taiko-reth-forks = { path = "crates/taiko/hardforks" }
+taiko-reth-chainspec = { path = "crates/taiko/chainspec" }
 
 # revm
 revm = { version = "14.0.3", features = [

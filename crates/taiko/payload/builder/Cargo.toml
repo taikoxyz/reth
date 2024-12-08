@@ -9,6 +9,17 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+# reth
+reth-primitives = { workspace = true, features = ["taiko"] }
+reth-revm = { workspace = true, features = ["taiko"] }
+reth-transaction-pool.workspace = true
+reth-provider.workspace = true
+reth-payload-builder.workspace = true
+reth-basic-payload-builder.workspace = true
+reth-evm = { workspace = true, features = ["taiko"] }
+reth-errors.workspace = true
+reth-chainspec = { workspace = true, features = ["taiko"] }
+
 # taiko
 taiko-reth-evm.workspace = true
 taiko-reth-engine-primitives.workspace = true

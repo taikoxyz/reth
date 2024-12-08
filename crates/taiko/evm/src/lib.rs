@@ -1,14 +1,21 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! EVM config for vanilla ethereum.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",
+    html_favicon_url = "https://avatars0.githubusercontent.com/u/97369466?s=256",
+    issue_tracker_base_url = "https://github.com/paradigmxyz/reth/issues/"
+)]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod execute;
+pub use execute::*;
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+/// Ethereum-related EVM configuration.
+#[derive(Debug, Clone, Copy, Default)]
+#[non_exhaustive]
+pub struct TaikoEvmConfig;

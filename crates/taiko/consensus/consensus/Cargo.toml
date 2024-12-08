@@ -9,6 +9,14 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+# reth
+reth-chainspec = { workspace = true, features = ["taiko"] }
+reth-consensus-common.workspace = true
+reth-primitives = { workspace = true, features = ["taiko"] }
+reth-consensus.workspace = true
+
+# taiko
+taiko-reth-chainspec.workspace = true
 
 [lints]
 workspace = true

@@ -29,6 +29,7 @@
 
 pub mod cli;
 pub mod commands;
+pub mod taiko;
 
 /// Re-exported utils.
 pub mod utils {

@@ -9,11 +9,41 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+# reth
+reth-chainspec.workspace = true
+reth-primitives.workspace = true
+reth-payload-builder.workspace = true
+reth-auto-seal-consensus.workspace = true
+reth-basic-payload-builder.workspace = true
+reth-consensus.workspace = true
+reth-rpc-types-compat.workspace = true
+reth-node-api.workspace = true
+reth-node-builder.workspace = true
+reth-tracing.workspace = true
+reth-provider.workspace = true
+reth-transaction-pool.workspace = true
+reth-network.workspace = true
+reth-evm.workspace = true
+reth-revm.workspace = true
+reth-beacon-consensus.workspace = true
+reth-discv5.workspace = true
+reth-rpc-eth-types.workspace = true
+reth-rpc-eth-api.workspace = true
+reth-rpc.workspace = true
+
 # taiko
 taiko-reth-beacon-consensus.workspace = true
 taiko-reth-evm.workspace = true
 taiko-reth-engine-primitives.workspace = true
 taiko-reth-payload-builder.workspace = true
+
+# misc
+clap.workspace = true
+serde.workspace = true
+eyre.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+taiko-reth-chainspec.workspace = true
 
 [lints]
 workspace = true

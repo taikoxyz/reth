@@ -9,6 +9,7 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+reth-chainspec.workspace = true
 # taiko
 taiko-reth-beacon-consensus.workspace = true
 

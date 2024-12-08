@@ -44,7 +44,11 @@ impl PayloadBuilderAttributes for OptimismPayloadBuilderAttributes {
     /// Creates a new payload builder for the given parent block and the attributes.
     ///
     /// Derives the unique [`PayloadId`] for the given parent and attributes
+<<<<<<< HEAD
     fn try_new(parent: B256, attributes: OpPayloadAttributes, _: EngineApiMessageVersion,) -> Result<Self, Self::Error> {
+=======
+    fn try_new(parent: B256, attributes: OpPayloadAttributes, version: EngineApiMessageVersion) -> Result<Self, Self::Error> {
+>>>>>>> f702d0934 (the main update(not finished))
         let id = payload_id_optimism(&parent, &attributes);
 
         let transactions = attributes

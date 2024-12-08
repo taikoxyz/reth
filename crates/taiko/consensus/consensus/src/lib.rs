@@ -1,14 +1,21 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+pub mod validator;
+pub use validator::*;
+
+use std::sync::Arc;
+use reth_chainspec::ChainSpec;
+
+/// Taiko beacon consensus
+///
+/// This consensus engine does basic checks as outlined in the execution specs.
+#[derive(Debug)]
+pub struct TaikoBeaconConsensus {
+    /// Configuration
+    chain_spec: Arc<ChainSpec>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+impl TaikoBeaconConsensus {
+    /// Create a new instance of [`EthBeaconConsensus`]
+    pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
+        Self { chain_spec }
     }
 }
