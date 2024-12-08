@@ -160,6 +160,7 @@ where
                                 let _ = to_engine.send(BeaconEngineMessage::ForkchoiceUpdated {
                                     state,
                                     payload_attrs: None,
+                                    version: Default::default(),
                                     tx,
                                 });
                                 debug!(target: "consensus::auto", ?state, "Sent fork choice update");

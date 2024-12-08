@@ -3,7 +3,7 @@
 use alloy_rpc_types_engine::{CancunPayloadFields, ExecutionPayload, ForkchoiceState};
 use futures::{Stream, StreamExt};
 use reth_beacon_consensus::BeaconEngineMessage;
-use reth_engine_primitives::EngineTypes;
+use reth_engine_primitives::{EngineApiMessageVersion, EngineTypes};
 use reth_fs_util as fs;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -25,6 +25,8 @@ pub enum StoredEngineApiMessage<Attributes> {
         state: ForkchoiceState,
         /// The payload attributes sent in the persisted call, if any.
         payload_attrs: Option<Attributes>,
+        /// The api version.
+        version: EngineApiMessageVersion,
     },
     /// The on-disk representation of an `engine_newPayload` method call.
     NewPayload {
@@ -63,13 +65,14 @@ impl EngineMessageStore {
         fs::create_dir_all(&self.path)?; // ensure that store path had been created
         let timestamp = received_at.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis();
         match msg {
-            BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, tx: _tx } => {
+            BeaconEngineMessage::ForkchoiceUpdated { state, payload_attrs, version, tx: _tx } => {
                 let filename = format!("{}-fcu-{}.json", timestamp, state.head_block_hash);
                 fs::write(
                     self.path.join(filename),
                     serde_json::to_vec(&StoredEngineApiMessage::ForkchoiceUpdated {
                         state: *state,
                         payload_attrs: payload_attrs.clone(),
+                        version: *version,
                     })?,
                 )?;
             }

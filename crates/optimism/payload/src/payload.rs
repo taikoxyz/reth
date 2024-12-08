@@ -13,7 +13,7 @@ use reth_chain_state::ExecutedBlock;
 use reth_chainspec::EthereumHardforks;
 use reth_optimism_chainspec::OpChainSpec;
 use reth_payload_builder::EthPayloadBuilderAttributes;
-use reth_payload_primitives::{BuiltPayload, PayloadBuilderAttributes};
+use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadBuilderAttributes};
 use reth_primitives::{
     transaction::WithEncoded, BlobTransactionSidecar, SealedBlock, TransactionSigned, Withdrawals,
 };
@@ -44,7 +44,7 @@ impl PayloadBuilderAttributes for OptimismPayloadBuilderAttributes {
     /// Creates a new payload builder for the given parent block and the attributes.
     ///
     /// Derives the unique [`PayloadId`] for the given parent and attributes
-    fn try_new(parent: B256, attributes: OpPayloadAttributes) -> Result<Self, Self::Error> {
+    fn try_new(parent: B256, attributes: OpPayloadAttributes, _: EngineApiMessageVersion,) -> Result<Self, Self::Error> {
         let id = payload_id_optimism(&parent, &attributes);
 
         let transactions = attributes

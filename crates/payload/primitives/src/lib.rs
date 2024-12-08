@@ -10,6 +10,7 @@
 
 mod error;
 
+use serde::{Deserialize, Serialize};
 pub use error::{EngineObjectValidationError, PayloadBuilderError, VersionSpecificValidationError};
 
 mod events;
@@ -323,22 +324,23 @@ where
 }
 
 /// The version of Engine API message.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum EngineApiMessageVersion {
     /// Version 1
-    V1,
+    #[default]
+    V1 = 1,
     /// Version 2
     ///
     /// Added in the Shanghai hardfork.
-    V2,
+    V2 = 2,
     /// Version 3
     ///
     /// Added in the Cancun hardfork.
-    V3,
+    V3 = 3,
     /// Version 4
     ///
     /// Added in the Prague hardfork.
-    V4,
+    V4 = 4,
 }
 
 #[cfg(test)]

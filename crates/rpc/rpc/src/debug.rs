@@ -596,7 +596,7 @@ where
         block_id: BlockNumberOrTag,
     ) -> Result<ExecutionWitness, Eth::Error> {
         let this = self.clone();
-        let mut block = this
+        let block = this
             .eth_api()
             .block_with_senders(block_id.into())
             .await?

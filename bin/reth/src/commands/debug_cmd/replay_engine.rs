@@ -165,9 +165,9 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                 .wrap_err(format!("failed to parse: {}", filepath.display()))?;
             debug!(target: "reth::cli", filepath = %filepath.display(), ?message, "Forwarding Engine API message");
             match message {
-                StoredEngineApiMessage::ForkchoiceUpdated { state, payload_attrs } => {
+                StoredEngineApiMessage::ForkchoiceUpdated { state, payload_attrs, version } => {
                     let response =
-                        beacon_engine_handle.fork_choice_updated(state, payload_attrs).await?;
+                        beacon_engine_handle.fork_choice_updated(state, payload_attrs, version).await?;
                     debug!(target: "reth::cli", ?response, "Received for forkchoice updated");
                 }
                 StoredEngineApiMessage::NewPayload { payload, cancun_fields } => {

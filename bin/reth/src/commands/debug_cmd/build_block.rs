@@ -227,6 +227,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
             reth_payload_builder::EthPayloadBuilderAttributes::try_new(
                 best_block.hash(),
                 payload_attrs,
+                Default::default(),
             )?,
         );
 
@@ -253,7 +254,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
                 consensus.validate_block_pre_execution(block)?;
 
                 let senders = block.senders().expect("sender recovery failed");
-                let mut block_with_senders =
+                let block_with_senders =
                     SealedBlockWithSenders::new(block.clone(), senders).unwrap();
 
                 let db = StateProviderDatabase::new(blockchain_db.latest()?);

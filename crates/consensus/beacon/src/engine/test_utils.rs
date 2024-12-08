@@ -93,7 +93,7 @@ impl<DB> TestEnv<DB> {
         &self,
         state: ForkchoiceState,
     ) -> Result<ForkchoiceUpdated, BeaconForkChoiceUpdateError> {
-        self.engine_handle.fork_choice_updated(state, None).await
+        self.engine_handle.fork_choice_updated(state, None, Default::default()).await
     }
 
     /// Sends the `ForkchoiceUpdated` message to the consensus engine and retries if the engine
@@ -103,7 +103,7 @@ impl<DB> TestEnv<DB> {
         state: ForkchoiceState,
     ) -> Result<ForkchoiceUpdated, BeaconForkChoiceUpdateError> {
         loop {
-            let result = self.engine_handle.fork_choice_updated(state, None).await?;
+            let result = self.engine_handle.fork_choice_updated(state, None, Default::default()).await?;
             if !result.is_syncing() {
                 return Ok(result)
             }

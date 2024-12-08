@@ -124,7 +124,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>> Command<C> {
 
         let client = fetch_client.clone();
         let chain = provider_factory.chain_spec();
-        let mut block = (move || get_single_body(client.clone(), Arc::clone(&chain), header.clone()))
+        let block = (move || get_single_body(client.clone(), Arc::clone(&chain), header.clone()))
             .retry(backoff)
             .notify(
                 |err, _| warn!(target: "reth::cli", "Error requesting body: {err}. Retrying..."),

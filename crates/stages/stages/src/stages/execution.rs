@@ -261,7 +261,7 @@ where
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
 
             // we need the block's transactions but we don't need the transaction hashes
-            let mut block = provider
+            let block = provider
                 .block_with_senders(block_number.into(), TransactionVariant::NoHash)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(block_number.into()))?;
 
