@@ -119,7 +119,7 @@ where
         let data_dir = ctx.config().datadir();
         let pool_config = ctx.pool_config();
         let blob_store = DiskFileBlobStore::open(data_dir.blobstore(), Default::default())?;
-        let validator = TransactionValidationTaskExecutor::eth_builder(ctx.chain_spec())
+        let validator = TransactionValidationTaskExecutor::eth_builder(ctx.chain_spec().inner.clone())
             .with_head_timestamp(ctx.head().timestamp)
             .kzg_settings(ctx.kzg_settings()?)
             .with_local_transactions_config(pool_config.local_transactions_config.clone())
@@ -196,7 +196,7 @@ where
         let chain_spec = ctx.chain_spec();
         let evm_config = TaikoEvmConfig::default();
         let payload_builder =
-            taiko_reth_payload_builder::TaikoPayloadBuilder::new(evm_config, TaikoChainSpec::new(chain_spec));
+            taiko_reth_payload_builder::TaikoPayloadBuilder::new(evm_config, chain_spec.inner.clone());
         let conf = ctx.payload_builder_config();
 
         let payload_job_config = BasicPayloadJobGeneratorConfig::default()
@@ -263,7 +263,7 @@ where
     ) -> eyre::Result<(Self::EVM, Self::Executor)> {
         let chain_spec = ctx.chain_spec();
         let evm_config = TaikoEvmConfig::default();
-        let executor = TaikoExecutorProvider::new(TaikoChainSpec::new(chain_spec), evm_config);
+        let executor = TaikoExecutorProvider::new(chain_spec, evm_config);
 
         Ok((evm_config, executor))
     }
@@ -286,7 +286,7 @@ where
         if ctx.is_dev() {
             Ok(Arc::new(AutoSealConsensus::new(chain_spec)))
         } else {
-            Ok(Arc::new(TaikoBeaconConsensus::new(TaikoChainSpec::new(chain_spec))))
+            Ok(Arc::new(TaikoBeaconConsensus::new(chain_spec)))
         }
     }
 }

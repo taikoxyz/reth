@@ -12,6 +12,7 @@ exclude.workspace = true
 reth-chainspec.workspace = true
 # taiko
 taiko-reth-beacon-consensus.workspace = true
+taiko-reth-chainspec.workspace = true
 
 [lints]
 workspace = true
