@@ -142,9 +142,7 @@ where
 /// config.
 #[derive(Debug, Default, Clone, Copy)]
 #[non_exhaustive]
-pub struct EthereumPoolBuilder {
-    // TODO add options for txpool args
-}
+pub struct EthereumPoolBuilder;
 
 impl<Types, Node> PoolBuilder<Node> for EthereumPoolBuilder
 where

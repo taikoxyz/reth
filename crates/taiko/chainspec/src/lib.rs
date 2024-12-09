@@ -14,16 +14,23 @@
 )]
 
 use std::fmt::Display;
+use std::sync::Arc;
 use derive_more::{Constructor, Deref, Into};
 use reth_chainspec::{BaseFeeParams, Chain, ChainSpec, DepositContract, EthChainSpec, EthereumHardforks, ForkCondition, ForkFilter, ForkId, Hardfork, Hardforks, Head};
 use reth_primitives::Header;
 use reth_primitives::revm_primitives::{B256, U256};
 
 /// OP stack chain spec type.
-#[derive(Debug, Clone, Deref, Into, Constructor, PartialEq, Eq)]
+#[derive(Debug, Clone, Deref, Into, PartialEq, Eq)]
 pub struct TaikoChainSpec {
     /// [`ChainSpec`].
-    pub inner: ChainSpec,
+    pub inner: Arc<ChainSpec>,
+}
+
+impl TaikoChainSpec {
+    pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
+        Self { inner: chain_spec }
+    }
 }
 
 impl EthChainSpec for TaikoChainSpec {
