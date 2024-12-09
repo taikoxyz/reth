@@ -12,5 +12,13 @@ exclude.workspace = true
 # taiko
 taiko-reth-primitives.workspace = true
 
+# misc
+auto_impl.workspace = true
+alloy-primitives = "0.8.15"
+reth-storage-errors.workspace = true
+reth-provider.workspace = true
+reth-db-api.workspace = true
+reth-node-types.workspace = true
+
 [lints]
 workspace = true

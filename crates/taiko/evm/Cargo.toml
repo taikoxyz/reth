@@ -9,10 +9,11 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+# reth
 reth-chainspec.workspace = true
-# taiko
-taiko-reth-beacon-consensus.workspace = true
-taiko-reth-chainspec.workspace = true
-
+reth-evm.workspace = true
+reth-primitives.workspace = true
+reth-prune-types.workspace = true
+reth-revm.workspace = true
 [lints]
 workspace = true

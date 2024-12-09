@@ -95,10 +95,12 @@ tempfile.workspace = true
 
 [features]
 taiko = [
+    "reth-evm/taiko",
     "reth-rpc-api/taiko",
     "reth-node-core/taiko",
     "reth-node-api/taiko",
     "reth-rpc-builder/taiko",
+    "reth-rpc-eth-types/taiko",
 ]
 default = []
 test-utils = ["reth-db/test-utils"]

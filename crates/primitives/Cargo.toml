@@ -67,7 +67,6 @@ proptest = { workspace = true, optional = true }
 reth-chainspec.workspace = true
 reth-codecs.workspace = true
 reth-primitives-traits = { workspace = true, features = ["arbitrary"] }
-reth-testing-utils.workspace = true
 revm-primitives = { workspace = true, features = ["arbitrary"] }
 
 alloy-eips = { workspace = true, features = ["arbitrary"] }
@@ -81,7 +80,6 @@ proptest-arbitrary-interop.workspace = true
 proptest.workspace = true
 rand.workspace = true
 serde_json.workspace = true
-test-fuzz.workspace = true
 
 criterion.workspace = true
 pprof = { workspace = true, features = [
@@ -91,10 +89,7 @@ pprof = { workspace = true, features = [
 ] }
 
 [features]
-taiko = [
-    "reth-chainspec/taiko",
-    "revm-primitives/taiko"
-]
+taiko = []
 default = ["c-kzg", "alloy-compat", "std", "reth-codec", "secp256k1"]
 std = ["reth-primitives-traits/std"]
 reth-codec = ["dep:reth-codecs", "dep:zstd", "dep:modular-bitfield", "std"]
@@ -126,7 +121,6 @@ optimism = [
 alloy-compat = [
     "dep:alloy-rpc-types",
     "dep:alloy-serde",
-    "dep:op-alloy-rpc-types",
 ]
 test-utils = ["reth-primitives-traits/test-utils"]
 serde-bincode-compat = [

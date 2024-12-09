@@ -1,5 +1,5 @@
 [package]
-name = "taiko-reth-beacon-consensus"
+name = "taiko-reth"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,9 +10,18 @@ exclude.workspace = true
 
 [dependencies]
 # reth
-reth-chainspec = { workspace = true, features = ["taiko"] }
+reth = { workspace = true, features = ["taiko"] }
+reth-node-core.workspace = true
 reth-primitives = { workspace = true, features = ["taiko"] }
-reth-consensus.workspace = true
+# taiko
+taiko-reth-node.workspace = true
+
+[features]
+asm-keccak = ["reth-node-core/asm-keccak", "reth-primitives/asm-keccak"]
 
 [lints]
 workspace = true
+
+[[bin]]
+name = "taiko-reth"
+path = "src/main.rs"

@@ -11,16 +11,12 @@ exclude.workspace = true
 [dependencies]
 # reth
 reth-primitives.workspace = true
-reth-db-api.workspace = true
-reth-codecs.workspace = true
 
 # alloy
 alloy-rlp.workspace = true
 
 # Misc
 serde.workspace = true
-modular-bitfield.workspace = true
-bytes.workspace = true
 
 [lints]
 workspace = true

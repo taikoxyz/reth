@@ -3,7 +3,11 @@ use reth_cli::chainspec::{parse_genesis, ChainSpecParser};
 use std::sync::Arc;
 
 /// Chains supported by reth. First value should be used as the default.
+#[cfg(not(feature = "taiko"))]
 pub const SUPPORTED_CHAINS: &[&str] = &["mainnet", "sepolia", "holesky", "dev"];
+#[cfg(feature = "taiko")]
+pub const SUPPORTED_CHAINS: &[&str] =
+    &["taiko-internal-l2a", "taiko-internal-l2b", "mainnet", "hekla"];
 
 /// Clap value parser for [`ChainSpec`]s.
 ///
@@ -30,7 +34,10 @@ impl ChainSpecParser for EthereumChainSpecParser {
     const SUPPORTED_CHAINS: &'static [&'static str] = SUPPORTED_CHAINS;
 
     fn parse(s: &str) -> eyre::Result<Arc<ChainSpec>> {
-        chain_value_parser(s)
+        #[cfg(not(feature = "taiko"))]
+        return chain_value_parser(s);
+        #[cfg(feature = "taiko")]
+        taiko_reth_chainspec::chain_value_parser(s)
     }
 }
 

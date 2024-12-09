@@ -15,9 +15,16 @@ workspace = true
 reth-cli.workspace = true
 reth-chainspec.workspace = true
 
+# taiko
+taiko-reth-chainspec = { workspace = true, optional = true }
+
 # misc
 eyre.workspace = true
 
 [dev-dependencies]
 clap.workspace = true
-reth-cli-commands.workspace = true
+
+[features]
+taiko = [
+    "dep:taiko-reth-chainspec",
+]

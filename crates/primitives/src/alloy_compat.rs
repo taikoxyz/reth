@@ -9,6 +9,7 @@ use alloy_consensus::{TxEip1559, TxEip2930, TxEip4844, TxLegacy};
 use alloy_primitives::{Parity, TxKind};
 use alloy_rlp::Error as RlpError;
 use alloy_serde::WithOtherFields;
+#[cfg(feature = "optimism")]
 use op_alloy_rpc_types as _;
 
 impl TryFrom<alloy_rpc_types::Block<WithOtherFields<alloy_rpc_types::Transaction>>> for Block {
@@ -20,23 +21,22 @@ impl TryFrom<alloy_rpc_types::Block<WithOtherFields<alloy_rpc_types::Transaction
         use alloy_rpc_types::ConversionError;
 
         let transactions = {
-            let transactions: Result<Vec<TransactionSigned>, ConversionError> = match block
-                .transactions
-            {
-                alloy_rpc_types::BlockTransactions::Full(transactions) => {
-                    transactions.into_iter().map(|tx| tx.try_into()).collect()
-                }
-                alloy_rpc_types::BlockTransactions::Hashes(_) |
-                alloy_rpc_types::BlockTransactions::Uncle => {
-                    // alloy deserializes empty blocks into `BlockTransactions::Hashes`, if the tx
-                    // root is the empty root then we can just return an empty vec.
-                    if block.header.transactions_root == EMPTY_TRANSACTIONS {
-                        Ok(Vec::new())
-                    } else {
-                        Err(ConversionError::MissingFullTransactions)
+            let transactions: Result<Vec<TransactionSigned>, ConversionError> =
+                match block.transactions {
+                    alloy_rpc_types::BlockTransactions::Full(transactions) => {
+                        transactions.into_iter().map(|tx| tx.try_into()).collect()
                     }
-                }
-            };
+                    alloy_rpc_types::BlockTransactions::Hashes(_)
+                    | alloy_rpc_types::BlockTransactions::Uncle => {
+                        // alloy deserializes empty blocks into `BlockTransactions::Hashes`, if the tx
+                        // root is the empty root then we can just return an empty vec.
+                        if block.header.transactions_root == EMPTY_TRANSACTIONS {
+                            Ok(Vec::new())
+                        } else {
+                            Err(ConversionError::MissingFullTransactions)
+                        }
+                    }
+                };
             transactions?
         };
 
@@ -77,7 +77,7 @@ impl TryFrom<WithOtherFields<alloy_rpc_types::Transaction>> for Transaction {
                     return Err(ConversionError::Eip2718Error(
                         RlpError::Custom("EIP-1559 fields are present in a legacy transaction")
                             .into(),
-                    ))
+                    ));
                 }
 
                 // extract the chain id if possible
@@ -93,7 +93,7 @@ impl TryFrom<WithOtherFields<alloy_rpc_types::Transaction>> for Transaction {
                                 .map_err(|err| ConversionError::Eip2718Error(err.into()))?
                                 .1
                         } else {
-                            return Err(ConversionError::MissingChainId)
+                            return Err(ConversionError::MissingChainId);
                         }
                     }
                 };

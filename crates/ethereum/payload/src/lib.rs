@@ -50,6 +50,12 @@ pub struct EthereumPayloadBuilder<EvmConfig = EthEvmConfig> {
     evm_config: EvmConfig,
 }
 
+impl Default for EthereumPayloadBuilder {
+    fn default() -> Self {
+        Self::new(EthEvmConfig::default())
+    }
+}
+
 impl<EvmConfig> EthereumPayloadBuilder<EvmConfig> {
     /// `EthereumPayloadBuilder` constructor.
     pub const fn new(evm_config: EvmConfig) -> Self {

@@ -16,7 +16,7 @@ reth-ethereum-forks.workspace = true
 reth-network-peers.workspace = true
 reth-trie-common.workspace = true
 reth-primitives-traits.workspace = true
-revm-primitives = { workspace = true, optional = true }
+revm-primitives = { workspace = true, optional = true, features = ["serde"] }
 
 # op-reth
 reth-optimism-forks = { workspace = true, optional = true }
@@ -49,7 +49,6 @@ alloy-genesis.workspace = true
 taiko = [
     "dep:strum",
     "dep:num_enum",
-    "dep:revm-primitives",
     "dep:alloy-serde",
     "reth-ethereum-forks/taiko",
     "serde",

@@ -13,100 +13,63 @@
     issue_tracker_base_url = "https://github.com/paradigmxyz/reth/issues/"
 )]
 
-use std::fmt::Display;
+mod spec;
+pub mod taiko;
+
+use crate::spec::TAIKO_INTERNAL_L2_A;
+use crate::taiko::{get_taiko_genesis, TaikoNamedChain};
+use alloy_genesis::Genesis;
+use derive_more::Into;
+use eyre::bail;
+use reth_chainspec::{ChainSpec, EthChainSpec, EthereumHardforks, Hardfork, Hardforks};
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
-use derive_more::{Constructor, Deref, Into};
-use reth_chainspec::{BaseFeeParams, Chain, ChainSpec, DepositContract, EthChainSpec, EthereumHardforks, ForkCondition, ForkFilter, ForkId, Hardfork, Hardforks, Head};
-use reth_primitives::Header;
-use reth_primitives::revm_primitives::{B256, U256};
 
-/// OP stack chain spec type.
-#[derive(Debug, Clone, Deref, Into, PartialEq, Eq)]
-pub struct TaikoChainSpec {
-    /// [`ChainSpec`].
-    pub inner: Arc<ChainSpec>,
+/// Clap value parser for [`ChainSpec`]s.
+///
+/// The value parser matches either a known chain, the path
+/// to a json file, or a json formatted string in-memory. The json needs to be a Genesis struct.
+pub fn chain_value_parser(s: &str) -> eyre::Result<Arc<ChainSpec>, eyre::Error> {
+    Ok(match s {
+        "taiko-internal-l2a" => TAIKO_INTERNAL_L2_A.clone(),
+        _ => {
+            if let Ok(chain_id) = s.parse::<u64>() {
+                if let Ok(chain) = TaikoNamedChain::try_from(chain_id) {
+                    let genesis = get_taiko_genesis(chain);
+                    Arc::new(genesis.into())
+                } else {
+                    bail!("Invalid taiko chain id")
+                }
+            } else {
+                // try to read json from path first
+                let raw =
+                    match fs::read_to_string(PathBuf::from(shellexpand::full(s)?.into_owned())) {
+                        Ok(raw) => raw,
+                        Err(io_err) => {
+                            // valid json may start with "\n", but must contain "{"
+                            if s.contains('{') {
+                                s.to_string()
+                            } else {
+                                return Err(io_err.into()); // assume invalid path
+                            }
+                        }
+                    };
+
+                // both serialized Genesis and ChainSpec structs supported
+                let genesis: Genesis = serde_json::from_str(&raw)?;
+
+                Arc::new(genesis.into())
+            }
+        }
+    })
 }
 
-impl TaikoChainSpec {
-    pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
-        Self { inner: chain_spec }
+/*hardfork!(
+    TaikoHardFork {
+        /// Hekla: the 1st taiko mainnet version: <>
+        Hekla,
+        /// Ontake: the 2nd taiko mainnet fork: <>
+        Ontake,
     }
-}
-
-impl EthChainSpec for TaikoChainSpec {
-    fn chain(&self) -> Chain {
-        self.inner.chain()
-    }
-
-    fn base_fee_params_at_block(&self, block_number: u64) -> BaseFeeParams {
-        self.inner.base_fee_params_at_block(block_number)
-    }
-
-    fn base_fee_params_at_timestamp(&self, timestamp: u64) -> BaseFeeParams {
-        self.inner.base_fee_params_at_timestamp(timestamp)
-    }
-
-    fn deposit_contract(&self) -> Option<&DepositContract> {
-        self.inner.deposit_contract()
-    }
-
-    fn genesis_hash(&self) -> B256 {
-        self.inner.genesis_hash()
-    }
-
-    fn prune_delete_limit(&self) -> usize {
-        self.inner.prune_delete_limit()
-    }
-
-    fn display_hardforks(&self) -> impl Display {
-        self.inner.display_hardforks()
-    }
-
-    fn genesis_header(&self) -> &Header {
-        self.inner.genesis_header()
-    }
-
-    fn genesis(&self) -> &alloy_genesis::Genesis {
-        self.inner.genesis()
-    }
-
-    fn max_gas_limit(&self) -> u64 {
-        self.inner.max_gas_limit()
-    }
-
-    fn bootnodes(&self) -> Option<Vec<reth_network_peers::node_record::NodeRecord>> {
-        self.inner.bootnodes()
-    }
-}
-
-impl Hardforks for TaikoChainSpec {
-    fn fork<H: Hardfork>(&self, fork: H) -> ForkCondition {
-        self.inner.fork(fork)
-    }
-
-    fn forks_iter(&self) -> impl Iterator<Item=(&dyn Hardfork, ForkCondition)> {
-        self.inner.forks_iter()
-    }
-
-    fn fork_id(&self, head: &Head) -> ForkId {
-        self.inner.fork_id(head)
-    }
-
-    fn latest_fork_id(&self) -> ForkId {
-        self.inner.latest_fork_id()
-    }
-
-    fn fork_filter(&self, head: Head) -> ForkFilter {
-        self.inner.fork_filter(head)
-    }
-}
-
-impl EthereumHardforks for TaikoChainSpec {
-    fn get_final_paris_total_difficulty(&self) -> Option<U256> {
-        self.inner.get_final_paris_total_difficulty()
-    }
-
-    fn final_paris_total_difficulty(&self, block_number: u64) -> Option<U256> {
-        self.inner.final_paris_total_difficulty(block_number)
-    }
-}
+);*/

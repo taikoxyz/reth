@@ -85,6 +85,5 @@ clap = { workspace = true, features = ["derive"] }
 taiko = [
     "reth-rpc/taiko",
     "reth-node-core/taiko",
-    "dep:taiko-reth-provider",
     "reth-rpc-server-types/taiko",
 ]

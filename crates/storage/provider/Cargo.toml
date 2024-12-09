@@ -97,5 +97,6 @@ test-utils = [
     "alloy-consensus",
 ]
 taiko = [
-    "reth-evm/taiko"
+    "reth-evm/taiko",
+    "reth-primitives/taiko",
 ]

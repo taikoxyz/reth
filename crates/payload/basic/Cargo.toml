@@ -38,3 +38,8 @@ metrics.workspace = true
 
 # misc
 tracing.workspace = true
+
+[features]
+taiko = [
+    "reth-primitives/taiko"
+]

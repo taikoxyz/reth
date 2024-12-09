@@ -157,6 +157,7 @@ members = [
     "crates/taiko/primitives",
     "crates/taiko/storage",
     "crates/taiko/chainspec",
+    "crates/taiko/bin",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]

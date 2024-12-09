@@ -9,13 +9,32 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
-alloy-genesis.workspace = true
-derive_more = "1.0.0"
 # reth
-reth-chainspec.workspace = true
-reth-network-peers.workspace = true
-reth-primitives.workspace = true
+reth-ethereum-forks = { workspace = true, features = ["taiko"] }
 
+# ethereum
+alloy-chains = { workspace = true, features = ["serde", "rlp"] }
+alloy-genesis.workspace = true
+alloy-primitives = { workspace = true, features = ["rand", "rlp"] }
+alloy-serde = { workspace = true, optional = true }
+
+# misc
+once_cell.workspace = true
+serde_json.workspace = true
+derive_more.workspace = true
+strum = { workspace = true, optional = true }
+num_enum = { version = "0.7.2", optional = true, default-features = false }
+serde = { workspace = true, features = ["derive"], optional = true }
+schemars = { version = "0.8.21", optional = true }
+eyre.workspace = true
+reth-chainspec.workspace = true
+shellexpand.workspace = true
+
+[features]
+default = ["std", "serde", "dep:alloy-serde", "dep:strum", "dep:num_enum"]
+std = []
+serde = ["dep:serde"]
+schema = ["dep:schemars"]
 
 [lints]
 workspace = true

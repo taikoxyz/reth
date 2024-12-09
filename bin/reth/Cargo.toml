@@ -66,11 +66,6 @@ reth-consensus.workspace = true
 reth-engine-util.workspace = true
 reth-prune.workspace = true
 
-# taiko
-taiko-reth-payload-builder = { workspace = true, optional = true }
-taiko-reth-payload-validator = { workspace = true, optional = true }
-taiko-reth-node = { workspace = true, optional = true }
-
 # crypto
 alloy-eips.workspace = true
 alloy-rlp.workspace = true
@@ -99,6 +94,8 @@ eyre.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
 backon.workspace = true
 similar-asserts.workspace = true
+taiko-reth-chainspec.workspace = true
+alloy-serde.workspace = true
 
 [dev-dependencies]
 reth-discv4.workspace = true
@@ -126,19 +123,9 @@ min-debug-logs = ["tracing/release_max_level_debug"]
 min-trace-logs = ["tracing/release_max_level_trace"]
 
 taiko = [
-    "dep:taiko-reth-payload-validator",
-    "reth-primitives/taiko",
-    "reth-revm/taiko",
-    "reth-node-builder/taiko",
-    "dep:taiko-reth-node",
-    "reth-blockchain-tree/taiko",
+    "reth-ethereum-cli/taiko",
 ]
 
 [[bin]]
 name = "reth"
 path = "src/main.rs"
-
-[[bin]]
-name = "taiko-reth"
-path = "src/taiko.rs"
-required-features = ["taiko"]

@@ -64,3 +64,6 @@ arbitrary = [
     "dep:proptest",
 ]
 optimism = ["reth-primitives/optimism"]
+taiko = [
+    "reth-primitives/taiko"
+]

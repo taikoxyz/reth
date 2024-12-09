@@ -1,24 +1,33 @@
 //! Ethereum Node types config.
 
-use std::future::Future;
-use std::sync::Arc;
+use crate::engine::TaikoEngineTypes;
+use crate::TaikoEngineValidator;
 use reth_auto_seal_consensus::AutoSealConsensus;
 use reth_basic_payload_builder::{BasicPayloadJobGenerator, BasicPayloadJobGeneratorConfig};
-use reth_beacon_consensus::EngineNodeTypes;
-use reth_chainspec::ChainSpec;
-use reth_network::NetworkHandle;
-use reth_node_api::{EngineValidator, FullNodeComponents, FullNodeTypes, NodeAddOns, NodeTypesWithEngine};
-use reth_node_builder::components::{ComponentsBuilder, ConsensusBuilder, EngineValidatorBuilder, ExecutorBuilder, NetworkBuilder, PayloadServiceBuilder, PoolBuilder};
-use reth_node_builder::{BuilderContext, Node, NodeTypes, PayloadTypes};
+use reth_chainspec::{ChainSpec, EthChainSpec, Hardforks};
+use reth_ethereum_payload_builder::EthereumPayloadBuilder;
+use reth_evm::ConfigureEvm;
+use reth_network::{NetworkConfig, NetworkHandle, NetworkManager};
+use reth_node_api::{EngineValidator, FullNodeComponents, NodeAddOns};
+use reth_node_builder::{
+    components::{
+        ComponentsBuilder, ConsensusBuilder, EngineValidatorBuilder, ExecutorBuilder,
+        NetworkBuilder, PayloadServiceBuilder, PoolBuilder, PoolBuilderConfigOverrides,
+    },
+    node::{FullNodeTypes, NodeTypes, NodeTypesWithEngine},
+    BuilderContext, Node, PayloadBuilderConfig,
+};
 use reth_payload_builder::{PayloadBuilderHandle, PayloadBuilderService};
+use reth_primitives::Header;
 use reth_provider::CanonStateSubscriptions;
 use reth_rpc::EthApi;
 use reth_tracing::tracing::{debug, info};
-use reth_transaction_pool::{EthTransactionPool, TransactionPool, TransactionValidationTaskExecutor};
-use reth_transaction_pool::blobstore::DiskFileBlobStore;
-use taiko_reth_beacon_consensus::{TaikoBeaconConsensus, TaikoEngineValidator};
-use taiko_reth_chainspec::TaikoChainSpec;
-use taiko_reth_engine_primitives::{TaikoBuiltPayload, TaikoEngineTypes, TaikoPayloadAttributes, TaikoPayloadBuilderAttributes};
+use reth_transaction_pool::{
+    blobstore::DiskFileBlobStore, CoinbaseTipOrdering, EthTransactionPool, TransactionPool,
+    TransactionValidationTaskExecutor,
+};
+use std::sync::Arc;
+use taiko_reth_beacon_consensus::TaikoBeaconConsensus;
 use taiko_reth_evm::{TaikoEvmConfig, TaikoExecutorProvider};
 
 /// Type configuration for a regular Ethereum node.
@@ -38,12 +47,8 @@ impl TaikoNode {
         TaikoEngineValidatorBuilder,
     >
     where
-
-        Node: FullNodeTypes<Types: NodeTypes<ChainSpec=TaikoChainSpec>>,
-        <Node::Types as NodeTypesWithEngine>::Engine: PayloadTypes<
-            BuiltPayload=TaikoBuiltPayload,
-            PayloadAttributes=TaikoPayloadAttributes,
-            PayloadBuilderAttributes=TaikoPayloadBuilderAttributes,
+        Node: FullNodeTypes<
+            Types: NodeTypesWithEngine<Engine = TaikoEngineTypes, ChainSpec = ChainSpec>,
         >,
     {
         ComponentsBuilder::default()
@@ -57,9 +62,34 @@ impl TaikoNode {
     }
 }
 
+impl<N> Node<N> for TaikoNode
+where
+    N: FullNodeTypes<Types: NodeTypesWithEngine<Engine = TaikoEngineTypes, ChainSpec = ChainSpec>>,
+{
+    type ComponentsBuilder = ComponentsBuilder<
+        N,
+        TaikoPoolBuilder,
+        TaikoPayloadBuilder,
+        TaikoNetworkBuilder,
+        TaikoExecutorBuilder,
+        TaikoConsensusBuilder,
+        TaikoEngineValidatorBuilder,
+    >;
+
+    type AddOns = TaikoAddOns;
+
+    fn components_builder(&self) -> Self::ComponentsBuilder {
+        Self::components()
+    }
+
+    fn add_ons(&self) -> Self::AddOns {
+        TaikoAddOns::default()
+    }
+}
+
 impl NodeTypes for TaikoNode {
     type Primitives = ();
-    type ChainSpec = TaikoChainSpec;
+    type ChainSpec = ChainSpec;
 }
 impl NodeTypesWithEngine for TaikoNode {
     type Engine = TaikoEngineTypes;
@@ -74,29 +104,27 @@ impl<N: FullNodeComponents> NodeAddOns<N> for TaikoAddOns {
     type EthApi = EthApi<N::Provider, N::Pool, NetworkHandle, N::Evm>;
 }
 
-impl<Types, N> Node<N> for TaikoNode
+/// A regular ethereum evm and executor builder.
+#[derive(Debug, Default, Clone, Copy)]
+#[non_exhaustive]
+pub struct TaikoExecutorBuilder;
+
+impl<Node> ExecutorBuilder<Node> for TaikoExecutorBuilder
 where
-    Types: NodeTypesWithEngine<Engine=TaikoEngineTypes, ChainSpec=TaikoChainSpec>,
-    N: FullNodeTypes<Types=Types>,
+    Node: FullNodeTypes<Types: NodeTypes<ChainSpec = ChainSpec>>,
 {
-    type ComponentsBuilder = ComponentsBuilder<
-        N,
-        TaikoPoolBuilder,
-        TaikoPayloadBuilder,
-        TaikoNetworkBuilder,
-        TaikoExecutorBuilder,
-        TaikoConsensusBuilder,
-        TaikoEngineValidatorBuilder,
-    >;
+    type EVM = TaikoEvmConfig;
+    type Executor = TaikoExecutorProvider<Self::EVM>;
 
-    type AddOns = TaikoAddOns;
+    async fn build_evm(
+        self,
+        ctx: &BuilderContext<Node>,
+    ) -> eyre::Result<(Self::EVM, Self::Executor)> {
+        let chain_spec = ctx.chain_spec();
+        let evm_config = TaikoEvmConfig::default();
+        let executor = TaikoExecutorProvider::new(chain_spec, evm_config.clone());
 
-    fn components_builder(self) -> Self::ComponentsBuilder {
-        Self::components()
-    }
-
-    fn add_ons(&self) -> Self::AddOns {
-        TaikoAddOns::default()
+        Ok((evm_config, executor))
     }
 }
 
@@ -108,10 +136,9 @@ where
 #[non_exhaustive]
 pub struct TaikoPoolBuilder;
 
-impl<Types, Node> PoolBuilder<Node> for TaikoPoolBuilder
+impl<Node> PoolBuilder<Node> for TaikoPoolBuilder
 where
-    Types: NodeTypes<ChainSpec=TaikoChainSpec>,
-    Node: FullNodeTypes<Types=Types>,
+    Node: FullNodeTypes<Types: NodeTypes<ChainSpec = ChainSpec>>,
 {
     type Pool = EthTransactionPool<Node::Provider, DiskFileBlobStore>;
 
@@ -119,7 +146,7 @@ where
         let data_dir = ctx.config().datadir();
         let pool_config = ctx.pool_config();
         let blob_store = DiskFileBlobStore::open(data_dir.blobstore(), Default::default())?;
-        let validator = TransactionValidationTaskExecutor::eth_builder(ctx.chain_spec().inner.clone())
+        let validator = TransactionValidationTaskExecutor::eth_builder(ctx.chain_spec())
             .with_head_timestamp(ctx.head().timestamp)
             .kzg_settings(ctx.kzg_settings()?)
             .with_local_transactions_config(pool_config.local_transactions_config.clone())
@@ -177,26 +204,21 @@ where
 #[non_exhaustive]
 pub struct TaikoPayloadBuilder;
 
-impl<Types, Node, Pool> PayloadServiceBuilder<Node, Pool> for TaikoPayloadBuilder
+impl<Node, Pool> PayloadServiceBuilder<Node, Pool> for TaikoPayloadBuilder
 where
-    Types: NodeTypesWithEngine<ChainSpec=TaikoChainSpec>,
-    Node: FullNodeTypes<Types=Types>,
+    Node:
+        FullNodeTypes<Types: NodeTypesWithEngine<Engine = TaikoEngineTypes, ChainSpec = ChainSpec>>,
     Pool: TransactionPool + Unpin + 'static,
-    Types::Engine: PayloadTypes<
-        BuiltPayload=TaikoBuiltPayload,
-        PayloadAttributes=TaikoPayloadAttributes,
-        PayloadBuilderAttributes=TaikoPayloadBuilderAttributes,
-    >,
 {
     async fn spawn_payload_service(
         self,
         ctx: &BuilderContext<Node>,
         pool: Pool,
-    ) -> eyre::Result<PayloadBuilderHandle<Types::Engine>> {
+    ) -> eyre::Result<PayloadBuilderHandle<TaikoEngineTypes>> {
         let chain_spec = ctx.chain_spec();
         let evm_config = TaikoEvmConfig::default();
         let payload_builder =
-            taiko_reth_payload_builder::TaikoPayloadBuilder::new(evm_config, chain_spec.inner.clone());
+            taiko_reth_payload_builder::TaikoPayloadBuilder::new(evm_config, chain_spec);
         let conf = ctx.payload_builder_config();
 
         let payload_job_config = BasicPayloadJobGeneratorConfig::default()
@@ -210,7 +232,7 @@ where
             pool,
             ctx.task_executor().clone(),
             payload_job_config,
-            ctx.chain_spec(),
+            payload_builder,
         );
         let (payload_service, payload_builder) =
             PayloadBuilderService::new(payload_generator, ctx.provider().canonical_state_stream());
@@ -223,13 +245,12 @@ where
 
 /// A basic ethereum payload service.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct TaikoNetworkBuilder {
-    // TODO add closure to modify network
-}
+#[non_exhaustive]
+pub struct TaikoNetworkBuilder;
 
 impl<Node, Pool> NetworkBuilder<Node, Pool> for TaikoNetworkBuilder
 where
-    Node: FullNodeTypes<Types: NodeTypes<ChainSpec=TaikoChainSpec>>,
+    Node: FullNodeTypes<Types: NodeTypes<ChainSpec = ChainSpec>>,
     Pool: TransactionPool + Unpin + 'static,
 {
     async fn build_network(
@@ -244,40 +265,14 @@ where
     }
 }
 
-/// A regular ethereum evm and executor builder.
-#[derive(Debug, Default, Clone, Copy)]
-#[non_exhaustive]
-pub struct TaikoExecutorBuilder;
-
-impl<Types, Node> ExecutorBuilder<Node> for TaikoExecutorBuilder
-where
-    Types: NodeTypesWithEngine<ChainSpec=TaikoChainSpec>,
-    Node: FullNodeTypes<Types=Types>,
-{
-    type EVM = TaikoEvmConfig;
-    type Executor = TaikoExecutorProvider<Self::EVM>;
-
-    async fn build_evm(
-        self,
-        ctx: &BuilderContext<Node>,
-    ) -> eyre::Result<(Self::EVM, Self::Executor)> {
-        let chain_spec = ctx.chain_spec();
-        let evm_config = TaikoEvmConfig::default();
-        let executor = TaikoExecutorProvider::new(chain_spec, evm_config);
-
-        Ok((evm_config, executor))
-    }
-}
-
 /// A basic ethereum consensus builder.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct TaikoConsensusBuilder {
-    // TODO add closure to modify consensus
-}
+#[non_exhaustive]
+pub struct TaikoConsensusBuilder;
 
 impl<Node> ConsensusBuilder<Node> for TaikoConsensusBuilder
 where
-    Node: FullNodeTypes<Types: NodeTypes<ChainSpec=TaikoChainSpec>>,
+    Node: FullNodeTypes<Types: NodeTypes<ChainSpec = ChainSpec>>,
 {
     type Consensus = Arc<dyn reth_consensus::Consensus>;
 
@@ -297,8 +292,8 @@ pub struct TaikoEngineValidatorBuilder;
 
 impl<Node, Types> EngineValidatorBuilder<Node> for TaikoEngineValidatorBuilder
 where
-    Types: NodeTypesWithEngine<ChainSpec=TaikoChainSpec>,
-    Node: FullNodeTypes<Types=Types>,
+    Types: NodeTypesWithEngine<ChainSpec = ChainSpec>,
+    Node: FullNodeTypes<Types = Types>,
     TaikoEngineValidator: EngineValidator<Types::Engine>,
 {
     type Validator = TaikoEngineValidator;

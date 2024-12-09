@@ -35,7 +35,7 @@ pub mod dao_fork;
 pub mod eip6110;
 
 /// Ethereum-related EVM configuration.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EthEvmConfig {
     chain_spec: Arc<ChainSpec>,
 }
