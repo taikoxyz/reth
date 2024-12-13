@@ -81,10 +81,12 @@ where
     let state = StateProviderDatabase::new(state_provider);
     let mut sync_state = SyncStateProviderDatabase::new(Some(chain_spec.chain().id()), state);
 
-    let (l1_id, l1_provider) = attributes.l1_provider.unwrap();
-    let l1_box: Box<dyn StateProvider> = Box::new(l1_provider);
-    let l1_state = StateProviderDatabase::new(l1_box);
-    sync_state.add_db(l1_id, l1_state);
+    // Add all external state dependencies
+    for (&chain_id, provider) in attributes.providers.iter() {
+        let boxed: Box<dyn StateProvider> = Box::new(provider);
+        let state_provider = StateProviderDatabase::new(boxed);
+        sync_state.add_db(chain_id, state_provider);
+    }
 
     let mut sync_cached_reads = to_sync_cached_reads(cached_reads, chain_spec.chain.id());
     let mut sync_db = State::builder()

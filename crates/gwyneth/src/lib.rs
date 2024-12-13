@@ -1,5 +1,5 @@
 //! Ethereum Node types config.
-use std::{fmt::Debug, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use builder::default_gwyneth_payload_builder;
 use reth_evm_ethereum::EthEvmConfig;
@@ -113,7 +113,7 @@ pub struct GwynethPayloadBuilderAttributes<SyncProvider> {
     /// The gas limit for the generated payload
     pub gas_limit: Option<u64>,
 
-    pub l1_provider: Option<(ChainId, SyncProvider)>,
+    pub providers: HashMap<ChainId, SyncProvider>,
 }
 
 impl<SyncProvider: Debug + Sync + Send> PayloadBuilderAttributes
@@ -137,7 +137,7 @@ impl<SyncProvider: Debug + Sync + Send> PayloadBuilderAttributes
             inner: EthPayloadBuilderAttributes::new(parent, attributes.inner),
             transactions,
             gas_limit: attributes.gas_limit,
-            l1_provider: None,
+            providers: HashMap::default(),
         })
     }
 

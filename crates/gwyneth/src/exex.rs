@@ -21,7 +21,7 @@ use reth_primitives::{
     address, Address, SealedBlock, SealedBlockWithSenders, TransactionSigned, B256, U256,
 };
 use reth_provider::{
-    providers::BlockchainProvider, CanonStateSubscriptions, DatabaseProviderFactory,
+    providers::BlockchainProvider, BlockNumReader, CanonStateSubscriptions, DatabaseProviderFactory,
 };
 use reth_rpc_types::engine::PayloadStatusEnum;
 use reth_transaction_pool::{
@@ -152,8 +152,22 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
 
                 let mut builder_attrs =
                     GwynethPayloadBuilderAttributes::try_new(B256::ZERO, attrs).unwrap();
-                builder_attrs.l1_provider =
-                    Some((self.ctx.config.chain.chain().id(), Arc::new(l1_state_provider)));
+                builder_attrs.providers.insert(self.ctx.config.chain.chain().id(), Arc::new(l1_state_provider));
+
+                // Add all other L2 dbs for now as well until dependencies are broken
+                for node in self.nodes.iter() {
+                    let chain_id = node.config.chain.chain().id();
+                    if chain_id != node_chain_id {
+                        let state_provider = node
+                            .provider
+                            .database_provider_ro()
+                            .unwrap();
+                        let last_block_number = state_provider.last_block_number()?;
+                        let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+
+                        builder_attrs.providers.insert(chain_id, Arc::new(state_provider));
+                    }
+                }
 
                 let payload_id = builder_attrs.inner.payload_id();
                 let parrent_beacon_block_root =
@@ -181,6 +195,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                         }
                     } else {
                         println!("Gwyneth: No block?");
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                         continue;
                     }
                     break;
