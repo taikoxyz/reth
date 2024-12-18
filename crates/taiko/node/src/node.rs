@@ -4,26 +4,23 @@ use crate::engine::TaikoEngineTypes;
 use crate::TaikoEngineValidator;
 use reth_auto_seal_consensus::AutoSealConsensus;
 use reth_basic_payload_builder::{BasicPayloadJobGenerator, BasicPayloadJobGeneratorConfig};
-use reth_chainspec::{ChainSpec, EthChainSpec, Hardforks};
-use reth_ethereum_payload_builder::EthereumPayloadBuilder;
-use reth_evm::ConfigureEvm;
-use reth_network::{NetworkConfig, NetworkHandle, NetworkManager};
+use reth_chainspec::ChainSpec;
+use reth_network::NetworkHandle;
 use reth_node_api::{EngineValidator, FullNodeComponents, NodeAddOns};
 use reth_node_builder::{
     components::{
         ComponentsBuilder, ConsensusBuilder, EngineValidatorBuilder, ExecutorBuilder,
-        NetworkBuilder, PayloadServiceBuilder, PoolBuilder, PoolBuilderConfigOverrides,
+        NetworkBuilder, PayloadServiceBuilder, PoolBuilder,
     },
     node::{FullNodeTypes, NodeTypes, NodeTypesWithEngine},
     BuilderContext, Node, PayloadBuilderConfig,
 };
 use reth_payload_builder::{PayloadBuilderHandle, PayloadBuilderService};
-use reth_primitives::Header;
 use reth_provider::CanonStateSubscriptions;
 use reth_rpc::EthApi;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{
-    blobstore::DiskFileBlobStore, CoinbaseTipOrdering, EthTransactionPool, TransactionPool,
+    blobstore::DiskFileBlobStore, EthTransactionPool, TransactionPool,
     TransactionValidationTaskExecutor,
 };
 use std::sync::Arc;
@@ -286,6 +283,7 @@ where
     }
 }
 
+/// A basic ethereum engine validator builder.
 #[derive(Debug, Default, Clone, Copy)]
 #[non_exhaustive]
 pub struct TaikoEngineValidatorBuilder;

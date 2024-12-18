@@ -5,6 +5,7 @@ use reth_consensus::{Consensus, ConsensusError, PostExecutionInput};
 use reth_primitives::revm_primitives::U256;
 use reth_primitives::{BlockWithSenders, Header, SealedBlock, SealedHeader};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 /// Taiko beacon consensus
 ///

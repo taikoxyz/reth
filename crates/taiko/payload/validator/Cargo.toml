@@ -9,6 +9,13 @@ repository.workspace = true
 exclude.workspace = true
 
 [dependencies]
+# reth
+reth-chainspec.workspace = true
+reth-primitives.workspace = true
+
+# alloy
+alloy-rpc-types.workspace = true
+alloy-rpc-types-engine.workspace = true
 
 [lints]
 workspace = true

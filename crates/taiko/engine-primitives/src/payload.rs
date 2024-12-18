@@ -1,18 +1,23 @@
 //! Payload related types
 
-use std::convert::Infallible;
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
-use alloy_rpc_types_engine::{ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4, ExecutionPayloadV1, ExecutionPayloadV2, PayloadAttributes, PayloadId};
+use alloy_rpc_types_engine::{
+    ExecutionPayload, ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4, ExecutionPayloadV1,
+    ExecutionPayloadV2, PayloadAttributes, PayloadId,
+};
 use reth_ethereum_engine_primitives::EthPayloadBuilderAttributes;
+use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadBuilderAttributes};
 use reth_primitives::revm_primitives::{Address, Bytes, B256, U256};
 use reth_primitives::{BlobTransactionSidecar, SealedBlock, Withdrawals};
-use taiko_reth_primitives::L1Origin;
+use reth_rpc_types_compat::engine::block_to_payload_v1;
+use reth_rpc_types_compat::engine::payload::{
+    block_to_payload_v2, block_to_payload_v3, block_to_payload_v4,
+};
 use serde::{Deserialize, Serialize};
 use serde_with::base64::Base64;
 use serde_with::serde_as;
-use reth_payload_primitives::{BuiltPayload, EngineApiMessageVersion, PayloadBuilderAttributes};
-use reth_rpc_types_compat::engine::block_to_payload_v1;
-use reth_rpc_types_compat::engine::payload::{block_to_payload_v2, block_to_payload_v3, block_to_payload_v4};
+use std::convert::Infallible;
+use taiko_reth_primitives::L1Origin;
 
 /// Contains the built payload.
 #[derive(Debug, Clone)]
@@ -168,9 +173,13 @@ impl PayloadBuilderAttributes for TaikoPayloadBuilderAttributes {
     type RpcPayloadAttributes = TaikoPayloadAttributes;
     type Error = Infallible;
 
-    fn try_new(parent: B256, attributes: TaikoPayloadAttributes, version: EngineApiMessageVersion) -> Result<Self, Self::Error>
+    fn try_new(
+        parent: B256,
+        attributes: TaikoPayloadAttributes,
+        version: EngineApiMessageVersion,
+    ) -> Result<Self, Self::Error>
     where
-        Self: Sized
+        Self: Sized,
     {
         let id = payload_id(&parent, &attributes, version);
 
@@ -193,31 +202,31 @@ impl PayloadBuilderAttributes for TaikoPayloadBuilderAttributes {
     }
 
     fn payload_id(&self) -> alloy_rpc_types_engine::payload::PayloadId {
-        todo!()
+        self.payload_attributes.id
     }
 
     fn parent(&self) -> B256 {
-        todo!()
+        self.payload_attributes.parent
     }
 
     fn timestamp(&self) -> u64 {
-        todo!()
+        self.payload_attributes.timestamp
     }
 
     fn parent_beacon_block_root(&self) -> Option<B256> {
-        todo!()
+        self.payload_attributes.parent_beacon_block_root
     }
 
     fn suggested_fee_recipient(&self) -> Address {
-        todo!()
+        self.payload_attributes.suggested_fee_recipient
     }
 
     fn prev_randao(&self) -> B256 {
-        todo!()
+        self.payload_attributes.prev_randao
     }
 
     fn withdrawals(&self) -> &Withdrawals {
-        todo!()
+        &self.payload_attributes.withdrawals
     }
 }
 
@@ -267,6 +276,49 @@ impl From<TaikoBuiltPayload> for TaikoExecutionPayloadEnvelopeV2 {
     fn from(value: TaikoBuiltPayload) -> Self {
         let fees = value.fees;
         Self { execution_payload: value.into(), block_value: fees }
+    }
+}
+
+/// An tiako execution payload
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TaikoExecutionPayload {
+    /// Inner V3 payload
+    #[serde(flatten)]
+    pub payload_inner: ExecutionPayload,
+
+    /// Allow passing txHash directly instead of transactions list
+    pub tx_hash: B256,
+    /// Allow passing `WithdrawalsHash` directly instead of withdrawals
+    pub withdrawals_hash: B256,
+}
+
+impl TaikoExecutionPayload {
+    /// Returns the block hash
+    pub const fn block_hash(&self) -> B256 {
+        self.payload_inner.block_hash()
+    }
+
+    /// Returns the block number
+    pub const fn block_number(&self) -> u64 {
+        self.payload_inner.block_number()
+    }
+
+    /// Returns the parent hash
+    pub const fn parent_hash(&self) -> B256 {
+        self.payload_inner.parent_hash()
+    }
+}
+
+impl From<(ExecutionPayload, B256, B256)> for TaikoExecutionPayload {
+    fn from((payload_inner, tx_hash, withdrawals_hash): (ExecutionPayload, B256, B256)) -> Self {
+        Self { payload_inner, tx_hash, withdrawals_hash }
+    }
+}
+
+impl From<ExecutionPayload> for TaikoExecutionPayload {
+    fn from(value: ExecutionPayload) -> Self {
+        Self { payload_inner: value, tx_hash: B256::default(), withdrawals_hash: B256::default() }
     }
 }
 

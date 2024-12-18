@@ -14,14 +14,14 @@
 )]
 
 mod spec;
+pub use spec::*;
 pub mod taiko;
+pub use taiko::*;
 
-use crate::spec::TAIKO_INTERNAL_L2_A;
-use crate::taiko::{get_taiko_genesis, TaikoNamedChain};
 use alloy_genesis::Genesis;
 use derive_more::Into;
 use eyre::bail;
-use reth_chainspec::{ChainSpec, EthChainSpec, EthereumHardforks, Hardfork, Hardforks};
+use reth_chainspec::ChainSpec;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -36,10 +36,18 @@ pub fn chain_value_parser(s: &str) -> eyre::Result<Arc<ChainSpec>, eyre::Error> 
         _ => {
             if let Ok(chain_id) = s.parse::<u64>() {
                 if let Ok(chain) = TaikoNamedChain::try_from(chain_id) {
-                    let genesis = get_taiko_genesis(chain);
-                    Arc::new(genesis.into())
+                    match chain {
+                        TaikoNamedChain::Mainnet => TAIKO_MAINNET.clone(),
+                        TaikoNamedChain::TaikoInternalL2a => TAIKO_INTERNAL_L2_A.clone(),
+                        TaikoNamedChain::Katla => TAIKO_TESTNET.clone(),
+                        TaikoNamedChain::Hekla => TAIKO_HEKLA.clone(),
+                        _ => {
+                            let genesis = get_taiko_genesis(chain);
+                            Arc::new(genesis.into())
+                        }
+                    }
                 } else {
-                    bail!("Invalid taiko chain id")
+                    bail!("Invalid taiko chain id: {}", chain_id)
                 }
             } else {
                 // try to read json from path first
@@ -64,12 +72,3 @@ pub fn chain_value_parser(s: &str) -> eyre::Result<Arc<ChainSpec>, eyre::Error> 
         }
     })
 }
-
-/*hardfork!(
-    TaikoHardFork {
-        /// Hekla: the 1st taiko mainnet version: <>
-        Hekla,
-        /// Ontake: the 2nd taiko mainnet fork: <>
-        Ontake,
-    }
-);*/

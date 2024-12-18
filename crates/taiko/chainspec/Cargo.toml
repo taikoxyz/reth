@@ -29,6 +29,7 @@ schemars = { version = "0.8.21", optional = true }
 eyre.workspace = true
 reth-chainspec.workspace = true
 shellexpand.workspace = true
+taiko-reth-forks.workspace = true
 
 [features]
 default = ["std", "serde", "dep:alloy-serde", "dep:strum", "dep:num_enum"]

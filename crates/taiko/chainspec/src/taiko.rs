@@ -3,11 +3,12 @@ use std::collections::BTreeMap;
 
 use alloy_chains::Chain;
 use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
-use once_cell::sync::Lazy;
-use reth_ethereum_forks::{ChainHardforks, EthereumHardfork, ForkCondition};
-use serde::{Deserialize, Serialize};
-use std::io;
 use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
+use core::{fmt, fmt::Formatter, str::FromStr};
+use once_cell::sync::Lazy;
+use reth_ethereum_forks::{hardfork, ChainHardforks, EthereumHardfork, ForkCondition, Hardfork};
+use serde::{Deserialize, Serialize};
+use taiko_reth_forks::TaikoHardFork;
 
 /// The internal devnet ontake height.
 pub const INTERNAL_DEVNET_ONTAKE_BLOCK: u64 = 2;
@@ -48,8 +49,7 @@ static TAIKO_CHAIN_CONFIG: Lazy<ChainConfig> = Lazy::new(|| ChainConfig {
 });
 
 /// The named chains for Taiko.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(strum::IntoStaticStr)] // NamedChain::VARIANTS
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, strum::IntoStaticStr)] // NamedChain::VARIANTS
 #[derive(strum::VariantNames)] // NamedChain::VARIANTS
 #[derive(strum::VariantArray)] // NamedChain::VARIANTS
 #[derive(strum::EnumString)] // FromStr, TryFrom<&str>
@@ -142,42 +142,6 @@ pub fn get_taiko_genesis(chain: TaikoNamedChain) -> Genesis {
         excess_blob_gas: None,
         blob_gas_used: None,
         number: None,
-    }
-}
-
-pub fn get_taiko_hardforks(chain: TaikoNamedChain) -> Option<ChainHardforks> {
-    match chain {
-        TaikoNamedChain::Mainnet => Option::from(ChainHardforks::new(vec![])),
-        TaikoNamedChain::TaikoInternalL2a => {
-            Option::from(ChainHardforks::new(vec![
-                (EthereumHardfork::Frontier.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Homestead.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Dao.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Tangerine.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::SpuriousDragon.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Byzantium.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
-                (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
-                (
-                    EthereumHardfork::Paris.boxed(),
-                    ForkCondition::TTD {
-                        fork_block: None,
-                        total_difficulty: alloy_primitives::U256::from(0),
-                    },
-                ),
-                (EthereumHardfork::Shanghai.boxed(), ForkCondition::Timestamp(0)),
-                // #[cfg(feature = "taiko")]
-                // (TaikoHardFork::Hekla.boxed(), ForkCondition::Block(0)),
-                // #[cfg(feature = "taiko")]
-                // (TaikoHardFork::Ontake.boxed(), ForkCondition::Block(2)), //todo
-            ]))
-        }
-        TaikoNamedChain::Katla => Option::from(ChainHardforks::new(vec![])),
-        TaikoNamedChain::Hekla => Option::from(ChainHardforks::new(vec![])),
-        _ => None,
     }
 }
 
