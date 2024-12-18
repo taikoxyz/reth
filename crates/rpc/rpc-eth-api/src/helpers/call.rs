@@ -891,7 +891,7 @@ pub trait Call: LoadState + SpawnBlocking {
             ..
         } = request;
 
-        let chain_id_inner = chain_id.unwrap_or(ETHEREUM_CHAIN_ID);
+        let chain_id_inner = chain_id.unwrap_or(L1_CHAIN_ID); //Todo: fix long term - no default for simulated call()!
         let CallFees { max_priority_fee_per_gas, gas_price, max_fee_per_blob_gas } =
             CallFees::ensure_fees(
                 gas_price.map(U256::from),
