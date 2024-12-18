@@ -585,6 +585,11 @@ pub trait Call: LoadState + SpawnBlocking {
         // set nonce to None so that the correct nonce is chosen by the EVM
         request.nonce = None;
 
+        // set chain_id to the config chain id if unknown
+        if request.chain_id == None {
+            request.chain_id = Some(cfg.chain_id);
+        }
+
         // Keep a copy of gas related request values
         let tx_request_gas_limit = request.gas;
         let tx_request_gas_price = request.gas_price;
@@ -891,7 +896,7 @@ pub trait Call: LoadState + SpawnBlocking {
             ..
         } = request;
 
-        let chain_id_inner = chain_id.unwrap_or(L1_CHAIN_ID); //Todo: fix long term - no default for simulated call()!
+        let chain_id_inner = chain_id.expect("chain id unknown");
         let CallFees { max_priority_fee_per_gas, gas_price, max_fee_per_blob_gas } =
             CallFees::ensure_fees(
                 gas_price.map(U256::from),
@@ -921,7 +926,7 @@ pub trait Call: LoadState + SpawnBlocking {
                 .try_into_unique_input()
                 .map_err(Self::Error::from_eth_err)?
                 .unwrap_or_default(),
-                chain_ids: Some(std::iter::once(L1_CHAIN_ID)
+            chain_ids: Some(std::iter::once(L1_CHAIN_ID)
                 .chain((0..NUM_L2_CHAINS)
                 .map(|i| BASE_CHAIN_ID + i))
                 .collect::<Vec<u64>>()),
