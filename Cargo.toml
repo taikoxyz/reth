@@ -151,6 +151,21 @@ members = [
     "examples/custom-beacon-withdrawals",
     "testing/ef-tests/",
     "testing/testing-utils",
+
+    # taiko
+    "crates/taiko/consensus/consensus",
+    "crates/taiko/consensus/proposer",
+    "crates/taiko/engine-primitives/",
+    "crates/taiko/evm",
+    "crates/taiko/bin",
+    "crates/taiko/cli",
+    "crates/taiko/node",
+    "crates/taiko/rpc",
+    "crates/taiko/payload/builder",
+    "crates/taiko/payload/validator",
+    "crates/taiko/primitives/",
+    "crates/taiko/storage/",
+    "crates/taiko/chainspec",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]
@@ -343,7 +358,7 @@ reth-ethereum-consensus = { path = "crates/ethereum/consensus" }
 reth-ethereum-engine-primitives = { path = "crates/ethereum/engine-primitives" }
 reth-ethereum-forks = { path = "crates/ethereum-forks", default-features = false }
 reth-ethereum-payload-builder = { path = "crates/ethereum/payload" }
-reth-ethereum-primitives = { path = "crates/ethereum/primitives", default-features = false  }
+reth-ethereum-primitives = { path = "crates/ethereum/primitives", default-features = false }
 reth-etl = { path = "crates/etl" }
 reth-evm = { path = "crates/evm" }
 reth-evm-ethereum = { path = "crates/ethereum/evm" }
@@ -425,6 +440,23 @@ reth-trie-parallel = { path = "crates/trie/parallel" }
 reth-trie-sparse = { path = "crates/trie/sparse" }
 reth-zstd-compressors = { path = "crates/storage/zstd-compressors", default-features = false }
 
+# taiko
+taiko-reth = { path = "crates/taiko/bin" }
+reth-taiko-cli = { path = "crates/taiko/cli" }
+reth-taiko-beacon-consensus = { path = "crates/taiko/consensus/consensus" }
+reth-taiko-proposer-consensus = { path = "crates/taiko/consensus/proposer" }
+reth-taiko-primitives = { path = "crates/taiko/primitives" }
+reth-taiko-provider = { path = "crates/taiko/storage" }
+reth-taiko-evm = { path = "crates/taiko/evm" }
+reth-taiko-payload-builder = { path = "crates/taiko/payload/builder" }
+reth-taiko-payload-validator = { path = "crates/taiko/payload/validator" }
+reth-taiko-engine-primitives = { path = "crates/taiko/engine-primitives" }
+reth-taiko-node = { path = "crates/taiko/node" }
+reth-taiko-chainspec = { path = "crates/taiko/chainspec" }
+reth-taiko-forks = { path = "crates/taiko/hardforks" }
+reth-taiko-rpc = { path = "crates/taiko/rpc" }
+flate2 = "1.0.35"
+
 # revm
 revm = { version = "18.0.0", features = ["std"], default-features = false }
 revm-inspectors = "0.12.0"
@@ -495,7 +527,7 @@ cfg-if = "1.0"
 clap = "4"
 const_format = { version = "0.2.32", features = ["rust_1_64"] }
 dashmap = "6.0"
-derive_more = { version = "1",  default-features = false,  features = ["full"] }
+derive_more = { version = "1", default-features = false, features = ["full"] }
 dyn-clone = "1.0.17"
 eyre = "0.6"
 fdlimit = "0.3.0"
@@ -647,3 +679,14 @@ tracy-client = "0.17.3"
 # op-alloy-network = { git = "https://github.com/alloy-rs/op-alloy", rev = "debfc29" }
 # op-alloy-rpc-types = { git = "https://github.com/alloy-rs/op-alloy", rev = "debfc29" }
 # op-alloy-rpc-types-engine = { git = "https://github.com/alloy-rs/op-alloy", rev = "debfc29" }
+
+[patch.crates-io]
+revm = { git = "https://github.com/taikoxyz/revm.git", branch = "v50-taiko" }
+revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "v50-taiko" }
+revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "v50-taiko" }
+revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "v50-taiko" }
+c-kzg = { git = "https://github.com/brechtpd/c-kzg-4844", branch = "for-alpha7" }
+secp256k1 = { git = "https://github.com/CeciliaZ030/rust-secp256k1", branch = "sp1-patch" }
+
+[patch.'https://github.com/bluealloy/revm.git']
+revm = { git = "https://github.com/taikoxyz/revm.git", branch = "v50-taiko" }

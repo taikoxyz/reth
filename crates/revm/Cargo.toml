@@ -36,6 +36,7 @@ alloy-consensus.workspace = true
 
 [features]
 default = ["std"]
+taiko = ["revm/taiko"]
 std = [
 	"reth-primitives/std",
 	"alloy-primitives/std",

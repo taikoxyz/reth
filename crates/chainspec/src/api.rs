@@ -60,6 +60,12 @@ pub trait EthChainSpec: Send + Sync + Unpin + Debug {
         self.chain().is_optimism()
     }
 
+    /// Return `true` if this chain contains Taiko configuration.
+    fn is_taiko(&self) -> bool {
+        let id = self.chain().id();
+        (167000..=168000).contains(&id)
+    }
+
     /// Returns `true` if this chain contains Ethereum configuration.
     fn is_ethereum(&self) -> bool {
         self.chain().is_ethereum()

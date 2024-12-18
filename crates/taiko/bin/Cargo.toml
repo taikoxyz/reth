@@ -1,0 +1,50 @@
+[package]
+name = "taiko-reth"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+reth-node-builder = { workspace = true, features = ["js-tracer"] }
+reth-cli-util.workspace = true
+reth-taiko-cli.workspace = true
+reth-provider.workspace = true
+reth-taiko-rpc.workspace = true
+reth-taiko-node.workspace = true
+reth-taiko-chainspec.workspace = true
+reth-taiko-beacon-consensus.workspace = true
+reth-taiko-evm.workspace = true
+reth-taiko-payload-builder.workspace = true
+reth-taiko-primitives.workspace = true
+reth-taiko-forks.workspace = true
+
+clap = { workspace = true, features = ["derive", "env"] }
+tracing.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["jemalloc"]
+
+jemalloc = ["reth-cli-util/jemalloc", "reth-taiko-cli/jemalloc"]
+jemalloc-prof = ["reth-cli-util/jemalloc-prof"]
+tracy-allocator = ["reth-cli-util/tracy-allocator"]
+
+asm-keccak = ["reth-taiko-cli/asm-keccak"]
+
+dev = ["reth-taiko-cli/dev"]
+
+min-error-logs = ["tracing/release_max_level_error"]
+min-warn-logs = ["tracing/release_max_level_warn"]
+min-info-logs = ["tracing/release_max_level_info"]
+min-debug-logs = ["tracing/release_max_level_debug"]
+min-trace-logs = ["tracing/release_max_level_trace"]
+
+[[bin]]
+name = "taiko-reth"
+path = "src/main.rs"
