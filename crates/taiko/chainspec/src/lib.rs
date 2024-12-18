@@ -299,11 +299,11 @@ impl EthereumHardforks for TaikoChainSpec {
 impl TaikoHardforks for TaikoChainSpec {}
 
 /// The internal devnet ontake height.
-const INTERNAL_DEVNET_ONTAKE_BLOCK: u64 = 2;
+const INTERNAL_DEVNET_ONTAKE_BLOCK: u64 = 0;
 /// The hekla ontake height.
 const HEKLA_ONTAKE_BLOCK: u64 = 840_512;
 /// The mainnet ontake height.
-const MAINNET_ONTAKE_BLOCK: u64 = 9_000_000;
+const MAINNET_ONTAKE_BLOCK: u64 = 538_304;
 
 impl From<Genesis> for TaikoChainSpec {
     fn from(genesis: Genesis) -> Self {
