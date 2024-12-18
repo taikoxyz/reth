@@ -13,6 +13,11 @@ exclude.workspace = true
 reth-chainspec = { workspace = true, features = ["taiko"] }
 reth-primitives = { workspace = true, features = ["taiko"] }
 reth-consensus.workspace = true
+reth-consensus-common.workspace = true
+
+# alloy
+alloy-primitives.workspace = true
+tracing.workspace = true
 
 [lints]
 workspace = true
