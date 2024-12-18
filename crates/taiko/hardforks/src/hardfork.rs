@@ -54,6 +54,24 @@ impl TaikoHardfork {
         }
     }
 
+    // var TaikoChainConfig = &ChainConfig{
+    //     ChainID:                       TaikoInternalL2ANetworkID, // Use Internal Devnet network ID by default.
+    //     HomesteadBlock:                common.Big0,
+    //     EIP150Block:                   common.Big0,
+    //     EIP155Block:                   common.Big0,
+    //     EIP158Block:                   common.Big0,
+    //     ByzantiumBlock:                common.Big0,
+    //     ConstantinopleBlock:           common.Big0,
+    //     PetersburgBlock:               common.Big0,
+    //     IstanbulBlock:                 common.Big0,
+    //     BerlinBlock:                   common.Big0,
+    //     LondonBlock:                   common.Big0,
+    //     ShanghaiTime:                  u64(0),
+    //     MergeNetsplitBlock:            nil,
+    //     TerminalTotalDifficulty:       common.Big0,
+    //     TerminalTotalDifficultyPassed: true,
+    //     Taiko:                         true,
+    // }
     /// Retrieves the activation block for the specified hardfork on the Base Internal testnet.
     pub fn base_internal_activation_block<H: Hardfork>(fork: H) -> Option<u64> {
         match_hardfork(
@@ -61,18 +79,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -88,18 +102,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -115,18 +125,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -142,15 +148,11 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
-                | EthereumHardfork::MuirGlacier
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 EthereumHardfork::Istanbul => Some(1561651),
@@ -169,18 +171,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -196,18 +194,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -223,18 +217,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -250,18 +240,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -277,18 +263,14 @@ impl TaikoHardfork {
             |fork| match fork {
                 EthereumHardfork::Frontier
                 | EthereumHardfork::Homestead
-                | EthereumHardfork::Dao
                 | EthereumHardfork::Tangerine
                 | EthereumHardfork::SpuriousDragon
                 | EthereumHardfork::Byzantium
                 | EthereumHardfork::Constantinople
                 | EthereumHardfork::Petersburg
                 | EthereumHardfork::Istanbul
-                | EthereumHardfork::MuirGlacier
                 | EthereumHardfork::Berlin
                 | EthereumHardfork::London
-                | EthereumHardfork::ArrowGlacier
-                | EthereumHardfork::GrayGlacier
                 | EthereumHardfork::Paris
                 | EthereumHardfork::Shanghai => Some(0),
                 _ => None,
@@ -308,11 +290,8 @@ impl TaikoHardfork {
             (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(1561651)),
-            (EthereumHardfork::MuirGlacier.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(4460644)),
             (EthereumHardfork::London.boxed(), ForkCondition::Block(5062605)),
-            (EthereumHardfork::ArrowGlacier.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::GrayGlacier.boxed(), ForkCondition::Block(0)),
             (
                 EthereumHardfork::Paris.boxed(),
                 ForkCondition::TTD { fork_block: None, total_difficulty: U256::ZERO },
@@ -334,11 +313,8 @@ impl TaikoHardfork {
             (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::MuirGlacier.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::ArrowGlacier.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::GrayGlacier.boxed(), ForkCondition::Block(0)),
             (
                 EthereumHardfork::Paris.boxed(),
                 ForkCondition::TTD { fork_block: None, total_difficulty: U256::ZERO },
@@ -360,11 +336,8 @@ impl TaikoHardfork {
             (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::MuirGlacier.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::ArrowGlacier.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::GrayGlacier.boxed(), ForkCondition::Block(0)),
             (
                 EthereumHardfork::Paris.boxed(),
                 ForkCondition::TTD { fork_block: None, total_difficulty: U256::ZERO },
@@ -386,11 +359,8 @@ impl TaikoHardfork {
             (EthereumHardfork::Constantinople.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Petersburg.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::MuirGlacier.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::ArrowGlacier.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::GrayGlacier.boxed(), ForkCondition::Block(0)),
             (
                 EthereumHardfork::Paris.boxed(),
                 ForkCondition::TTD { fork_block: None, total_difficulty: U256::ZERO },

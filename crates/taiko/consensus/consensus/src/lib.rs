@@ -8,21 +8,20 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use reth_chainspec::ChainSpec;
-use reth_consensus::{Consensus, ConsensusError, PostExecutionInput};
+use alloy_consensus::EMPTY_OMMER_ROOT_HASH;
+use alloy_primitives::B64;
+use reth_chainspec::EthChainSpec;
+use reth_consensus::{Consensus, ConsensusError, HeaderValidator};
 use reth_consensus_common::validation::{
     validate_4844_header_standalone, validate_against_parent_4844,
-    validate_against_parent_hash_number, validate_header_base_fee, validate_header_extradata,
+    validate_against_parent_hash_number, validate_block_pre_execution,
+    validate_body_against_header, validate_header_base_fee, validate_header_extradata,
     validate_header_gas,
 };
-use reth_primitives::{
-    constants::MAXIMUM_GAS_LIMIT, BlockWithSenders, GotExpected, Header, SealedBlock, SealedHeader,
-    EMPTY_OMMER_ROOT_HASH, U256,
-};
-use std::{sync::Arc, time::SystemTime};
-
-mod validation;
-pub use validation::validate_block_post_execution;
+use reth_primitives::{BlockBody, EthereumHardforks, Header, SealedBlock, SealedHeader};
+use reth_primitives_traits::constants::MAXIMUM_GAS_LIMIT;
+use revm_primitives::U256;
+use std::{fmt::Debug, sync::Arc, time::SystemTime};
 
 mod anchor;
 pub use anchor::*;
@@ -31,12 +30,12 @@ pub use anchor::*;
 ///
 /// This consensus engine does basic checks as outlined in the execution specs.
 #[derive(Debug)]
-pub struct TaikoBeaconConsensus {
+pub struct TaikoBeaconConsensus<ChainSpec> {
     /// Configuration
     chain_spec: Arc<ChainSpec>,
 }
 
-impl TaikoBeaconConsensus {
+impl<ChainSpec> TaikoBeaconConsensus<ChainSpec> {
     /// Create a new instance of [`EthBeaconConsensus`]
     pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
         Self { chain_spec }
@@ -61,7 +60,9 @@ impl TaikoBeaconConsensus {
     }
 }
 
-impl Consensus for TaikoBeaconConsensus {
+impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> HeaderValidator
+    for TaikoBeaconConsensus<ChainSpec>
+{
     fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError> {
         // Check if timestamp is in the future. Clock can drift but this can be consensus issue.
         let present_timestamp =
@@ -73,14 +74,14 @@ impl Consensus for TaikoBeaconConsensus {
                 present_timestamp,
             });
         }
-        validate_header_gas(header)?;
-        validate_header_base_fee(header, &self.chain_spec)?;
+        validate_header_gas(header.header())?;
+        validate_header_base_fee(header.header(), &self.chain_spec)?;
 
         if !header.is_zero_difficulty() {
             return Err(ConsensusError::TheMergeDifficultyIsNotZero);
         }
 
-        if header.nonce != 0 {
+        if header.nonce != B64::ZERO {
             return Err(ConsensusError::TheMergeNonceIsNotZero);
         }
 
@@ -97,7 +98,7 @@ impl Consensus for TaikoBeaconConsensus {
         // is greater than its parent timestamp.
 
         // validate header extradata for all networks post merge
-        validate_header_extradata(header)?;
+        validate_header_extradata(header.header())?;
 
         // EIP-4895: Beacon chain push withdrawals as operations
         if self.chain_spec.is_shanghai_active_at_timestamp(header.timestamp)
@@ -112,7 +113,7 @@ impl Consensus for TaikoBeaconConsensus {
 
         // Ensures that EIP-4844 fields are valid once cancun is active.
         if self.chain_spec.is_cancun_active_at_timestamp(header.timestamp) {
-            validate_4844_header_standalone(header)?;
+            validate_4844_header_standalone(header.header())?;
         } else if header.blob_gas_used.is_some() {
             return Err(ConsensusError::BlobGasUsedUnexpected);
         } else if header.excess_blob_gas.is_some() {
@@ -122,11 +123,11 @@ impl Consensus for TaikoBeaconConsensus {
         }
 
         if self.chain_spec.is_prague_active_at_timestamp(header.timestamp) {
-            if header.requests_root.is_none() {
-                return Err(ConsensusError::RequestsRootMissing);
+            if header.requests_hash.is_none() {
+                return Err(ConsensusError::RequestsHashMissing);
             }
-        } else if header.requests_root.is_some() {
-            return Err(ConsensusError::RequestsRootUnexpected);
+        } else if header.requests_hash.is_some() {
+            return Err(ConsensusError::RequestsHashUnexpected);
         }
 
         Ok(())
@@ -137,7 +138,7 @@ impl Consensus for TaikoBeaconConsensus {
         header: &SealedHeader,
         parent: &SealedHeader,
     ) -> Result<(), ConsensusError> {
-        validate_against_parent_hash_number(header, parent)?;
+        validate_against_parent_hash_number(header.header(), parent)?;
 
         validate_against_parent_timestamp(header, parent)?;
 
@@ -147,7 +148,7 @@ impl Consensus for TaikoBeaconConsensus {
 
         // ensure that the blob gas fields for this block
         if self.chain_spec.is_cancun_active_at_timestamp(header.timestamp) {
-            validate_against_parent_4844(header, parent)?;
+            validate_against_parent_4844(header.header(), parent)?;
         }
 
         Ok(())
@@ -160,58 +161,21 @@ impl Consensus for TaikoBeaconConsensus {
     ) -> Result<(), ConsensusError> {
         Ok(())
     }
+}
 
+impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> Consensus
+    for TaikoBeaconConsensus<ChainSpec>
+{
     fn validate_block_pre_execution(&self, block: &SealedBlock) -> Result<(), ConsensusError> {
-        // Check ommers hash
-        let ommers_hash = reth_primitives::proofs::calculate_ommers_root(&block.ommers);
-        if block.header.ommers_hash != ommers_hash {
-            return Err(ConsensusError::BodyOmmersHashDiff(
-                GotExpected { got: ommers_hash, expected: block.header.ommers_hash }.into(),
-            ));
-        }
-
-        // Check transaction root
-        if let Err(error) = block.ensure_transaction_root_valid() {
-            return Err(ConsensusError::BodyTransactionRootDiff(error.into()));
-        }
-
-        // EIP-4844: Shard Blob Transactions
-        if self.chain_spec.is_cancun_active_at_timestamp(block.timestamp) {
-            // Check that the blob gas used in the header matches the sum of the blob gas used by each
-            // blob tx
-            let header_blob_gas_used =
-                block.blob_gas_used.ok_or(ConsensusError::BlobGasUsedMissing)?;
-            let total_blob_gas = block.blob_gas_used();
-            if total_blob_gas != header_blob_gas_used {
-                return Err(ConsensusError::BlobGasUsedDiff(GotExpected {
-                    got: header_blob_gas_used,
-                    expected: total_blob_gas,
-                }));
-            }
-        }
-
-        // EIP-7685: General purpose execution layer requests
-        if self.chain_spec.is_prague_active_at_timestamp(block.timestamp) {
-            let requests = block.requests.as_ref().ok_or(ConsensusError::BodyRequestsMissing)?;
-            let requests_root = reth_primitives::proofs::calculate_requests_root(&requests.0);
-            let header_requests_root =
-                block.requests_root.as_ref().ok_or(ConsensusError::RequestsRootMissing)?;
-            if requests_root != *header_requests_root {
-                return Err(ConsensusError::BodyRequestsRootDiff(
-                    GotExpected { got: requests_root, expected: *header_requests_root }.into(),
-                ));
-            }
-        }
-
-        Ok(())
+        validate_block_pre_execution(block, &self.chain_spec)
     }
 
-    fn validate_block_post_execution(
+    fn validate_body_against_header(
         &self,
-        block: &BlockWithSenders,
-        input: PostExecutionInput<'_>,
+        body: &BlockBody,
+        header: &SealedHeader,
     ) -> Result<(), ConsensusError> {
-        validate_block_post_execution(block, &self.chain_spec, input.receipts, input.requests)
+        validate_body_against_header(body, header.header())
     }
 }
 
@@ -229,12 +193,3 @@ fn validate_against_parent_timestamp(
     }
     Ok(())
 }
-
-// #[inline]
-// fn validate_ommers(header: &SealedHeader) -> Result<(), ConsensusError> {
-//     if header.ommers_hash == EMPTY_OMMER_ROOT_HASH  {
-//         return Err(ConsensusError::OmmersHashEmpty)
-//     }
-//     Ok(())
-
-// }

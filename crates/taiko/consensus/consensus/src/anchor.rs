@@ -1,50 +1,45 @@
 //! Taiko related functionality for the block executor.
 
-use eyre::{bail, ensure, eyre, Result};
-use lazy_static::lazy_static;
-use reth_primitives::{Block, Header, TransactionSigned, TxKind};
-use revm_primitives::{alloy_primitives::uint, Address, U256};
+use alloy_primitives::{uint, Address, TxKind, U256};
+use eyre::{bail, ensure, eyre, OptionExt, Result};
+use once_cell::sync::Lazy;
+use reth_primitives::{Block, Header, TransactionSigned};
 use std::str::FromStr;
 
 /// Anchor tx gas limit
 pub const ANCHOR_GAS_LIMIT: u64 = 250_000;
 
-lazy_static! {
-    /// The address calling the anchor transaction
-    pub static ref GOLDEN_TOUCH_ACCOUNT: Address = {
-        Address::from_str("0x0000777735367b36bC9B61C50022d9D0700dB4Ec")
-            .expect("invalid golden touch account")
-    };
-    static ref GX1: U256 =
-        uint!(0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798_U256);
-    static ref N: U256 =
-        uint!(0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141_U256);
-    static ref GX1_MUL_PRIVATEKEY: U256 =
-        uint!(0x4341adf5a780b4a87939938fd7a032f6e6664c7da553c121d3b4947429639122_U256);
-    static ref GX2: U256 =
-        uint!(0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5_U256);
-}
+/// The address calling the anchor transaction
+pub static GOLDEN_TOUCH_ACCOUNT: Lazy<Address> = Lazy::new(|| {
+    Address::from_str("0x0000777735367b36bC9B61C50022d9D0700dB4Ec")
+        .expect("invalid golden touch account")
+});
+static GX1: U256 = uint!(0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798_U256);
+static N: U256 = uint!(0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141_U256);
+static GX1_MUL_PRIVATEKEY: U256 =
+    uint!(0x4341adf5a780b4a87939938fd7a032f6e6664c7da553c121d3b4947429639122_U256);
+static GX2: U256 = uint!(0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5_U256);
 
 /// check the anchor signature with fixed K value
 pub fn check_anchor_signature(anchor: &TransactionSigned) -> Result<()> {
-    let sign = anchor.signature();
-    if sign.r == *GX1 {
+    let sign = anchor.signature;
+    if sign.r() == GX1 {
         return Ok(());
     }
     let msg_hash = anchor.signature_hash();
     let msg_hash: U256 = msg_hash.into();
-    if sign.r == *GX2 {
+    if sign.r() == GX2 {
         // when r == GX2 require s == 0 if k == 1
         // alias: when r == GX2 require N == msg_hash + *GX1_MUL_PRIVATEKEY
-        if *N != msg_hash + *GX1_MUL_PRIVATEKEY {
+        if N != msg_hash + GX1_MUL_PRIVATEKEY {
             bail!(
                 "r == GX2, but N != msg_hash + *GX1_MUL_PRIVATEKEY, N: {}, msg_hash: {msg_hash}, *GX1_MUL_PRIVATEKEY: {}",
-                *N, *GX1_MUL_PRIVATEKEY
+                N, GX1_MUL_PRIVATEKEY
             );
         }
         return Ok(());
     }
-    Err(eyre!("r != *GX1 && r != GX2, r: {}, *GX1: {}, GX2: {}", sign.r, *GX1, *GX2))
+    Err(eyre!("r != *GX1 && r != GX2, r: {}, *GX1: {}, GX2: {}", sign.r(), GX1, GX2))
 }
 
 use alloy_sol_types::{sol, SolCall};
@@ -97,7 +92,7 @@ pub fn check_anchor_tx(
     treasury: Address,
 ) -> eyre::Result<()> {
     use eyre::{bail, ensure, eyre, Context};
-    let anchor = tx.as_eip1559().context(eyre!("anchor tx is not an EIP1559 tx"))?;
+    let anchor = tx.as_eip1559().ok_or_eyre("anchor tx is not an EIP1559 tx")?;
 
     // Check the signature
     check_anchor_signature(tx).context(eyre!("failed to check anchor signature"))?;

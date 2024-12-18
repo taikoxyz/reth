@@ -6,6 +6,7 @@
     issue_tracker_base_url = "https://github.com/paradigmxyz/reth/issues/"
 )]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
@@ -14,20 +15,20 @@ use alloc::{boxed::Box, vec::Vec};
 use alloy_chains::Chain;
 use alloy_consensus::Header;
 use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
-use alloy_primitives::{b256, Address, Bytes, FixedBytes, B256, U256};
+use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
 use derive_more::{Constructor, Deref, Display, From, Into};
 #[cfg(not(feature = "std"))]
 pub(crate) use once_cell::sync::Lazy as LazyLock;
 use reth_chainspec::{
-    BaseFeeParams, BaseFeeParamsKind, ChainSpec, ChainSpecBuilder, DepositContract, EthChainSpec,
-    EthereumHardforks, ForkFilter, ForkId, Hardforks, Head,
+    BaseFeeParams, ChainSpec, ChainSpecBuilder, DepositContract, EthChainSpec, EthereumHardforks,
+    ForkFilter, ForkId, Hardforks, Head,
 };
 use reth_ethereum_forks::{ChainHardforks, EthereumHardfork, ForkCondition, Hardfork};
 use reth_network_peers::NodeRecord;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 #[cfg(feature = "std")]
 pub(crate) use std::sync::LazyLock;
-use std::{collections::BTreeMap, sync::Arc};
 
 use reth_taiko_forks::{
     TaikoHardfork, TaikoHardforks, CHAIN_HEKLA_TESTNET, CHAIN_INTERNAL_TESTNET,

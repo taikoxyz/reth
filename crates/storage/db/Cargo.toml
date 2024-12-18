@@ -24,6 +24,9 @@ reth-stages-types.workspace = true
 reth-trie-common = { workspace = true, features = ["serde"] }
 reth-tracing.workspace = true
 
+# taiko
+reth-taiko-primitives.workspace = true
+
 # ethereum
 alloy-primitives.workspace = true
 alloy-consensus.workspace = true

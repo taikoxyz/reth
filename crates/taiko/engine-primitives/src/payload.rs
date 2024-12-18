@@ -1,32 +1,17 @@
 //! Payload related types
 
+use alloy_eips::eip4895::{Withdrawal, Withdrawals};
+use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
-
-use reth_chainspec::ChainSpec;
-use reth_ethereum_engine_primitives::{
-    EthPayloadBuilderAttributes, ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4,
-};
-use reth_payload_primitives::{
-    BuiltPayload, EngineApiMessageVersion, EngineObjectValidationError, PayloadBuilderAttributes,
-};
-use reth_primitives::{
-    revm::config::revm_spec_by_timestamp_after_merge,
-    revm_primitives::{BlobExcessGasAndPrice, BlockEnv, CfgEnv, CfgEnvWithHandlerCfg, SpecId},
-    Address, Bytes, Header, SealedBlock, Withdrawals, B256, U256,
-};
-use reth_rpc_types::{
-    engine::{PayloadAttributes, PayloadId},
-    BlobTransactionSidecar, ExecutionPayload, ExecutionPayloadV1, ExecutionPayloadV2,
-};
-use reth_rpc_types_compat::engine::{
-    block_to_payload_v1,
-    payload::{block_to_payload_v2, block_to_payload_v3, block_to_payload_v4},
-};
+use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadV2, PayloadAttributes, PayloadId};
+use reth_ethereum_engine_primitives::{EthBuiltPayload, EthPayloadBuilderAttributes};
+use reth_payload_primitives::{EngineApiMessageVersion, PayloadBuilderAttributes};
+use reth_rpc_types_compat::engine::payload::block_to_payload_v2;
+use reth_taiko_primitives::L1Origin;
 use serde::{Deserialize, Serialize};
 use serde_with::base64::Base64;
 use serde_with::serde_as;
 use std::convert::Infallible;
-use taiko_reth_primitives::L1Origin;
 
 /// Taiko Payload Attributes
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,20 +33,12 @@ impl reth_payload_primitives::PayloadAttributes for TaikoPayloadAttributes {
         self.payload_attributes.timestamp()
     }
 
-    fn withdrawals(&self) -> Option<&Vec<reth_rpc_types::Withdrawal>> {
+    fn withdrawals(&self) -> Option<&Vec<Withdrawal>> {
         self.payload_attributes.withdrawals()
     }
 
     fn parent_beacon_block_root(&self) -> Option<B256> {
         self.payload_attributes.parent_beacon_block_root()
-    }
-
-    fn ensure_well_formed_attributes(
-        &self,
-        chain_spec: &ChainSpec,
-        version: EngineApiMessageVersion,
-    ) -> Result<(), EngineObjectValidationError> {
-        self.payload_attributes.ensure_well_formed_attributes(chain_spec, version)
     }
 }
 
@@ -113,7 +90,7 @@ impl PayloadBuilderAttributes for TaikoPayloadBuilderAttributes {
     fn try_new(
         parent: B256,
         attributes: TaikoPayloadAttributes,
-        version: EngineApiMessageVersion,
+        version: u8,
     ) -> Result<Self, Infallible> {
         let id = payload_id(&parent, &attributes, version);
 
@@ -162,159 +139,6 @@ impl PayloadBuilderAttributes for TaikoPayloadBuilderAttributes {
     fn withdrawals(&self) -> &Withdrawals {
         &self.payload_attributes.withdrawals
     }
-
-    fn cfg_and_block_env(
-        &self,
-        chain_spec: &ChainSpec,
-        parent: &Header,
-    ) -> (CfgEnvWithHandlerCfg, BlockEnv) {
-        // configure evm env based on parent block
-        let mut cfg = CfgEnv::default();
-        cfg.chain_id = chain_spec.chain().id();
-
-        // ensure we're not missing any timestamp based hardforks
-        let spec_id = revm_spec_by_timestamp_after_merge(chain_spec, self.timestamp());
-
-        // if the parent block did not have excess blob gas (i.e. it was pre-cancun), but it is
-        // cancun now, we need to set the excess blob gas to the default value
-        let blob_excess_gas_and_price = parent
-            .next_block_excess_blob_gas()
-            .or_else(|| {
-                if spec_id.is_enabled_in(SpecId::CANCUN) {
-                    // default excess blob gas is zero
-                    Some(0)
-                } else {
-                    None
-                }
-            })
-            .map(BlobExcessGasAndPrice::new);
-
-        let block_env = BlockEnv {
-            number: U256::from(parent.number + 1),
-            coinbase: self.suggested_fee_recipient(),
-            timestamp: U256::from(self.timestamp()),
-            difficulty: U256::ZERO,
-            prevrandao: Some(self.prev_randao()),
-            gas_limit: U256::from(self.block_metadata.gas_limit),
-            basefee: self.base_fee_per_gas,
-            // calculate excess gas based on parent block's blob gas usage
-            blob_excess_gas_and_price,
-        };
-
-        (CfgEnvWithHandlerCfg::new_with_spec_id(cfg, spec_id), block_env)
-    }
-}
-
-/// Contains the built payload.
-#[derive(Debug, Clone)]
-pub struct TaikoBuiltPayload {
-    /// Identifier of the payload
-    pub(crate) id: PayloadId,
-    /// The built block
-    pub(crate) block: SealedBlock,
-    /// The fees of the block
-    pub(crate) fees: U256,
-    /// The blobs, proofs, and commitments in the block. If the block is pre-cancun, this will be
-    /// empty.
-    pub(crate) sidecars: Vec<BlobTransactionSidecar>,
-}
-
-// === impl BuiltPayload ===
-
-impl TaikoBuiltPayload {
-    /// Initializes the payload with the given initial block.
-    pub const fn new(id: PayloadId, block: SealedBlock, fees: U256) -> Self {
-        Self { id, block, fees, sidecars: Vec::new() }
-    }
-
-    /// Returns the identifier of the payload.
-    pub const fn id(&self) -> PayloadId {
-        self.id
-    }
-
-    /// Returns the built block(sealed)
-    pub const fn block(&self) -> &SealedBlock {
-        &self.block
-    }
-
-    /// Fees of the block
-    pub const fn fees(&self) -> U256 {
-        self.fees
-    }
-
-    /// Adds sidecars to the payload.
-    pub fn extend_sidecars(&mut self, sidecars: Vec<BlobTransactionSidecar>) {
-        self.sidecars.extend(sidecars)
-    }
-}
-
-impl BuiltPayload for TaikoBuiltPayload {
-    fn block(&self) -> &SealedBlock {
-        &self.block
-    }
-
-    fn fees(&self) -> U256 {
-        self.fees
-    }
-}
-
-impl<'a> BuiltPayload for &'a TaikoBuiltPayload {
-    fn block(&self) -> &SealedBlock {
-        (**self).block()
-    }
-
-    fn fees(&self) -> U256 {
-        (**self).fees()
-    }
-}
-
-// V1 engine_getPayloadV1 response
-impl From<TaikoBuiltPayload> for ExecutionPayloadV1 {
-    fn from(value: TaikoBuiltPayload) -> Self {
-        block_to_payload_v1(value.block)
-    }
-}
-
-impl From<TaikoBuiltPayload> for ExecutionPayloadEnvelopeV3 {
-    fn from(value: TaikoBuiltPayload) -> Self {
-        let TaikoBuiltPayload { block, fees, sidecars, .. } = value;
-
-        Self {
-            execution_payload: block_to_payload_v3(block).0,
-            block_value: fees,
-            // From the engine API spec:
-            //
-            // > Client software **MAY** use any heuristics to decide whether to set
-            // `shouldOverrideBuilder` flag or not. If client software does not implement any
-            // heuristic this flag **SHOULD** be set to `false`.
-            //
-            // Spec:
-            // <https://github.com/ethereum/execution-apis/blob/fe8e13c288c592ec154ce25c534e26cb7ce0530d/src/engine/cancun.md#specification-2>
-            should_override_builder: false,
-            blobs_bundle: sidecars.into_iter().map(Into::into).collect::<Vec<_>>().into(),
-        }
-    }
-}
-
-impl From<TaikoBuiltPayload> for ExecutionPayloadEnvelopeV4 {
-    fn from(value: TaikoBuiltPayload) -> Self {
-        let TaikoBuiltPayload { block, fees, sidecars, .. } = value;
-
-        Self {
-            execution_payload: block_to_payload_v4(block),
-            block_value: fees,
-            // From the engine API spec:
-            //
-            // > Client software **MAY** use any heuristics to decide whether to set
-            // `shouldOverrideBuilder` flag or not. If client software does not implement any
-            // heuristic this flag **SHOULD** be set to `false`.
-            //
-            // Spec:
-            // <https://github.com/ethereum/execution-apis/blob/fe8e13c288c592ec154ce25c534e26cb7ce0530d/src/engine/cancun.md#specification-2>
-            should_override_builder: false,
-            blobs_bundle: sidecars.into_iter().map(Into::into).collect::<Vec<_>>().into(),
-        }
-    }
 }
 
 /// Taiko Execution Payload
@@ -347,21 +171,21 @@ pub struct TaikoExecutionPayloadEnvelopeV2 {
     pub block_value: U256,
 }
 
-impl From<TaikoBuiltPayload> for TaikoExecutionPayloadV2 {
-    fn from(value: TaikoBuiltPayload) -> Self {
-        let TaikoBuiltPayload { block, .. } = value;
+impl From<EthBuiltPayload> for TaikoExecutionPayloadV2 {
+    fn from(value: EthBuiltPayload) -> Self {
+        let block = value.block();
 
         Self {
             tx_hash: block.header.transactions_root,
             withdrawals_hash: block.header.withdrawals_root.unwrap_or_default(),
-            payload_inner: block_to_payload_v2(block),
+            payload_inner: block_to_payload_v2(block.clone()),
         }
     }
 }
 
-impl From<TaikoBuiltPayload> for TaikoExecutionPayloadEnvelopeV2 {
-    fn from(value: TaikoBuiltPayload) -> Self {
-        let fees = value.fees;
+impl From<EthBuiltPayload> for TaikoExecutionPayloadEnvelopeV2 {
+    fn from(value: EthBuiltPayload) -> Self {
+        let fees = value.fees();
         Self { execution_payload: value.into(), block_value: fees }
     }
 }
@@ -415,7 +239,7 @@ impl From<ExecutionPayload> for TaikoExecutionPayload {
 pub(crate) fn payload_id(
     parent: &B256,
     attributes: &TaikoPayloadAttributes,
-    version: EngineApiMessageVersion,
+    version: u8,
 ) -> PayloadId {
     use sha2::Digest;
     let mut hasher = sha2::Sha256::new();
@@ -445,6 +269,6 @@ pub(crate) fn payload_id(
 
     let out = hasher.finalize();
     let mut out_bytes: [u8; 8] = out.as_slice()[..8].try_into().expect("sufficient length");
-    out_bytes[0] = version as u8;
+    out_bytes[0] = version;
     PayloadId::new(out_bytes)
 }

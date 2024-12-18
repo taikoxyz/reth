@@ -7057,6 +7057,7 @@ dependencies = [
  "reth-prune-types",
  "reth-stages-types",
  "reth-storage-errors",
+ "reth-taiko-primitives",
  "reth-tracing",
  "reth-trie-common",
  "rustc-hash 2.1.0",
@@ -9458,12 +9459,16 @@ dependencies = [
 name = "reth-taiko-beacon-consensus"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 0.8.14",
  "alloy-sol-types",
  "eyre",
  "once_cell",
+ "reth-chainspec",
  "reth-consensus",
  "reth-consensus-common",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-taiko-chainspec",
  "revm-primitives",
  "tracing",
@@ -9545,6 +9550,8 @@ dependencies = [
 name = "reth-taiko-engine-primitives"
 version = "1.1.4"
 dependencies = [
+ "alloy-eips",
+ "alloy-primitives 0.8.14",
  "alloy-rlp",
  "alloy-rpc-types-engine",
  "alloy-serde 0.1.4",
@@ -9640,9 +9647,13 @@ dependencies = [
 name = "reth-taiko-payload-validator"
 version = "1.1.4"
 dependencies = [
+ "alloy-primitives 0.8.14",
+ "alloy-rpc-types-engine",
  "reth-chainspec",
+ "reth-payload-validator",
  "reth-primitives",
  "reth-rpc-types-compat",
+ "reth-taiko-chainspec",
  "reth-taiko-engine-primitives",
 ]
 
@@ -9682,11 +9693,15 @@ dependencies = [
 name = "reth-taiko-provider"
 version = "1.1.4"
 dependencies = [
+ "alloy-primitives 0.8.14",
  "auto_impl",
  "reth-db",
  "reth-db-api",
+ "reth-node-types",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-provider",
+ "reth-storage-api",
  "reth-storage-errors",
  "reth-taiko-primitives",
 ]

@@ -14,15 +14,12 @@ pub use alloy_rpc_types_engine::{
     ExecutionPayloadV1, PayloadAttributes as EthPayloadAttributes,
 };
 pub use payload::{
-    TaikoBuiltPayload, TaikoExecutionPayload, TaikoExecutionPayloadEnvelopeV2,
-    TaikoPayloadAttributes, TaikoPayloadBuilderAttributes,
+    TaikoExecutionPayload, TaikoExecutionPayloadEnvelopeV2, TaikoPayloadAttributes,
+    TaikoPayloadBuilderAttributes,
 };
-use reth_chainspec::ChainSpec;
 use reth_engine_primitives::EngineTypes;
-use reth_payload_primitives::{
-    validate_version_specific_fields, EngineApiMessageVersion, EngineObjectValidationError,
-    PayloadOrAttributes, PayloadTypes,
-};
+use reth_ethereum_engine_primitives::EthBuiltPayload;
+use reth_payload_primitives::PayloadTypes;
 
 /// The types used in the default mainnet ethereum beacon consensus engine.
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
@@ -30,22 +27,14 @@ use reth_payload_primitives::{
 pub struct TaikoEngineTypes;
 
 impl PayloadTypes for TaikoEngineTypes {
-    type BuiltPayload = TaikoBuiltPayload;
+    type BuiltPayload = EthBuiltPayload;
     type PayloadAttributes = TaikoPayloadAttributes;
     type PayloadBuilderAttributes = TaikoPayloadBuilderAttributes;
 }
 
 impl EngineTypes for TaikoEngineTypes {
-    type ExecutionPayloadV1 = ExecutionPayloadV1;
-    type ExecutionPayloadV2 = TaikoExecutionPayloadEnvelopeV2;
-    type ExecutionPayloadV3 = ExecutionPayloadEnvelopeV3;
-    type ExecutionPayloadV4 = ExecutionPayloadEnvelopeV4;
-
-    fn validate_version_specific_fields(
-        chain_spec: &ChainSpec,
-        version: EngineApiMessageVersion,
-        payload_or_attrs: PayloadOrAttributes<'_, TaikoPayloadAttributes>,
-    ) -> Result<(), EngineObjectValidationError> {
-        validate_version_specific_fields(chain_spec, version, payload_or_attrs)
-    }
+    type ExecutionPayloadEnvelopeV1 = ExecutionPayloadV1;
+    type ExecutionPayloadEnvelopeV2 = TaikoExecutionPayloadEnvelopeV2;
+    type ExecutionPayloadEnvelopeV3 = ExecutionPayloadEnvelopeV3;
+    type ExecutionPayloadEnvelopeV4 = ExecutionPayloadEnvelopeV4;
 }

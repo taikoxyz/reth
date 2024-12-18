@@ -35,6 +35,7 @@ use reth_primitives::{Receipt, StorageEntry, TransactionSigned};
 use reth_primitives_traits::{Account, Bytecode};
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::StageCheckpoint;
+use reth_taiko_primitives::{HeadL1OriginKey, L1Origin};
 use reth_trie_common::{BranchNodeCompact, StorageTrieEntry, StoredNibbles, StoredNibblesSubKey};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -528,6 +529,18 @@ tables! {
     /// Stores generic chain state info, like the last finalized block.
     table ChainState {
         type Key = ChainStateKey;
+        type Value = BlockNumber;
+    }
+
+    /// Stores the l1 origin of the block
+    table L1Origins{
+        type Key = BlockNumber;
+        type Value = L1Origin;
+    }
+
+    /// Stores the latest l1 origin
+    table HeadL1Origin{
+        type Key = HeadL1OriginKey;
         type Value = BlockNumber;
     }
 }
