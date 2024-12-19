@@ -1,6 +1,6 @@
 //! Hard forks of optimism protocol.
 
-use alloc::{boxed::Box, format, string::String, vec};
+use alloc::{boxed::Box, format, string::String};
 use core::{
     any::Any,
     fmt::{self, Display, Formatter},
@@ -8,8 +8,7 @@ use core::{
 };
 
 use alloy_chains::Chain;
-use alloy_primitives::U256;
-use reth_ethereum_forks::{hardfork, ChainHardforks, EthereumHardfork, ForkCondition, Hardfork};
+use reth_ethereum_forks::{hardfork, EthereumHardfork, Hardfork};
 
 hardfork!(
     /// The name of an taiko hardfork.
@@ -54,24 +53,6 @@ impl TaikoHardfork {
         }
     }
 
-    // var TaikoChainConfig = &ChainConfig{
-    //     ChainID:                       TaikoInternalL2ANetworkID, // Use Internal Devnet network ID by default.
-    //     HomesteadBlock:                common.Big0,
-    //     EIP150Block:                   common.Big0,
-    //     EIP155Block:                   common.Big0,
-    //     EIP158Block:                   common.Big0,
-    //     ByzantiumBlock:                common.Big0,
-    //     ConstantinopleBlock:           common.Big0,
-    //     PetersburgBlock:               common.Big0,
-    //     IstanbulBlock:                 common.Big0,
-    //     BerlinBlock:                   common.Big0,
-    //     LondonBlock:                   common.Big0,
-    //     ShanghaiTime:                  u64(0),
-    //     MergeNetsplitBlock:            nil,
-    //     TerminalTotalDifficulty:       common.Big0,
-    //     TerminalTotalDifficultyPassed: true,
-    //     Taiko:                         true,
-    // }
     /// Retrieves the activation block for the specified hardfork on the Base Internal testnet.
     pub fn base_internal_activation_block<H: Hardfork>(fork: H) -> Option<u64> {
         match_hardfork(

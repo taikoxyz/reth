@@ -7761,6 +7761,7 @@ dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives 0.8.14",
+ "alloy-rpc-types-eth",
  "arbitrary",
  "bincode",
  "rand 0.8.5",

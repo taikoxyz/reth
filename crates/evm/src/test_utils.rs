@@ -70,6 +70,8 @@ impl<DB> Executor<DB> for MockExecutorProvider {
                 reqs
             }),
             gas_used: 0,
+            target_list: vec![],
+            skipped_list: vec![],
         })
     }
 

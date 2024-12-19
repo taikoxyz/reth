@@ -357,7 +357,7 @@ where
     }
 
     fn execute(mut self, input: Self::Input<'_>) -> Result<Self::Output, Self::Error> {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
         let ExecuteOutput { receipts, gas_used } =
@@ -366,7 +366,14 @@ where
             self.strategy.apply_post_execution_changes(block, total_difficulty, &receipts)?;
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput { state, receipts, requests, gas_used })
+        Ok(BlockExecutionOutput {
+            state,
+            receipts,
+            requests,
+            gas_used,
+            target_list: vec![],
+            skipped_list: vec![],
+        })
     }
 
     fn execute_with_state_closure<F>(
@@ -377,7 +384,7 @@ where
     where
         F: FnMut(&State<DB>),
     {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
         let ExecuteOutput { receipts, gas_used } =
@@ -389,7 +396,14 @@ where
 
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput { state, receipts, requests, gas_used })
+        Ok(BlockExecutionOutput {
+            state,
+            receipts,
+            requests,
+            gas_used,
+            target_list: vec![],
+            skipped_list: vec![],
+        })
     }
 
     fn execute_with_state_hook<H>(
@@ -400,7 +414,7 @@ where
     where
         H: OnStateHook + 'static,
     {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         self.strategy.with_state_hook(Some(Box::new(state_hook)));
 
@@ -412,7 +426,14 @@ where
 
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput { state, receipts, requests, gas_used })
+        Ok(BlockExecutionOutput {
+            state,
+            receipts,
+            requests,
+            gas_used,
+            target_list: vec![],
+            skipped_list: vec![],
+        })
     }
 }
 
@@ -453,7 +474,7 @@ where
     type Error = BlockExecutionError;
 
     fn execute_and_verify_one(&mut self, input: Self::Input<'_>) -> Result<(), Self::Error> {
-        let BlockExecutionInput { block, total_difficulty } = input;
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         if self.batch_record.first_block().is_none() {
             self.batch_record.set_first_block(block.header().number());
@@ -743,7 +764,7 @@ mod tests {
         let provider = TestExecutorProvider;
         let db = CacheDB::<EmptyDBTyped<ProviderError>>::default();
         let executor = provider.executor(db);
-        let _ = executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
+        let _ = executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
     }
 
     #[test]
@@ -766,7 +787,8 @@ mod tests {
         let provider = BasicBlockExecutorProvider::new(strategy_factory);
         let db = CacheDB::<EmptyDBTyped<ProviderError>>::default();
         let executor = provider.executor(db);
-        let result = executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
+        let result =
+            executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
 
         assert!(result.is_ok());
         let block_execution_output = result.unwrap();
@@ -796,7 +818,8 @@ mod tests {
         executor.init(Box::new(|tx_env: &mut TxEnv| {
             tx_env.nonce.take();
         }));
-        let result = executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
+        let result =
+            executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
         assert!(result.is_ok());
     }
 

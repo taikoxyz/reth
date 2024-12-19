@@ -23,6 +23,7 @@ revm.workspace = true
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true
 alloy-eips.workspace = true
+alloy-rpc-types-eth.workspace = true
 
 serde = { workspace = true, optional = true }
 serde_with = { workspace = true, optional = true }
@@ -66,3 +67,5 @@ std = [
 	"alloy-consensus/std",
 	"serde_with?/std"
 ]
+
+taiko = ["revm/taiko"]
