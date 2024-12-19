@@ -32,7 +32,7 @@ The deployment addresses (`FACTORY_ADDRESS`, `WETH`) below are valid **only if t
    npx hardhat run scripts/deploy.ts --network gwyneth_l1
 ## 2. Uniswap SDK
 
-1. Clone the repository and switch to the `gwyneth_uniswapV2 branch:
+1. Clone the repository and switch to the `gwyneth_uniswapV2` branch:
    ```bash
    git clone https://github.com/adaki2004/v2-sdk && cd v2-sdk
    git checkout gwyneth_uniswapV2
