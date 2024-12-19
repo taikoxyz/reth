@@ -28,7 +28,7 @@ impl<'a, Block> BlockExecutionInput<'a, Block> {
             block,
             total_difficulty,
             enable_anchor: false,
-            enable_skip: false,
+            enable_skip: true,
             enable_build: false,
             max_bytes_per_tx_list: 0,
             max_transactions_lists: 0,
