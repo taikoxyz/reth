@@ -15,7 +15,7 @@ workspace = true
 reth-chainspec = { workspace = true }
 reth-evm.workspace = true
 reth-primitives = { workspace = true }
-reth-revm = { workspace = true }
+reth-revm = { workspace = true, features = ["taiko"] }
 reth-prune-types.workspace = true
 reth-execution-types.workspace = true
 reth-consensus.workspace = true
@@ -25,7 +25,7 @@ reth-rpc-types-compat.workspace = true
 reth-taiko-beacon-consensus.workspace = true
 
 # Ethereum
-revm-primitives = { workspace = true }
+revm-primitives = { workspace = true, features = ["taiko"] }
 
 # Alloy
 alloy-eips.workspace = true
@@ -37,7 +37,7 @@ flate2.workspace = true
 
 [dev-dependencies]
 reth-testing-utils.workspace = true
-reth-revm = { workspace = true, features = ["test-utils"] }
+reth-revm = { workspace = true, features = ["test-utils", "taiko"] }
 secp256k1.workspace = true
 serde_json.workspace = true
 

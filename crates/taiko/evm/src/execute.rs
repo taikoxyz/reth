@@ -149,7 +149,7 @@ where
     /// [`EthBlockExecutor::post_execution`].
     fn execute_state_transitions<Ext, DB>(
         &self,
-        block: &mut BlockWithSenders,
+        block: &BlockWithSenders,
         mut evm: Evm<'_, Ext, &mut State<DB>>,
         enable_anchor: bool,
         enable_skip: bool,
@@ -179,7 +179,7 @@ where
         let mut cumulative_gas_used = 0;
         let mut receipts: Vec<Receipt> = Vec::with_capacity(block.body.len());
 
-        let delete_tx = |block: &mut BlockWithSenders, idx: usize| {
+        let delete_tx = |block: &BlockWithSenders, idx: usize| {
             block.body.remove(idx);
             block.senders.remove(idx);
         };
@@ -379,7 +379,7 @@ where
     /// Returns an error if execution fails.
     fn execute_without_verification(
         &mut self,
-        block: &mut BlockWithSenders,
+        block: &BlockWithSenders,
         total_difficulty: U256,
         enable_anchor: bool,
         enable_skip: bool,
