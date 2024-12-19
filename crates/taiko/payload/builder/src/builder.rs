@@ -177,7 +177,7 @@ where
     let requests = chain_spec
         .is_prague_active_at_timestamp(attributes.payload_attributes.timestamp)
         .then_some(requests);
-    block.header.requests_root = requests.map(|r| proofs::calculate_requests_root(&r));
+    block.header.requests_root = requests.map(|r| proofs::calculate_receipt_root_no_memo(&r));
     // now we need to update certain header fields with the results of the execution
     block.header.transactions_root = proofs::calculate_transaction_root(&block.body);
     block.header.state_root = db.state_root(execution_outcome.state())?;

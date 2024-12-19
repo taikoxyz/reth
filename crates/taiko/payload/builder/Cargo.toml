@@ -28,10 +28,11 @@ reth-taiko-evm.workspace = true
 reth-taiko-engine-primitives.workspace = true
 reth-taiko-primitives.workspace = true
 reth-taiko-provider.workspace = true
-reth-taiko-beacon-consensus.workspace = true
+reth-taiko-consensus.workspace = true
 
 # crypto
 alloy-rlp.workspace = true
+alloy-primitives.workspace = true
 
 # misc
 tracing.workspace = true

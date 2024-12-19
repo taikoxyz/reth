@@ -16,7 +16,6 @@ hardfork!(
     /// When building a list of hardforks for a chain, it's still expected to mix with
     /// [`EthereumHardfork`].
     TaikoHardfork {
-        Hekla,
         Ontake,
     }
 );

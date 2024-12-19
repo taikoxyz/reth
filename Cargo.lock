@@ -9444,25 +9444,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-taiko-beacon-consensus"
-version = "1.1.4"
-dependencies = [
- "alloy-consensus",
- "alloy-primitives 0.8.14",
- "alloy-sol-types",
- "eyre",
- "once_cell",
- "reth-chainspec",
- "reth-consensus",
- "reth-consensus-common",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-taiko-chainspec",
- "revm-primitives",
- "tracing",
-]
-
-[[package]]
 name = "reth-taiko-chainspec"
 version = "1.1.4"
 dependencies = [
@@ -9535,6 +9516,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-taiko-consensus"
+version = "1.1.4"
+dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 0.8.14",
+ "alloy-sol-types",
+ "eyre",
+ "once_cell",
+ "reth-chainspec",
+ "reth-consensus",
+ "reth-consensus-common",
+ "reth-primitives",
+ "reth-primitives-traits",
+ "reth-taiko-chainspec",
+ "revm-primitives",
+ "tracing",
+]
+
+[[package]]
 name = "reth-taiko-engine-primitives"
 version = "1.1.4"
 dependencies = [
@@ -9560,22 +9560,33 @@ dependencies = [
 name = "reth-taiko-evm"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
  "alloy-eips",
- "alloy-sol-types",
- "flate2",
+ "alloy-genesis",
+ "alloy-primitives 0.8.14",
+ "derive_more 1.0.0",
+ "op-alloy-consensus",
  "reth-chainspec",
  "reth-consensus",
+ "reth-consensus-common",
+ "reth-ethereum-consensus",
+ "reth-ethereum-forks",
  "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-errors",
  "reth-execution-types",
+ "reth-optimism-chainspec",
+ "reth-optimism-primitives",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-prune-types",
  "reth-revm",
- "reth-rpc-types-compat",
- "reth-taiko-beacon-consensus",
- "reth-testing-utils",
+ "reth-taiko-chainspec",
+ "reth-taiko-consensus",
+ "reth-taiko-forks",
+ "reth-taiko-primitives",
+ "revm",
  "revm-primitives",
- "secp256k1",
- "serde_json",
  "tracing",
 ]
 
@@ -9600,7 +9611,7 @@ dependencies = [
  "reth-node-builder",
  "reth-payload-builder",
  "reth-provider",
- "reth-taiko-beacon-consensus",
+ "reth-taiko-consensus",
  "reth-taiko-engine-primitives",
  "reth-taiko-evm",
  "reth-taiko-payload-builder",
@@ -9612,6 +9623,7 @@ dependencies = [
 name = "reth-taiko-payload-builder"
 version = "1.1.4"
 dependencies = [
+ "alloy-primitives 0.8.14",
  "alloy-rlp",
  "reth-basic-payload-builder",
  "reth-chainspec",
@@ -9621,7 +9633,7 @@ dependencies = [
  "reth-primitives",
  "reth-provider",
  "reth-revm",
- "reth-taiko-beacon-consensus",
+ "reth-taiko-consensus",
  "reth-taiko-engine-primitives",
  "reth-taiko-evm",
  "reth-taiko-primitives",
@@ -9724,8 +9736,8 @@ dependencies = [
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
- "reth-taiko-beacon-consensus",
  "reth-taiko-chainspec",
+ "reth-taiko-consensus",
  "reth-taiko-evm",
  "reth-taiko-forks",
  "reth-taiko-payload-builder",
@@ -11132,9 +11144,9 @@ dependencies = [
  "reth-cli-util",
  "reth-node-builder",
  "reth-provider",
- "reth-taiko-beacon-consensus",
  "reth-taiko-chainspec",
  "reth-taiko-cli",
+ "reth-taiko-consensus",
  "reth-taiko-evm",
  "reth-taiko-forks",
  "reth-taiko-node",

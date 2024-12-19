@@ -176,17 +176,8 @@ impl TaikoChainSpecBuilder {
         self
     }
 
-    /// Enable Bedrock at genesis
-    pub fn hekla_activated(mut self) -> Self {
-        self.inner = self.inner.paris_activated();
-        self.inner =
-            self.inner.with_fork(reth_taiko_forks::TaikoHardfork::Hekla, ForkCondition::Block(0));
-        self
-    }
-
     /// Enable Regolith at genesis
     pub fn ontake_activated(mut self) -> Self {
-        self = self.hekla_activated();
         self.inner =
             self.inner.with_fork(reth_taiko_forks::TaikoHardfork::Ontake, ForkCondition::Block(0));
         self

@@ -22,7 +22,7 @@ reth-network.workspace = true
 reth-consensus.workspace = true
 
 # taiko
-reth-taiko-beacon-consensus.workspace = true
+reth-taiko-consensus.workspace = true
 reth-taiko-evm.workspace = true
 reth-taiko-engine-primitives.workspace = true
 reth-taiko-payload-builder.workspace = true

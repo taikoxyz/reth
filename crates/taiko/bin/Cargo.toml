@@ -11,12 +11,13 @@ exclude.workspace = true
 [dependencies]
 reth-node-builder = { workspace = true, features = ["js-tracer"] }
 reth-cli-util.workspace = true
-reth-taiko-cli.workspace = true
 reth-provider.workspace = true
+
+reth-taiko-cli.workspace = true
 reth-taiko-rpc.workspace = true
 reth-taiko-node.workspace = true
 reth-taiko-chainspec.workspace = true
-reth-taiko-beacon-consensus.workspace = true
+reth-taiko-consensus.workspace = true
 reth-taiko-evm.workspace = true
 reth-taiko-payload-builder.workspace = true
 reth-taiko-primitives.workspace = true

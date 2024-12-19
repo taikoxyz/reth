@@ -21,12 +21,6 @@ use reth_ethereum_forks::EthereumHardforks;
 pub trait TaikoHardforks: EthereumHardforks {
     /// Convenience method to check if [`TaikoHardfork::Hekla`] is active at a given block
     /// number.
-    fn is_hekla_active_at_block(&self, block_number: u64) -> bool {
-        self.fork(TaikoHardfork::Hekla).active_at_block(block_number)
-    }
-
-    /// Convenience method to check if [`TaikoHardfork::Hekla`] is active at a given block
-    /// number.
     fn is_ontake_active_at_block(&self, block_number: u64) -> bool {
         self.fork(TaikoHardfork::Ontake).active_at_block(block_number)
     }

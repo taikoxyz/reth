@@ -30,7 +30,7 @@ reth-chainspec.workspace = true
 
 # op-reth
 reth-taiko-chainspec.workspace = true
-reth-taiko-beacon-consensus.workspace = true
+reth-taiko-consensus.workspace = true
 reth-taiko-evm.workspace = true
 reth-taiko-payload-builder.workspace = true
 reth-taiko-primitives.workspace = true
