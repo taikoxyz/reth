@@ -4,7 +4,7 @@ use alloy_rpc_types_eth::transaction::Transaction;
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct BlockExecutionInput<'a, Block> {
     /// The block to execute.
     pub block: &'a Block,

@@ -5,6 +5,7 @@ use alloy_consensus::BlockHeader;
 pub use reth_execution_errors::{
     BlockExecutionError, BlockValidationError, InternalBlockExecutionError,
 };
+use reth_execution_types::TaskResult;
 pub use reth_execution_types::{BlockExecutionInput, BlockExecutionOutput, ExecutionOutcome};
 use reth_primitives_traits::Block as _;
 pub use reth_storage_errors::provider::ProviderError;
@@ -193,6 +194,10 @@ pub struct ExecuteOutput<R = Receipt> {
     pub receipts: Vec<R>,
     /// Cumulative gas used in the block execution.
     pub gas_used: u64,
+    /// The target list.
+    pub target_list: Vec<TaskResult>,
+    /// The skipped transactions when `BlockExecutionInput::enable_skip`.
+    pub skipped_list: Vec<usize>,
 }
 
 /// Defines the strategy for executing a single block.
@@ -219,8 +224,10 @@ pub trait BlockExecutionStrategy {
     /// Executes all transactions in the block.
     fn execute_transactions(
         &mut self,
-        block: &BlockWithSenders<<Self::Primitives as NodePrimitives>::Block>,
-        total_difficulty: U256,
+        input: BlockExecutionInput<
+            '_,
+            BlockWithSenders<<Self::Primitives as NodePrimitives>::Block>,
+        >,
     ) -> Result<ExecuteOutput<<Self::Primitives as NodePrimitives>::Receipt>, Self::Error>;
 
     /// Applies any necessary changes after executing the block's transactions.
@@ -360,20 +367,13 @@ where
         let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
-        let ExecuteOutput { receipts, gas_used } =
-            self.strategy.execute_transactions(block, total_difficulty)?;
+        let ExecuteOutput { receipts, gas_used, target_list, skipped_list } =
+            self.strategy.execute_transactions(input)?;
         let requests =
             self.strategy.apply_post_execution_changes(block, total_difficulty, &receipts)?;
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput {
-            state,
-            receipts,
-            requests,
-            gas_used,
-            target_list: vec![],
-            skipped_list: vec![],
-        })
+        Ok(BlockExecutionOutput { state, receipts, requests, gas_used, target_list, skipped_list })
     }
 
     fn execute_with_state_closure<F>(
@@ -387,8 +387,8 @@ where
         let BlockExecutionInput { block, total_difficulty, .. } = input;
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
-        let ExecuteOutput { receipts, gas_used } =
-            self.strategy.execute_transactions(block, total_difficulty)?;
+        let ExecuteOutput { receipts, gas_used, target_list, skipped_list } =
+            self.strategy.execute_transactions(input)?;
         let requests =
             self.strategy.apply_post_execution_changes(block, total_difficulty, &receipts)?;
 
@@ -396,14 +396,7 @@ where
 
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput {
-            state,
-            receipts,
-            requests,
-            gas_used,
-            target_list: vec![],
-            skipped_list: vec![],
-        })
+        Ok(BlockExecutionOutput { state, receipts, requests, gas_used, target_list, skipped_list })
     }
 
     fn execute_with_state_hook<H>(
@@ -419,21 +412,14 @@ where
         self.strategy.with_state_hook(Some(Box::new(state_hook)));
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
-        let ExecuteOutput { receipts, gas_used } =
-            self.strategy.execute_transactions(block, total_difficulty)?;
+        let ExecuteOutput { receipts, gas_used, target_list, skipped_list } =
+            self.strategy.execute_transactions(input)?;
         let requests =
             self.strategy.apply_post_execution_changes(block, total_difficulty, &receipts)?;
 
         let state = self.strategy.finish();
 
-        Ok(BlockExecutionOutput {
-            state,
-            receipts,
-            requests,
-            gas_used,
-            target_list: vec![],
-            skipped_list: vec![],
-        })
+        Ok(BlockExecutionOutput { state, receipts, requests, gas_used, target_list, skipped_list })
     }
 }
 
@@ -481,8 +467,7 @@ where
         }
 
         self.strategy.apply_pre_execution_changes(block, total_difficulty)?;
-        let ExecuteOutput { receipts, .. } =
-            self.strategy.execute_transactions(block, total_difficulty)?;
+        let ExecuteOutput { receipts, .. } = self.strategy.execute_transactions(input)?;
         let requests =
             self.strategy.apply_post_execution_changes(block, total_difficulty, &receipts)?;
 
@@ -774,6 +759,8 @@ mod tests {
         let expected_execute_transactions_result = ExecuteOutput::<Receipt> {
             receipts: expected_receipts.clone(),
             gas_used: expected_gas_used,
+            target_list: vec![],
+            skipped_list: vec![],
         };
         let expected_apply_post_execution_changes_result = Requests::new(vec![bytes!("deadbeef")]);
         let expected_finish_result = BundleState::default();
@@ -804,6 +791,8 @@ mod tests {
             execute_transactions_result: ExecuteOutput {
                 receipts: vec![Receipt::default()],
                 gas_used: 10,
+                target_list: vec![],
+                skipped_list: vec![],
             },
             apply_post_execution_changes_result: Requests::new(vec![bytes!("deadbeef")]),
             finish_result: BundleState::default(),

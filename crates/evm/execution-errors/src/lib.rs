@@ -11,6 +11,8 @@
 
 extern crate alloc;
 
+use core::error;
+
 use alloc::{boxed::Box, string::String};
 use alloy_eips::BlockNumHash;
 use alloy_primitives::B256;
@@ -115,6 +117,12 @@ pub enum BlockValidationError {
     /// [EIP-6110]: https://eips.ethereum.org/EIPS/eip-6110
     #[error("failed to decode deposit requests from receipts: {_0}")]
     DepositRequestDecode(String),
+    /// Anchor validation error
+    #[error("failed to validate anchor: {message}")]
+    AnchorValidation {
+        /// The error message.
+        message: String,
+    },
 }
 
 /// `BlockExecutor` Errors

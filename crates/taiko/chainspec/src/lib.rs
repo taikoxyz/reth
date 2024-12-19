@@ -16,6 +16,7 @@ use alloy_chains::Chain;
 use alloy_consensus::Header;
 use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
 use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
+use core::str::FromStr;
 use derive_more::{Constructor, Deref, Display, From, Into};
 #[cfg(not(feature = "std"))]
 pub(crate) use once_cell::sync::Lazy as LazyLock;
@@ -199,6 +200,19 @@ impl TaikoChainSpecBuilder {
 pub struct TaikoChainSpec {
     /// [`ChainSpec`].
     pub inner: ChainSpec,
+}
+
+impl TaikoChainSpec {
+    /// Get treasury address.
+    pub fn treasury(&self) -> Address {
+        const SUFFIX: &str = "10001";
+        let prefix = self.chain().id().to_string();
+        Address::from_str(&format!(
+            "{prefix}{}{SUFFIX}",
+            "0".repeat(Address::len_bytes() * 2 - prefix.len() - SUFFIX.len())
+        ))
+        .unwrap()
+    }
 }
 
 impl EthChainSpec for TaikoChainSpec {

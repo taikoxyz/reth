@@ -19,10 +19,15 @@ use reth_evm::{
     ConfigureEvm, TxEnvOverrides,
 };
 use reth_evm_ethereum::dao_fork::{DAO_HARDFORK_BENEFICIARY, DAO_HARDKFORK_ACCOUNTS};
+use reth_execution_types::BlockExecutionInput;
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt, TransactionSigned};
 use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
-use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, ResultAndState, U256};
+use reth_taiko_consensus::{check_anchor_tx, decode_ontake_extra_data};
+use reth_taiko_forks::TaikoHardforks;
+use revm::JournaledState;
+use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, HashSet, ResultAndState, U256};
+use tracing::debug;
 
 /// Factory for [`OpExecutionStrategy`].
 #[derive(Debug, Clone)]
@@ -34,8 +39,8 @@ pub struct TaikoExecutionStrategyFactory<EvmConfig = TaikoEvmConfig> {
 }
 
 impl TaikoExecutionStrategyFactory {
-    /// Creates a new default optimism executor strategy factory.
-    pub fn optimism(chain_spec: Arc<TaikoChainSpec>) -> Self {
+    /// Creates a new default taiko executor strategy factory.
+    pub fn taiko(chain_spec: Arc<TaikoChainSpec>) -> Self {
         Self::new(chain_spec.clone(), TaikoEvmConfig::new(chain_spec))
     }
 }
@@ -92,10 +97,98 @@ impl<DB, EvmConfig> TaikoExecutionStrategy<DB, EvmConfig>
 where
     EvmConfig: Clone,
 {
-    /// Creates a new [`OpExecutionStrategy`]
+    /// Creates a new [`TaikoExecutionStrategy`]
     pub fn new(state: State<DB>, chain_spec: Arc<TaikoChainSpec>, evm_config: EvmConfig) -> Self {
         let system_caller = SystemCaller::new(evm_config.clone(), chain_spec.clone());
         Self { state, chain_spec, evm_config, system_caller, tx_env_overrides: None }
+    }
+
+    fn build_transaction_list(
+        &mut self,
+        block: &BlockWithSenders,
+        max_bytes_per_tx_list: u64,
+        max_transactions_lists: u64,
+    ) -> Result<Vec<TaskResult>, BlockExecutionError> {
+        let env = self.evm_env_for_block(&block.header, U256::ZERO);
+        let mut evm = self.executor.evm_config.evm_with_env(&mut self.state, env);
+        // 2. configure the evm and execute
+        // apply pre execution changes
+        apply_beacon_root_contract_call(
+            &self.executor.chain_spec,
+            block.timestamp,
+            block.number,
+            block.parent_beacon_block_root,
+            &mut evm,
+        )?;
+
+        apply_blockhashes_update(
+            evm.db_mut(),
+            &self.executor.chain_spec,
+            block.timestamp,
+            block.number,
+            block.parent_hash,
+        )?;
+
+        let mut target_list: Vec<TaskResult> = vec![];
+        // get previous env
+        let previous_env = Box::new(evm.context.env().clone());
+
+        for _ in 0..max_transactions_lists {
+            // evm.context.evm.db.commit(state);
+            // re-set the previous env
+            evm.context.evm.env = previous_env.clone();
+
+            let mut cumulative_gas_used = 0;
+            let mut tx_list: Vec<TransactionSigned> = vec![];
+            let mut buf_len: u64 = 0;
+
+            for i in 0..block.body.len() {
+                let transaction = block.body.get(i).unwrap();
+                let sender = block.senders.get(i).unwrap();
+                let block_available_gas = block.header.gas_limit - cumulative_gas_used;
+                if transaction.gas_limit() > block_available_gas {
+                    break;
+                }
+
+                EvmConfig::fill_tx_env(evm.tx_mut(), transaction, *sender);
+
+                // Execute transaction.
+                let ResultAndState { result, state } = match evm.transact() {
+                    Ok(res) => res,
+                    Err(_) => continue,
+                };
+                tx_list.push(transaction.clone());
+
+                let compressed_buf =
+                    encode_and_compress_tx_list(&tx_list).map_err(BlockExecutionError::other)?;
+                if compressed_buf.len() > max_bytes_per_tx_list as usize {
+                    tx_list.pop();
+                    break;
+                }
+
+                buf_len = compressed_buf.len() as u64;
+                // append gas used
+                cumulative_gas_used += result.gas_used();
+
+                // collect executed transaction state
+                evm.db_mut().commit(state);
+            }
+
+            if tx_list.is_empty() {
+                break;
+            }
+            target_list.push(TaskResult {
+                txs: tx_list[..]
+                    .iter()
+                    .cloned()
+                    .map(|tx| reth_rpc_types_compat::transaction::from_signed(tx).unwrap())
+                    .collect(),
+                estimated_gas_used: cumulative_gas_used,
+                bytes_length: buf_len,
+            });
+        }
+
+        Ok(target_list)
     }
 }
 
@@ -147,19 +240,55 @@ where
 
     fn execute_transactions(
         &mut self,
-        block: &BlockWithSenders,
-        total_difficulty: U256,
+        input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
+        let BlockExecutionInput {
+            block,
+            total_difficulty,
+            enable_anchor,
+            enable_skip,
+            enable_build,
+            max_bytes_per_tx_list,
+            max_transactions_lists,
+        } = input;
+
+        if enable_build {
+            let target_list =
+                self.build_transaction_list(block, max_bytes_per_tx_list, max_transactions_lists)?;
+            Ok(ExecuteOutput { receipts: vec![], gas_used: 0, target_list, skipped_list: vec![] })
+        }
+
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
 
         let mut cumulative_gas_used = 0;
         let mut receipts = Vec::with_capacity(block.body.transactions.len());
-        for (sender, transaction) in block.transactions_with_sender() {
+        let mut skipped_transactions = Vec::with_capacity(block.body.transactions.len());
+        let treasury = self.chain_spec.treasury();
+
+        for (idx, (sender, transaction)) in block.transactions_with_sender().enumerate() {
+            let is_anchor = idx == 0 && enable_anchor;
+
+            // verify the anchor tx
+            if is_anchor {
+                check_anchor_tx(
+                    transaction,
+                    *sender,
+                    block.base_fee_per_gas.unwrap_or_default(),
+                    treasury,
+                )
+                .map_err(|e| BlockValidationError::AnchorValidation { message: e.to_string() })?;
+            }
+
             // The sum of the transaction’s gas limit, Tg, and the gas utilized in this block prior,
             // must be no greater than the block’s gasLimit.
             let block_available_gas = block.header.gas_limit - cumulative_gas_used;
             if transaction.gas_limit() > block_available_gas {
+                if !is_anchor && enable_skip {
+                    debug!(target: "taiko::executor", hash = ?transaction.hash(), want = ?transaction.gas_limit(), got = block_available_gas, "Invalid gas limit for tx");
+                    skipped_transactions.push(transaction);
+                    continue;
+                }
                 return Err(BlockValidationError::TransactionGasLimitMoreThanAvailableBlockGas {
                     transaction_gas_limit: transaction.gas_limit(),
                     block_available_gas,
@@ -173,15 +302,40 @@ where
                 tx_env_overrides.apply(evm.tx_mut());
             }
 
+            // Set taiko specific data
+            evm.tx_mut().taiko.is_anchor = is_anchor;
+            // set the treasury address
+            evm.tx_mut().taiko.treasury = treasury;
+
+            if self.chain_spec.is_ontake_active_at_block(block.number) {
+                // set the basefee ratio
+                evm.tx_mut().taiko.basefee_ratio = decode_ontake_extra_data(&block.extra_data);
+            }
+
             // Execute transaction.
-            let result_and_state = evm.transact().map_err(move |err| {
+            let result_and_state = match evm.transact().map_err(move |err| {
                 let new_err = err.map_db_err(|e| e.into());
                 // Ensure hash is calculated for error log, if not already done
                 BlockValidationError::EVM {
                     hash: transaction.recalculate_hash(),
                     error: Box::new(new_err),
                 }
-            })?;
+            }) {
+                Ok(res) => res,
+                Err(err) => {
+                    if !is_anchor && enable_skip {
+                        // Clear the state for the next tx
+                        evm.context.evm.journaled_state = JournaledState::new(
+                            evm.context.evm.journaled_state.spec,
+                            HashSet::default(),
+                        );
+                        debug!(target: "taiko::executor", hash = ?transaction.hash(), error = ?err, "Invalid execute for tx");
+                        continue;
+                    }
+                    return Err(err.into());
+                }
+            };
+
             self.system_caller.on_state(&result_and_state.state);
             let ResultAndState { result, state } = result_and_state;
             evm.db_mut().commit(state);
@@ -204,7 +358,12 @@ where
                 },
             );
         }
-        Ok(ExecuteOutput { receipts, gas_used: cumulative_gas_used })
+        Ok(ExecuteOutput {
+            receipts,
+            gas_used: cumulative_gas_used,
+            skipped_list,
+            target_list: vec![],
+        })
     }
 
     fn apply_post_execution_changes(
@@ -287,235 +446,13 @@ where
 
 /// Helper type with backwards compatible methods to obtain executor providers.
 #[derive(Debug)]
-pub struct OpExecutorProvider;
+pub struct TaikoExecutorProvider;
 
-impl OpExecutorProvider {
+impl TaikoExecutorProvider {
     /// Creates a new default optimism executor strategy factory.
-    pub fn optimism(
+    pub fn taiko(
         chain_spec: Arc<TaikoChainSpec>,
     ) -> BasicBlockExecutorProvider<TaikoExecutionStrategyFactory> {
-        BasicBlockExecutorProvider::new(TaikoExecutionStrategyFactory::optimism(chain_spec))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::TaikoChainSpec;
-    use alloy_consensus::TxEip1559;
-    use alloy_primitives::{
-        b256, Address, PrimitiveSignature as Signature, StorageKey, StorageValue,
-    };
-    use op_alloy_consensus::TxDeposit;
-    use reth_chainspec::MIN_TRANSACTION_GAS;
-    use reth_evm::execute::{BasicBlockExecutorProvider, BatchExecutor, BlockExecutorProvider};
-    use reth_optimism_chainspec::OpChainSpecBuilder;
-    use reth_primitives::{Account, Block, BlockBody, Transaction, TransactionSigned};
-    use reth_revm::{
-        database::StateProviderDatabase, test_utils::StateProviderTest, L1_BLOCK_CONTRACT,
-    };
-    use std::{collections::HashMap, str::FromStr};
-
-    fn create_op_state_provider() -> StateProviderTest {
-        let mut db = StateProviderTest::default();
-
-        let l1_block_contract_account =
-            Account { balance: U256::ZERO, bytecode_hash: None, nonce: 1 };
-
-        let mut l1_block_storage = HashMap::default();
-        // base fee
-        l1_block_storage.insert(StorageKey::with_last_byte(1), StorageValue::from(1000000000));
-        // l1 fee overhead
-        l1_block_storage.insert(StorageKey::with_last_byte(5), StorageValue::from(188));
-        // l1 fee scalar
-        l1_block_storage.insert(StorageKey::with_last_byte(6), StorageValue::from(684000));
-        // l1 free scalars post ecotone
-        l1_block_storage.insert(
-            StorageKey::with_last_byte(3),
-            StorageValue::from_str(
-                "0x0000000000000000000000000000000000001db0000d27300000000000000005",
-            )
-            .unwrap(),
-        );
-
-        db.insert_account(L1_BLOCK_CONTRACT, l1_block_contract_account, None, l1_block_storage);
-
-        db
-    }
-
-    fn executor_provider(
-        chain_spec: Arc<TaikoChainSpec>,
-    ) -> BasicBlockExecutorProvider<TaikoExecutionStrategyFactory> {
-        let strategy_factory =
-            TaikoExecutionStrategyFactory::new(chain_spec.clone(), TaikoEvmConfig::new(chain_spec));
-
-        BasicBlockExecutorProvider::new(strategy_factory)
-    }
-
-    #[test]
-    fn op_deposit_fields_pre_canyon() {
-        let header = Header {
-            timestamp: 1,
-            number: 1,
-            gas_limit: 1_000_000,
-            gas_used: 42_000,
-            receipts_root: b256!(
-                "83465d1e7d01578c0d609be33570f91242f013e9e295b0879905346abbd63731"
-            ),
-            ..Default::default()
-        };
-
-        let mut db = create_op_state_provider();
-
-        let addr = Address::ZERO;
-        let account = Account { balance: U256::MAX, ..Account::default() };
-        db.insert_account(addr, account, None, HashMap::default());
-
-        let chain_spec = Arc::new(OpChainSpecBuilder::base_mainnet().regolith_activated().build());
-
-        let tx = TransactionSigned::new_unhashed(
-            Transaction::Eip1559(TxEip1559 {
-                chain_id: chain_spec.chain.id(),
-                nonce: 0,
-                gas_limit: MIN_TRANSACTION_GAS,
-                to: addr.into(),
-                ..Default::default()
-            }),
-            Signature::test_signature(),
-        );
-
-        let tx_deposit = TransactionSigned::new_unhashed(
-            Transaction::Deposit(op_alloy_consensus::TxDeposit {
-                from: addr,
-                to: addr.into(),
-                gas_limit: MIN_TRANSACTION_GAS,
-                ..Default::default()
-            }),
-            Signature::test_signature(),
-        );
-
-        let provider = executor_provider(chain_spec);
-        let mut executor = provider.batch_executor(StateProviderDatabase::new(&db));
-
-        // make sure the L1 block contract state is preloaded.
-        executor.with_state_mut(|state| {
-            state.load_cache_account(L1_BLOCK_CONTRACT).unwrap();
-        });
-
-        // Attempt to execute a block with one deposit and one non-deposit transaction
-        executor
-            .execute_and_verify_one(
-                (
-                    &BlockWithSenders {
-                        block: Block {
-                            header,
-                            body: BlockBody {
-                                transactions: vec![tx, tx_deposit],
-                                ..Default::default()
-                            },
-                        },
-                        senders: vec![addr, addr],
-                    },
-                    U256::ZERO,
-                )
-                    .into(),
-            )
-            .unwrap();
-
-        let receipts = executor.receipts();
-        let tx_receipt = receipts[0][0].as_ref().unwrap();
-        let deposit_receipt = receipts[0][1].as_ref().unwrap();
-
-        // deposit_receipt_version is not present in pre canyon transactions
-        assert!(deposit_receipt.deposit_receipt_version.is_none());
-        assert!(tx_receipt.deposit_receipt_version.is_none());
-
-        // deposit_nonce is present only in deposit transactions
-        assert!(deposit_receipt.deposit_nonce.is_some());
-        assert!(tx_receipt.deposit_nonce.is_none());
-    }
-
-    #[test]
-    fn op_deposit_fields_post_canyon() {
-        // ensure_create2_deployer will fail if timestamp is set to less then 2
-        let header = Header {
-            timestamp: 2,
-            number: 1,
-            gas_limit: 1_000_000,
-            gas_used: 42_000,
-            receipts_root: b256!(
-                "fffc85c4004fd03c7bfbe5491fae98a7473126c099ac11e8286fd0013f15f908"
-            ),
-            ..Default::default()
-        };
-
-        let mut db = create_op_state_provider();
-        let addr = Address::ZERO;
-        let account = Account { balance: U256::MAX, ..Account::default() };
-
-        db.insert_account(addr, account, None, HashMap::default());
-
-        let chain_spec = Arc::new(OpChainSpecBuilder::base_mainnet().canyon_activated().build());
-
-        let tx = TransactionSigned::new_unhashed(
-            Transaction::Eip1559(TxEip1559 {
-                chain_id: chain_spec.chain.id(),
-                nonce: 0,
-                gas_limit: MIN_TRANSACTION_GAS,
-                to: addr.into(),
-                ..Default::default()
-            }),
-            Signature::test_signature(),
-        );
-
-        let tx_deposit = TransactionSigned::new_unhashed(
-            Transaction::Deposit(op_alloy_consensus::TxDeposit {
-                from: addr,
-                to: addr.into(),
-                gas_limit: MIN_TRANSACTION_GAS,
-                ..Default::default()
-            }),
-            TxDeposit::signature(),
-        );
-
-        let provider = executor_provider(chain_spec);
-        let mut executor = provider.batch_executor(StateProviderDatabase::new(&db));
-
-        // make sure the L1 block contract state is preloaded.
-        executor.with_state_mut(|state| {
-            state.load_cache_account(L1_BLOCK_CONTRACT).unwrap();
-        });
-
-        // attempt to execute an empty block with parent beacon block root, this should not fail
-        executor
-            .execute_and_verify_one(
-                (
-                    &BlockWithSenders {
-                        block: Block {
-                            header,
-                            body: BlockBody {
-                                transactions: vec![tx, tx_deposit],
-                                ..Default::default()
-                            },
-                        },
-                        senders: vec![addr, addr],
-                    },
-                    U256::ZERO,
-                )
-                    .into(),
-            )
-            .expect("Executing a block while canyon is active should not fail");
-
-        let receipts = executor.receipts();
-        let tx_receipt = receipts[0][0].as_ref().unwrap();
-        let deposit_receipt = receipts[0][1].as_ref().unwrap();
-
-        // deposit_receipt_version is set to 1 for post canyon deposit transactions
-        assert_eq!(deposit_receipt.deposit_receipt_version, Some(1));
-        assert!(tx_receipt.deposit_receipt_version.is_none());
-
-        // deposit_nonce is present only in deposit transactions
-        assert!(deposit_receipt.deposit_nonce.is_some());
-        assert!(tx_receipt.deposit_nonce.is_none());
+        BasicBlockExecutorProvider::new(TaikoExecutionStrategyFactory::taiko(chain_spec))
     }
 }
