@@ -585,11 +585,6 @@ pub trait Call: LoadState + SpawnBlocking {
         // set nonce to None so that the correct nonce is chosen by the EVM
         request.nonce = None;
 
-        // set chain_id to the config chain id if unknown
-        if request.chain_id == None {
-            request.chain_id = Some(cfg.chain_id);
-        }
-
         // Keep a copy of gas related request values
         let tx_request_gas_limit = request.gas;
         let tx_request_gas_price = request.gas_price;
@@ -952,6 +947,13 @@ pub trait Call: LoadState + SpawnBlocking {
         block: BlockEnv,
         request: TransactionRequest,
     ) -> Result<EnvWithHandlerCfg, Self::Error> {
+        let mut request = request;
+
+        // set chain_id to the config chain id if unknown
+        if request.chain_id == None {
+            request.chain_id = Some(cfg.chain_id);
+        }
+
         let tx = self.create_txn_env(&block, request)?;
         Ok(EnvWithHandlerCfg::new_with_cfg_env(cfg, block, tx))
     }
