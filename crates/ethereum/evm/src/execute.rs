@@ -227,7 +227,12 @@ where
                 },
             );
         }
-        Ok(ExecuteOutput { receipts, gas_used: cumulative_gas_used })
+        Ok(ExecuteOutput {
+            receipts,
+            gas_used: cumulative_gas_used,
+            target_list: vec![],
+            skipped_list: vec![],
+        })
     }
 
     fn apply_post_execution_changes(
