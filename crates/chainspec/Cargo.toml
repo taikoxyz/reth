@@ -21,6 +21,9 @@ revm-primitives = { workspace = true, optional = true, features = ["serde"] }
 # op-reth
 reth-optimism-forks = { workspace = true, optional = true }
 
+# taiko
+taiko-reth-forks.workspace = true
+
 # ethereum
 alloy-chains = { workspace = true, features = ["serde", "rlp"] }
 alloy-eips = { workspace = true, features = ["serde"] }

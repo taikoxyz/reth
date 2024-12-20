@@ -6,6 +6,7 @@ use alloy_genesis::{ChainConfig, Genesis, GenesisAccount};
 use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
 use core::{fmt, fmt::Formatter, str::FromStr};
 use once_cell::sync::Lazy;
+use reth_chainspec::ChainSpec;
 use reth_ethereum_forks::{hardfork, ChainHardforks, EthereumHardfork, ForkCondition, Hardfork};
 use serde::{Deserialize, Serialize};
 use taiko_reth_forks::TaikoHardFork;

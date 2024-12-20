@@ -1,10 +1,18 @@
 //! Beacon consensus implementation.
 
-mod validation;
+pub mod validation;
+pub use validation::*;
+pub mod anchor;
+pub use anchor::*;
 
+use crate::validation::validate_block_post_execution;
 use reth_chainspec::{ChainSpec, EthereumHardforks};
 use reth_consensus::{Consensus, ConsensusError, PostExecutionInput};
-use reth_consensus_common::validation::{validate_4844_header_standalone, validate_against_parent_4844, validate_against_parent_hash_number, validate_against_parent_timestamp, validate_header_base_fee, validate_header_extradata, validate_header_gas};
+use reth_consensus_common::validation::{
+    validate_4844_header_standalone, validate_against_parent_4844,
+    validate_against_parent_hash_number, validate_against_parent_timestamp,
+    validate_header_base_fee, validate_header_extradata, validate_header_gas,
+};
 use reth_primitives::constants::MAXIMUM_GAS_LIMIT;
 use reth_primitives::revm_primitives::alloy_primitives::B64;
 use reth_primitives::revm_primitives::U256;
@@ -13,7 +21,6 @@ use reth_primitives::{
 };
 use std::sync::Arc;
 use std::time::SystemTime;
-use crate::validation::validate_block_post_execution;
 
 /// Taiko beacon consensus
 ///

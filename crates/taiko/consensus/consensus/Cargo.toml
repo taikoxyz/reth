@@ -17,7 +17,12 @@ reth-consensus-common.workspace = true
 
 # alloy
 alloy-primitives.workspace = true
+
+# misc
 tracing.workspace = true
+once_cell.workspace = true
+anyhow = "1.0.94"
+alloy-sol-types.workspace = true
 
 [lints]
 workspace = true

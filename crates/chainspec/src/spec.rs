@@ -210,6 +210,27 @@ pub struct ChainSpec {
     pub prune_delete_limit: usize,
 }
 
+impl ChainSpec {
+    /// Returns the treasury address for the chain.
+    #[inline]
+    pub fn treasury(&self) -> Address {
+        use core::str::FromStr;
+        const SUFFIX: &str = "10001";
+        let prefix = self.chain().id().to_string();
+        Address::from_str(&format!(
+            "{prefix}{}{SUFFIX}",
+            "0".repeat(Address::len_bytes() * 2 - prefix.len() - SUFFIX.len())
+        ))
+            .unwrap()
+    }
+
+    /// Returns `true` if ontake fork is active at the given block number.
+    #[inline]
+    pub fn is_ontake_fork(&self, block_number: u64) -> bool {
+        self.is_fork_active_at_block(taiko_reth_forks::TaikoHardFork::Ontake, block_number)
+    }
+}
+
 impl Default for ChainSpec {
     fn default() -> Self {
         Self {
