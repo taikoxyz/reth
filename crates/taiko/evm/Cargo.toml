@@ -10,10 +10,27 @@ exclude.workspace = true
 
 [dependencies]
 # reth
-reth-chainspec.workspace = true
-reth-evm.workspace = true
-reth-primitives.workspace = true
+reth-chainspec = { workspace = true, features = ["taiko"] }
+reth-ethereum-forks.workspace = true
+reth-evm = { workspace = true, features = ["taiko"] }
+reth-evm-ethereum.workspace = true
+reth-execution-types.workspace = true
+reth-primitives = { workspace = true, features = ["taiko"] }
 reth-prune-types.workspace = true
 reth-revm.workspace = true
+
+# taiko
+taiko-reth-beacon-consensus.workspace = true
+taiko-reth-forks.workspace = true
+
+# alloy
+alloy-primitives.workspace = true
+reth-consensus.workspace = true
+alloy-eips.workspace = true
+alloy-sol-types.workspace = true
+revm-primitives.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
 [lints]
 workspace = true

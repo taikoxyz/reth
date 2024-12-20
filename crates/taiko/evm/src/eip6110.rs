@@ -88,6 +88,7 @@ fn parse_deposit_from_log(log: &Log<DepositEvent>) -> DepositRequest {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use super::*;
     use reth_chainspec::MAINNET;
     use reth_primitives::TxType;
