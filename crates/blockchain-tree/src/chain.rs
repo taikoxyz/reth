@@ -18,8 +18,7 @@ use reth_primitives::{
     BlockHash, BlockNumber, ForkBlock, GotExpected, SealedBlockWithSenders, SealedHeader, U256,
 };
 use reth_provider::{
-    providers::{BundleStateProvider, ConsistentDbView},
-    ChainSpecProvider, FullExecutionDataProvider, ProviderError, StateRootProvider,
+    providers::{BundleStateProvider, ConsistentDbView}, BlockNumReader, ChainSpecProvider, DatabaseProviderFactory, FullExecutionDataProvider, ProviderError, StateProvider, StateRootProvider, NODES
 };
 use reth_revm::database::{StateProviderDatabase, SyncStateProviderDatabase};
 use reth_trie::{updates::TrieUpdates, HashedPostState};
@@ -89,6 +88,7 @@ impl AppendableChain {
             canonical_fork,
         };
 
+        println!("Brecht: new_canonical_fork");
         let (bundle_state, trie_updates) = Self::validate_and_execute(
             block.clone(),
             parent_header,
@@ -137,6 +137,7 @@ impl AppendableChain {
             canonical_block_hashes,
             canonical_fork,
         };
+        println!("Brecht: new_chain_fork");
         let (block_state, _) = Self::validate_and_execute(
             block.clone(),
             parent,
@@ -205,13 +206,66 @@ impl AppendableChain {
             .disable_long_read_transaction_safety()
             .state_provider_by_block_number(canonical_fork.number)?;
 
-        let provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
 
-        let db = SyncStateProviderDatabase::new(
+        // let provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
+
+        // // Brecht
+        // let mut super_db = SyncStateProviderDatabase::new(
+        //     Some(externals.provider_factory.chain_spec().chain.id()),
+        //     StateProviderDatabase::new(&provider),
+        // );
+
+        // // Add all external state dependencies
+        // let providers = NODES.lock().unwrap();
+        // let mut chain_providers = Vec::new();
+        // for (&chain_id, chain_provider) in providers.iter() {
+        //     println!("Adding db for chain_id: {}", chain_id);
+
+        //     let state_provider = chain_provider
+        //         .database_provider_ro()
+        //         .unwrap();
+        //     let last_block_number = state_provider.last_block_number()?;
+        //     let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+
+        //     let chain_provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
+        //     chain_providers.push(chain_provider);
+
+        //     //let boxed: Box<dyn StateProvider> = Box::new(state_provider);
+        //     //let state_provider = StateProviderDatabase::new(boxed);
+        //     super_db.add_db(chain_id, StateProviderDatabase::new(&chain_providers.last().unwrap()));
+        // }
+
+        // Brecht
+        let mut super_db = SyncStateProviderDatabase::new(
             Some(externals.provider_factory.chain_spec().chain.id()),
-            StateProviderDatabase::new(&provider),
+            StateProviderDatabase::new(state_provider),
         );
-        let executor = externals.executor_factory.executor(db);
+
+        println!("Brecht executed: Adding db for chain_id: {}", externals.provider_factory.chain_spec().chain.id());
+        // Add all external state dependencies
+        let providers = NODES.lock().unwrap();
+        //let mut chain_providers = Vec::new();
+        for (&chain_id, chain_provider) in providers.iter() {
+            if chain_id == externals.provider_factory.chain_spec().chain.id() {
+                continue;
+            }
+            println!("Brecht executed: Adding db for chain_id: {}", chain_id);
+
+            let state_provider = chain_provider
+                .database_provider_ro()
+                .unwrap();
+            let last_block_number = state_provider.last_block_number()?;
+            let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+
+            //let chain_provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
+            //chain_providers.push(chain_provider);
+
+            //let boxed: Box<dyn StateProvider> = Box::new(state_provider);
+            //let state_provider = StateProviderDatabase::new(boxed);
+            super_db.add_db(chain_id, StateProviderDatabase::new(state_provider));
+        }
+
+        let executor = externals.executor_factory.executor(super_db);
         let block_hash = block.hash();
         let block = block.unseal();
 
@@ -224,48 +278,51 @@ impl AppendableChain {
         let chain_id = externals.provider_factory.chain_spec().chain.id();
         let initial_execution_outcome = ExecutionOutcome::from((state, chain_id, block.number));
 
+
+        //let initial_execution_outcome = initial_execution_outcome.filter_chain(externals.provider_factory.chain_spec().chain.id());
+
         // check state root if the block extends the canonical chain __and__ if state root
         // validation was requested.
-        if block_validation_kind.is_exhaustive() {
-            // calculate and check state root
-            let start = Instant::now();
-            let (state_root, trie_updates) = if block_attachment.is_canonical() {
-                // TODO(Cecilie): refactor the bundle state provider for cross-chain bundles
-                let mut execution_outcome =
-                    provider.block_execution_data_provider.execution_outcome().clone();
-                execution_outcome.chain_id = chain_id;
-                execution_outcome.extend(initial_execution_outcome.clone());
-                let hashed_state = execution_outcome.hash_state_slow();
-                ParallelStateRoot::new(consistent_view, hashed_state)
-                    .incremental_root_with_updates()
-                    .map(|(root, updates)| (root, Some(updates)))
-                    .map_err(ProviderError::from)?
-            } else {
-                let hashed_state = HashedPostState::from_bundle_state(
-                    &initial_execution_outcome.current_state().state,
-                );
-                let state_root = provider.state_root(hashed_state)?;
-                (state_root, None)
-            };
-            if block.state_root != state_root {
-                return Err(ConsensusError::BodyStateRootDiff(
-                    GotExpected { got: state_root, expected: block.state_root }.into(),
-                )
-                .into())
-            }
+        // if block_validation_kind.is_exhaustive() {
+        //     // calculate and check state root
+        //     let start = Instant::now();
+        //     let (state_root, trie_updates) = if block_attachment.is_canonical() {
+        //         // TODO(Cecilie): refactor the bundle state provider for cross-chain bundles
+        //         let mut execution_outcome =
+        //             provider.block_execution_data_provider.execution_outcome().clone();
+        //         execution_outcome.chain_id = chain_id;
+        //         execution_outcome.extend(initial_execution_outcome.clone());
+        //         let hashed_state = execution_outcome.hash_state_slow();
+        //         ParallelStateRoot::new(consistent_view, hashed_state)
+        //             .incremental_root_with_updates()
+        //             .map(|(root, updates)| (root, Some(updates)))
+        //             .map_err(ProviderError::from)?
+        //     } else {
+        //         let hashed_state = HashedPostState::from_bundle_state(
+        //             &initial_execution_outcome.current_state().state,
+        //         );
+        //         let state_root = provider.state_root(hashed_state)?;
+        //         (state_root, None)
+        //     };
+        //     if block.state_root != state_root {
+        //         return Err(ConsensusError::BodyStateRootDiff(
+        //             GotExpected { got: state_root, expected: block.state_root }.into(),
+        //         )
+        //         .into())
+        //     }
 
-            tracing::debug!(
-                target: "blockchain_tree::chain",
-                number = block.number,
-                hash = %block_hash,
-                elapsed = ?start.elapsed(),
-                "Validated state root"
-            );
+        //     tracing::debug!(
+        //         target: "blockchain_tree::chain",
+        //         number = block.number,
+        //         hash = %block_hash,
+        //         elapsed = ?start.elapsed(),
+        //         "Validated state root"
+        //     );
 
-            Ok((initial_execution_outcome, trie_updates))
-        } else {
+        //     Ok((initial_execution_outcome, trie_updates))
+        // } else {
             Ok((initial_execution_outcome, None))
-        }
+        //}
     }
 
     /// Validate and execute the given block, and append it to this chain.
@@ -304,6 +361,7 @@ impl AppendableChain {
             canonical_fork,
         };
 
+        println!("Brecht: append_block");
         let (block_state, _) = Self::validate_and_execute(
             block.clone(),
             parent_block,

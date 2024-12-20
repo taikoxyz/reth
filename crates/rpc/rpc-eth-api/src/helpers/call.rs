@@ -2,6 +2,7 @@
 //! methods.
 
 use core::sync;
+use std::collections::HashMap;
 
 use crate::{AsEthApiError, FromEthApiError, FromEvmError, IntoEthApiError};
 use futures::{io::Chain, Future};
@@ -17,7 +18,7 @@ use reth_primitives::{
 };
 
 use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS, L1_CHAIN_ID};
-use reth_provider::{ChainSpecProvider, StateProvider};
+use reth_provider::{BlockNumReader, ChainSpecProvider, DatabaseProviderFactory, StateProvider, NODES};
 use reth_revm::{
     database::{CachedDBSyncStateProvider, StateProviderDatabase, SyncStateProviderDatabase},
     db::CacheDB,
@@ -600,10 +601,34 @@ pub trait Call: LoadState + SpawnBlocking {
         // Configure the evm env
         let mut env = self.build_call_evm_env(cfg, block, request)?;
         // FIX(Cecilia): hack to get the write db
-        let mut sync_db = CachedDBSyncStateProvider::new(SyncStateProviderDatabase::new(
-            Some(chain_id),
-            StateProviderDatabase::new(state),
-        ));
+        // Brecht
+        //let boxed: Box<dyn StateProvider> = Box::new(StateProviderDatabase::new(state));
+        //let mut super_db = SyncStateProviderDatabase::new(
+        //    Some(chain_id),
+        //    boxed,
+        //);
+
+        let mut super_db = SyncStateProviderDatabase { 0: HashMap::default() };
+
+        let providers = NODES.lock().unwrap();
+        for (&chain_id, chain_provider) in providers.iter() {
+            println!("Brecht executed: Adding db for chain_id: {}", chain_id);
+
+            let state_provider = chain_provider
+                .database_provider_ro()
+                .unwrap();
+            let last_block_number = state_provider.last_block_number().unwrap();
+            let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+
+            //let chain_provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
+            //chain_providers.push(chain_provider);
+
+            //let boxed: Box<dyn StateProvider> = Box::new(state_provider);
+            //let state_provider = StateProviderDatabase::new(boxed);
+            super_db.add_db(chain_id, StateProviderDatabase::new(state_provider));
+        }
+
+        let mut sync_db = CachedDBSyncStateProvider::new(super_db);
 
         // Apply any state overrides if specified.
         if let Some(state_override) = state_override {

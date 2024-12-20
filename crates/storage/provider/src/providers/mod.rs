@@ -70,7 +70,7 @@ pub use blockchain_provider::BlockchainProvider2;
 #[allow(missing_debug_implementations)]
 pub struct BlockchainProvider<DB, Spec = ChainSpec> {
     /// Provider type used to access the database.
-    database: ProviderFactory<DB, Spec>,
+    pub database: ProviderFactory<DB, Spec>,
     /// The blockchain tree instance.
     tree: Arc<dyn TreeViewer>,
     /// Tracks the chain info wrt forkchoice updates

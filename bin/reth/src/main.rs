@@ -9,6 +9,7 @@ use reth::args::{DiscoveryArgs, NetworkArgs, RpcServerArgs};
 use reth_chainspec::ChainSpecBuilder;
 use reth_node_builder::{NodeBuilder, NodeConfig, NodeHandle};
 use reth_node_ethereum::EthereumNode;
+use reth_provider::NODES;
 use reth_tasks::TaskManager;
 
 const BASE_CHAIN_ID: u64 = gwyneth::exex::BASE_CHAIN_ID; // Base chain ID for L2s
@@ -49,13 +50,16 @@ fn main() -> eyre::Result<()> {
                         .with_static_l2_rpc_ip_and_port(chain_id)
                 );
 
+            let chain_id = chain_spec.chain.id();
+
             let NodeHandle { node: gwyneth_node, node_exit_future: _ } =
                 NodeBuilder::new(node_config.clone())
-                    .gwyneth_node(exec.clone(), chain_spec.chain.id())
+                    .gwyneth_node(exec.clone(), chain_id)
                     .node(GwynethNode::default())
                     .launch()
                     .await?;
 
+            NODES.lock().unwrap().insert(chain_id, gwyneth_node.provider.clone());
             gwyneth_nodes.push(gwyneth_node);
         }
 
@@ -66,6 +70,9 @@ fn main() -> eyre::Result<()> {
             })
             .launch()
             .await?;
+
+
+        NODES.lock().unwrap().insert(handle.node.chain_spec().chain.id(), handle.node.provider.clone());
 
         handle.wait_for_node_exit().await
     })

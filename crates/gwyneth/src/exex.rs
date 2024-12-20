@@ -14,7 +14,7 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent};
 use reth_node_api::{FullNodeTypesAdapter, PayloadBuilderAttributes};
-use reth_node_builder::{components::Components, FullNode, NodeAdapter};
+use reth_node_builder::{components::Components, FullNode, Node, NodeAdapter};
 use reth_node_ethereum::{node::EthereumAddOns, EthExecutorProvider};
 use reth_payload_builder::EthBuiltPayload;
 use reth_primitives::{
@@ -38,19 +38,19 @@ pub type GwynethFullNode = FullNode<
     NodeAdapter<
         FullNodeTypesAdapter<
             GwynethNode,
-            Arc<TempDatabase<DatabaseEnv>>,
-            BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+            Arc<DatabaseEnv>,
+            BlockchainProvider<Arc<DatabaseEnv>>,
         >,
         Components<
             FullNodeTypesAdapter<
                 GwynethNode,
-                Arc<TempDatabase<DatabaseEnv>>,
-                BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+                Arc<DatabaseEnv>,
+                BlockchainProvider<Arc<DatabaseEnv>>,
             >,
             Pool<
                 TransactionValidationTaskExecutor<
                     EthTransactionValidator<
-                        BlockchainProvider<Arc<TempDatabase<DatabaseEnv>>>,
+                        BlockchainProvider<Arc<DatabaseEnv>>,
                         EthPooledTransaction,
                     >,
                 >,
@@ -157,7 +157,9 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 // Add all other L2 dbs for now as well until dependencies are broken
                 for node in self.nodes.iter() {
                     let chain_id = node.config.chain.chain().id();
+                    println!("other chain_id: {}", chain_id);
                     if chain_id != node_chain_id {
+                        println!("Adding chain_id: {}", chain_id);
                         let state_provider = node
                             .provider
                             .database_provider_ro()

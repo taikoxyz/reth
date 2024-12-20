@@ -5,6 +5,7 @@
 pub mod add_ons;
 mod states;
 
+use reth_db::mdbx::DatabaseArguments;
 use reth_rpc_types::WithOtherFields;
 pub use states::*;
 
@@ -181,7 +182,7 @@ impl<DB> NodeBuilder<DB> {
         mut self,
         task_executor: TaskExecutor,
         chain_id: u64,
-    ) -> WithLaunchContext<NodeBuilder<Arc<reth_db::test_utils::TempDatabase<reth_db::DatabaseEnv>>>>
+    ) -> WithLaunchContext<NodeBuilder<Arc<reth_db::DatabaseEnv>>>
     {
         let folder_name = format!("/data/reth/gwyneth-{}/", chain_id);
         let path = reth_node_core::dirs::MaybePlatformPath::<DataDirPath>::from(
@@ -202,7 +203,7 @@ impl<DB> NodeBuilder<DB> {
 
         println!("data_dir: {:?}", data_dir);
 
-        let db = reth_db::test_utils::create_test_rw_db_with_path(data_dir.db());
+        let db = Arc::new(reth_db::init_db(data_dir.db(), DatabaseArguments::default()).unwrap());
 
         WithLaunchContext { builder: self.with_database(db), task_executor }
     }

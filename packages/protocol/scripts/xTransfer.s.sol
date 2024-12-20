@@ -25,7 +25,7 @@ contract XTransfer is Script {
         vm.startBroadcast(ALICE_PK);
 
         // Transfer 666 tokens to Bob on L2B (chainId: 167011)
-        xERC20(TOKEN_ADDRESS).xTransfer(167010, BOB, 666);
+        xERC20(TOKEN_ADDRESS).xTransfer(167011, BOB, 666);
 
         vm.stopBroadcast();
 
