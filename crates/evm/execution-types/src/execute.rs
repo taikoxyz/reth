@@ -1,5 +1,6 @@
 use alloy_primitives::U256;
-use reth_primitives::{Request, Transaction};
+use alloy_rpc_types_eth::transaction::Transaction;
+use reth_primitives::Request;
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.

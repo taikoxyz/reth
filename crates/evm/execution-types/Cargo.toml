@@ -23,6 +23,7 @@ alloy-eips.workspace = true
 
 serde = { workspace = true, optional = true }
 serde_with = { workspace = true, optional = true }
+alloy-rpc-types-eth.workspace = true
 
 [dev-dependencies]
 alloy-eips.workspace = true

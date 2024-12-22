@@ -9,14 +9,10 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod execute;
 pub mod dao_fork;
 pub mod eip6110;
+pub mod execute;
 
-use alloc::format;
-use alloc::string::{String, ToString};
-use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::str::FromStr;
 pub use execute::*;
 use reth_chainspec::ChainSpec;
@@ -27,14 +23,15 @@ use reth_primitives::revm_primitives::{
     Address, AnalysisKind, BlockEnv, Bytes, CfgEnvWithHandlerCfg, Env, TaikoFields, TxEnv, TxKind,
     U256,
 };
-use reth_primitives::{
-    revm_primitives, transaction::FillTxEnv, Header, TransactionSigned,
-};
+use reth_primitives::{revm_primitives, transaction::FillTxEnv, Header, TransactionSigned};
 use reth_revm::{inspector_handle_register, Evm, EvmBuilder, GetInspector};
 use taiko_reth_forks::TaikoHardFork;
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
+
+#[cfg(feature = "std")]
+use std::sync::Arc;
 
 /// Ethereum-related EVM configuration.
 #[derive(Debug, Clone, Default)]

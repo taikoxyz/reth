@@ -403,6 +403,13 @@ pub enum ConsensusError {
     /// Error when the first transaction in the block is not an anchor transaction.
     #[display("missing anchor transaction")]
     AnchorTxMissing,
+
+    /// Transaction error on revert with inner details
+    #[display("transaction error on revert: {inner}")]
+    CanonicalRevert {
+        /// The inner error message
+        inner: String,
+    },
 }
 
 impl ConsensusError {
