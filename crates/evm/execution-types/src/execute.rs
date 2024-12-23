@@ -1,6 +1,6 @@
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::U256;
-use reth_primitives::TransactionSigned;
+use reth_primitives::{BlockWithSenders, TransactionSigned};
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.
@@ -71,4 +71,14 @@ pub struct BlockExecutionOutput<T> {
     pub target_list: Vec<TaskResult>,
     /// The skipped transactions when `BlockExecutionInput::enable_skip`.
     pub skipped_list: Vec<usize>,
+}
+
+impl<T> BlockExecutionOutput<T> {
+    /// Remote the skipped transactions from the block.
+    pub fn apply_skip(&self, block: &mut BlockWithSenders) {
+        for i in &self.skipped_list {
+            block.senders.remove(*i);
+            block.body.transactions.remove(*i);
+        }
+    }
 }

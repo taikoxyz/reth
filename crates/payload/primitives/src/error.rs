@@ -2,7 +2,7 @@
 
 use alloy_primitives::B256;
 use alloy_rpc_types_engine::ForkchoiceUpdateError;
-use reth_errors::{ProviderError, RethError};
+use reth_errors::{BlockExecutionError, ProviderError, RethError};
 use revm_primitives::EVMError;
 use tokio::sync::oneshot;
 
@@ -30,6 +30,9 @@ pub enum PayloadBuilderError {
     /// Any other payload building errors.
     #[error(transparent)]
     Other(Box<dyn core::error::Error + Send + Sync>),
+    /// Error during block execution.
+    #[error(transparent)]
+    BlockExecutionError(#[from] BlockExecutionError),
 }
 
 impl PayloadBuilderError {

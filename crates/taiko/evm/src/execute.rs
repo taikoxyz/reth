@@ -27,7 +27,7 @@ use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::{check_anchor_tx, decode_ontake_extra_data};
 use reth_taiko_forks::TaikoHardforks;
-use revm::{interpreter::Host, Evm, JournaledState};
+use revm::{interpreter::Host, JournaledState};
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, HashSet, ResultAndState, U256};
 use std::io::{self, Write};
 use tracing::debug;
@@ -135,14 +135,14 @@ where
             let mut buf_len: u64 = 0;
 
             for i in 0..block.body.transactions.len() {
-                let ref transaction = block.body.transactions[i];
+                let transaction = &block.body.transactions[i];
                 let sender = block.senders.get(i).unwrap();
                 let block_available_gas = block.header.gas_limit - cumulative_gas_used;
                 if transaction.gas_limit() > block_available_gas {
                     break;
                 }
 
-                self.evm_config.fill_tx_env(evm.tx_mut(), &transaction, *sender);
+                self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender);
 
                 // Execute transaction.
                 let ResultAndState { result, state } = match evm.transact() {
@@ -259,7 +259,7 @@ where
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
         let mut cumulative_gas_used = 0;
         let mut receipts = Vec::with_capacity(block.body.transactions.len());
-        let mut skipped_transactions = Vec::with_capacity(block.body.transactions.len());
+        let mut skipped_list = Vec::with_capacity(block.body.transactions.len());
         let treasury = self.chain_spec.treasury();
 
         for (idx, (sender, transaction)) in block.transactions_with_sender().enumerate() {
@@ -282,7 +282,7 @@ where
             if transaction.gas_limit() > block_available_gas {
                 if !is_anchor && enable_skip {
                     debug!(target: "taiko::executor", hash = ?transaction.hash(), want = ?transaction.gas_limit(), got = block_available_gas, "Invalid gas limit for tx");
-                    skipped_transactions.push(idx);
+                    skipped_list.push(idx);
                     continue;
                 }
                 return Err(BlockValidationError::TransactionGasLimitMoreThanAvailableBlockGas {
@@ -326,7 +326,7 @@ where
                             HashSet::default(),
                         );
                         debug!(target: "taiko::executor", hash = ?transaction.hash(), error = ?err, "Invalid execute for tx");
-                        skipped_transactions.push(idx);
+                        skipped_list.push(idx);
                         continue;
                     }
                     return Err(err.into());
@@ -358,7 +358,7 @@ where
         Ok(ExecuteOutput {
             receipts,
             gas_used: cumulative_gas_used,
-            skipped_list: skipped_transactions,
+            skipped_list,
             target_list: vec![],
         })
     }

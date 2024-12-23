@@ -9623,22 +9623,28 @@ dependencies = [
 name = "reth-taiko-payload-builder"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
+ "alloy-eips",
  "alloy-primitives 0.8.14",
  "alloy-rlp",
  "reth-basic-payload-builder",
+ "reth-chain-state",
  "reth-chainspec",
  "reth-errors",
  "reth-evm",
  "reth-payload-builder",
+ "reth-payload-primitives",
  "reth-primitives",
  "reth-provider",
  "reth-revm",
+ "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-engine-primitives",
  "reth-taiko-evm",
  "reth-taiko-primitives",
  "reth-taiko-provider",
  "reth-transaction-pool",
+ "revm-primitives",
  "thiserror 2.0.5",
  "tracing",
 ]

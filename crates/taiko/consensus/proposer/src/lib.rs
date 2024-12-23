@@ -210,7 +210,7 @@ impl Storage {
             excess_blob_gas: None,
             extra_data: Default::default(),
             parent_beacon_block_root: None,
-            requests_root: requests.map(|r| proofs::calculate_requests_root(&r.0)),
+            requests_hash: requests.map(|r| r.requests_hash()),
         };
 
         if chain_spec.is_cancun_active_at_timestamp(timestamp) {
