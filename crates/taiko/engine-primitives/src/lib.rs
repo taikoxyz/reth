@@ -94,7 +94,8 @@ impl PayloadValidator for TaikoEngineValidator {
         payload: ExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlock, PayloadError> {
-        self.inner.ensure_well_formed_payload(payload, sidecar)
+        let mut block = self.inner.ensure_well_formed_payload(payload, sidecar)?;
+        Ok(block)
     }
 }
 

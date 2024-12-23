@@ -27,14 +27,17 @@ reth-node-api.workspace = true
 reth-network-api.workspace = true
 reth-node-builder.workspace = true
 reth-chainspec.workspace = true
+reth-errors.workspace = true
+reth-rpc-types-compat.workspace = true
 
-# op-reth
+# taiko
 reth-taiko-chainspec.workspace = true
 reth-taiko-consensus.workspace = true
 reth-taiko-evm.workspace = true
 reth-taiko-payload-builder.workspace = true
 reth-taiko-primitives.workspace = true
 reth-taiko-forks.workspace = true
+reth-taiko-proposer-consensus.workspace = true
 
 # ethereum
 alloy-eips.workspace = true
@@ -42,22 +45,24 @@ alloy-primitives.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-rpc-types-debug.workspace = true
 alloy-consensus.workspace = true
-op-alloy-network.workspace = true
-op-alloy-rpc-types.workspace = true
-op-alloy-rpc-types-engine.workspace = true
-op-alloy-rpc-jsonrpsee.workspace = true
-op-alloy-consensus.workspace = true
+alloy-network.workspace = true
 revm.workspace = true
 
 # async
 parking_lot.workspace = true
 tokio.workspace = true
+async-trait.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls-native-roots"] }
 
 # rpc
 jsonrpsee-core.workspace = true
 jsonrpsee-types.workspace = true
 serde_json.workspace = true
+
+# misc
+jsonrpsee = { workspace = true, features = ["server", "macros"] }
+serde = { workspace = true, features = ["derive"] }
+
 
 # misc
 thiserror.workspace = true

@@ -97,8 +97,7 @@ where
                         trigger_args
                             .local_accounts
                             .as_ref()
-                            .map(|local_accounts| local_accounts.contains(&tx.sender()))
-                            .unwrap_or_default()
+                            .is_some_and(|local_accounts| local_accounts.contains(&tx.sender()))
                     });
                 local_txs.extend(remote_txs);
                 debug!(target: "taiko::proposer", txs = ?local_txs.len(), "Proposer filter best transactions");
@@ -137,7 +136,7 @@ where
                         ..
                     } = trigger_args;
                     let res = build_and_execute(
-                        txs.clone(),
+                        txs,
                         ommers,
                         &client,
                         chain_spec,

@@ -70,6 +70,8 @@ reth-prune.workspace = true
 # taiko
 reth-taiko-chainspec.workspace = true
 reth-taiko-forks.workspace = true
+reth-taiko-node.workspace = true
+reth-taiko-cli.workspace = true
 
 # crypto
 alloy-eips.workspace = true

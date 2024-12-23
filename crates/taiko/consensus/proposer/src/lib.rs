@@ -22,8 +22,7 @@ use reth_execution_errors::{
     BlockExecutionError, BlockValidationError, InternalBlockExecutionError,
 };
 use reth_primitives::{
-    proofs, Block, BlockBody, BlockExt, BlockWithSenders, Header, NodePrimitives, SealedBlock,
-    SealedHeader, TransactionSigned,
+    proofs, Block, BlockBody, BlockExt, Header, NodePrimitives, TransactionSigned,
 };
 use reth_provider::{BlockReaderIdExt, StateProviderFactory};
 use reth_revm::database::StateProviderDatabase;
@@ -127,17 +126,15 @@ where
 {
     let base_fee_per_gas = Some(base_fee);
 
-    let blob_gas_used = if chain_spec.is_cancun_active_at_timestamp(timestamp) {
+    let blob_gas_used = chain_spec.is_cancun_active_at_timestamp(timestamp).then(|| {
         let mut sum_blob_gas_used = 0;
         for tx in transactions {
             if let Some(blob_tx) = tx.transaction.as_eip4844() {
                 sum_blob_gas_used += blob_tx.blob_gas();
             }
         }
-        Some(sum_blob_gas_used)
-    } else {
-        None
-    };
+        sum_blob_gas_used
+    });
     let latest_block =
         provider.latest_header().map_err(InternalBlockExecutionError::LatestBlock)?.unwrap();
     let mut header = Header {

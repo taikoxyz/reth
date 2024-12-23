@@ -6570,7 +6570,9 @@ dependencies = [
  "reth-stages",
  "reth-static-file",
  "reth-taiko-chainspec",
+ "reth-taiko-cli",
  "reth-taiko-forks",
+ "reth-taiko-node",
  "reth-tasks",
  "reth-tracing",
  "reth-transaction-pool",
@@ -9468,6 +9470,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "reth-taiko-cli"
+version = "1.1.4"
+dependencies = [
+ "eyre",
+ "reth-cli",
+ "reth-taiko-chainspec",
+ "reth-taiko-forks",
+]
+
+[[package]]
 name = "reth-taiko-consensus"
 version = "1.1.4"
 dependencies = [
@@ -9567,6 +9579,7 @@ dependencies = [
  "reth-evm",
  "reth-network",
  "reth-node-builder",
+ "reth-node-ethereum",
  "reth-payload-builder",
  "reth-primitives",
  "reth-provider",
@@ -9667,19 +9680,18 @@ version = "1.1.4"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
+ "alloy-network",
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-debug",
  "alloy-rpc-types-eth",
+ "async-trait",
+ "jsonrpsee",
  "jsonrpsee-core",
  "jsonrpsee-types",
- "op-alloy-consensus",
- "op-alloy-network",
- "op-alloy-rpc-jsonrpsee",
- "op-alloy-rpc-types",
- "op-alloy-rpc-types-engine",
  "parking_lot",
  "reqwest",
  "reth-chainspec",
+ "reth-errors",
  "reth-evm",
  "reth-network-api",
  "reth-node-api",
@@ -9691,15 +9703,18 @@ dependencies = [
  "reth-rpc-eth-api",
  "reth-rpc-eth-types",
  "reth-rpc-server-types",
+ "reth-rpc-types-compat",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-evm",
  "reth-taiko-forks",
  "reth-taiko-payload-builder",
  "reth-taiko-primitives",
+ "reth-taiko-proposer-consensus",
  "reth-tasks",
  "reth-transaction-pool",
  "revm",
+ "serde",
  "serde_json",
  "thiserror 2.0.5",
  "tokio",

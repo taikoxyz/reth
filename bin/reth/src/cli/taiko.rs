@@ -1,14 +1,12 @@
 //! CLI definition and entrypoint to executable
 
-pub mod taiko;
-
 use crate::{
     args::LogArgs,
     commands::debug_cmd,
     version::{LONG_VERSION, SHORT_VERSION},
 };
 use clap::{value_parser, Parser, Subcommand};
-use reth_chainspec::ChainSpec;
+use reth_chainspec::{ChainSpec, EthChainSpec};
 use reth_cli::chainspec::ChainSpecParser;
 use reth_cli_commands::{
     config_cmd, db, dump_genesis, import, init_cmd, init_state,
@@ -21,6 +19,9 @@ use reth_ethereum_cli::chainspec::EthereumChainSpecParser;
 use reth_node_builder::{NodeBuilder, WithLaunchContext};
 use reth_node_ethereum::{EthExecutorProvider, EthereumNode};
 use reth_node_metrics::recorder::install_prometheus_recorder;
+use reth_taiko_chainspec::TaikoChainSpec;
+use reth_taiko_cli::chainspec::TaikoChainSpecParser;
+use reth_taiko_node::{TaikoExecutorProvider, TaikoNode};
 use reth_tracing::FileWorkerGuard;
 use std::{ffi::OsString, fmt, future::Future, sync::Arc};
 use tracing::info;
@@ -37,8 +38,7 @@ pub use crate::core::cli::*;
 /// This is the entrypoint to the executable.
 #[derive(Debug, Parser)]
 #[command(author, version = SHORT_VERSION, long_version = LONG_VERSION, about = "Reth", long_about = None)]
-pub struct Cli<C: ChainSpecParser = EthereumChainSpecParser, Ext: clap::Args + fmt::Debug = NoArgs>
-{
+pub struct Cli<C: ChainSpecParser = TaikoChainSpecParser, Ext: clap::Args + fmt::Debug = NoArgs> {
     /// The command to run
     #[command(subcommand)]
     pub command: Commands<C, Ext>,
@@ -93,7 +93,7 @@ impl Cli {
     }
 }
 
-impl<C: ChainSpecParser<ChainSpec = ChainSpec>, Ext: clap::Args + fmt::Debug> Cli<C, Ext> {
+impl<C: ChainSpecParser<ChainSpec = TaikoChainSpec>, Ext: clap::Args + fmt::Debug> Cli<C, Ext> {
     /// Execute the configured cli command.
     ///
     /// This accepts a closure that is used to launch the node via the
@@ -158,32 +158,33 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>, Ext: clap::Args + fmt::Debug> Cl
                 runner.run_command_until_exit(|ctx| command.execute(ctx, launcher))
             }
             Commands::Init(command) => {
-                runner.run_blocking_until_ctrl_c(command.execute::<EthereumNode>())
+                runner.run_blocking_until_ctrl_c(command.execute::<TaikoNode>())
             }
             Commands::InitState(command) => {
-                runner.run_blocking_until_ctrl_c(command.execute::<EthereumNode>())
+                runner.run_blocking_until_ctrl_c(command.execute::<TaikoNode>())
             }
             Commands::Import(command) => runner.run_blocking_until_ctrl_c(
-                command.execute::<EthereumNode, _, _>(EthExecutorProvider::ethereum),
+                command.execute::<TaikoNode, _, _>(TaikoExecutorProvider::taiko),
             ),
             Commands::DumpGenesis(command) => runner.run_blocking_until_ctrl_c(command.execute()),
             Commands::Db(command) => {
-                runner.run_blocking_until_ctrl_c(command.execute::<EthereumNode>())
+                runner.run_blocking_until_ctrl_c(command.execute::<TaikoNode>())
             }
             Commands::Stage(command) => runner.run_command_until_exit(|ctx| {
-                command.execute::<EthereumNode, _, _>(ctx, EthExecutorProvider::ethereum)
+                command.execute::<TaikoNode, _, _>(ctx, TaikoExecutorProvider::taiko)
             }),
             Commands::P2P(command) => runner.run_until_ctrl_c(command.execute()),
             #[cfg(feature = "dev")]
             Commands::TestVectors(command) => runner.run_until_ctrl_c(command.execute()),
             Commands::Config(command) => runner.run_until_ctrl_c(command.execute()),
-            Commands::Debug(command) => {
-                runner.run_command_until_exit(|ctx| command.execute::<EthereumNode>(ctx))
+            Commands::Debug(_command) => {
+                todo!()
+                // runner.run_command_until_exit(|ctx| command.execute::<TaikoNode>(ctx))
             }
             Commands::Recover(command) => {
-                runner.run_command_until_exit(|ctx| command.execute::<EthereumNode>(ctx))
+                runner.run_command_until_exit(|ctx| command.execute::<TaikoNode>(ctx))
             }
-            Commands::Prune(command) => runner.run_until_ctrl_c(command.execute::<EthereumNode>()),
+            Commands::Prune(command) => runner.run_until_ctrl_c(command.execute::<TaikoNode>()),
         }
     }
 
@@ -239,77 +240,4 @@ pub enum Commands<C: ChainSpecParser, Ext: clap::Args + fmt::Debug> {
     /// Prune according to the configuration without any limits
     #[command(name = "prune")]
     Prune(prune::PruneCommand<C>),
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::args::ColorMode;
-    use clap::CommandFactory;
-    use reth_ethereum_cli::chainspec::SUPPORTED_CHAINS;
-
-    #[test]
-    fn parse_color_mode() {
-        let reth = Cli::try_parse_args_from(["reth", "node", "--color", "always"]).unwrap();
-        assert_eq!(reth.logs.color, ColorMode::Always);
-    }
-
-    /// Tests that the help message is parsed correctly. This ensures that clap args are configured
-    /// correctly and no conflicts are introduced via attributes that would result in a panic at
-    /// runtime
-    #[test]
-    fn test_parse_help_all_subcommands() {
-        let reth = Cli::<EthereumChainSpecParser, NoArgs>::command();
-        for sub_command in reth.get_subcommands() {
-            let err = Cli::try_parse_args_from(["reth", sub_command.get_name(), "--help"])
-                .err()
-                .unwrap_or_else(|| {
-                    panic!("Failed to parse help message {}", sub_command.get_name())
-                });
-
-            // --help is treated as error, but
-            // > Not a true "error" as it means --help or similar was used. The help message will be sent to stdout.
-            assert_eq!(err.kind(), clap::error::ErrorKind::DisplayHelp);
-        }
-    }
-
-    /// Tests that the log directory is parsed correctly. It's always tied to the specific chain's
-    /// name
-    #[test]
-    fn parse_logs_path() {
-        let mut reth = Cli::try_parse_args_from(["reth", "node"]).unwrap();
-        reth.logs.log_file_directory =
-            reth.logs.log_file_directory.join(reth.chain.chain.to_string());
-        let log_dir = reth.logs.log_file_directory;
-        let end = format!("reth/logs/{}", SUPPORTED_CHAINS[0]);
-        assert!(log_dir.as_ref().ends_with(end), "{log_dir:?}");
-
-        let mut iter = SUPPORTED_CHAINS.iter();
-        iter.next();
-        for chain in iter {
-            let mut reth = Cli::try_parse_args_from(["reth", "node", "--chain", chain]).unwrap();
-            reth.logs.log_file_directory =
-                reth.logs.log_file_directory.join(reth.chain.chain.to_string());
-            let log_dir = reth.logs.log_file_directory;
-            let end = format!("reth/logs/{chain}");
-            assert!(log_dir.as_ref().ends_with(end), "{log_dir:?}");
-        }
-    }
-
-    #[test]
-    fn parse_env_filter_directives() {
-        let temp_dir = tempfile::tempdir().unwrap();
-
-        std::env::set_var("RUST_LOG", "info,evm=debug");
-        let reth = Cli::try_parse_args_from([
-            "reth",
-            "init",
-            "--datadir",
-            temp_dir.path().to_str().unwrap(),
-            "--log.file.filter",
-            "debug,net=trace",
-        ])
-        .unwrap();
-        assert!(reth.run(|_, _| async move { Ok(()) }).is_ok());
-    }
 }

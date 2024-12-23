@@ -262,8 +262,12 @@ impl EthChainSpec for TaikoChainSpec {
         self.inner.bootnodes()
     }
 
-    fn is_optimism(&self) -> bool {
+    fn is_taiko(&self) -> bool {
         true
+    }
+
+    fn is_optimism(&self) -> bool {
+        false
     }
 }
 

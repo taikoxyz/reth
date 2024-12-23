@@ -157,6 +157,7 @@ members = [
     "crates/taiko/consensus/proposer",
     "crates/taiko/engine-primitives/",
     "crates/taiko/evm",
+    "crates/taiko/cli",
     "crates/taiko/node",
     "crates/taiko/rpc",
     "crates/taiko/payload/builder",
