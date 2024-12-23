@@ -10,7 +10,7 @@ exclude.workspace = true
 
 [dependencies]
 # reth
-reth-ethereum-forks = { workspace = true, features = ["taiko"] }
+reth-ethereum-forks = { workspace = true }
 
 # ethereum
 alloy-chains = { workspace = true, features = ["serde", "rlp"] }

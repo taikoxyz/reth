@@ -38,7 +38,6 @@ arbitrary = { workspace = true, features = ["derive"] }
 proptest.workspace = true
 
 [features]
-taiko = []
 default = ["std", "serde", "rustc-hash"]
 arbitrary = ["dep:arbitrary", "dep:proptest", "dep:proptest-derive"]
 serde = ["dep:serde"]
