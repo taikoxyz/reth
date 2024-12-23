@@ -9,9 +9,10 @@ use reth_payload_primitives::PayloadBuilderError;
 use reth_provider::StateProviderFactory;
 use reth_transaction_pool::TransactionPool;
 use std::sync::Arc;
+use alloy_primitives::U256;
+use reth_transaction_pool::noop::NoopTransactionPool;
 use taiko_reth_engine_primitives::{TaikoBuiltPayload, TaikoPayloadBuilderAttributes};
 use taiko_reth_evm::{TaikoEvmConfig, TaikoExecutorProvider};
-use taiko_reth_provider::l1_origin::L1OriginWriter;
 
 /// Taiko's payload builder
 #[derive(Debug, Clone)]
@@ -42,14 +43,16 @@ where
         &self,
         args: BuildArguments<Pool, Client, Self::Attributes, Self::BuiltPayload>,
     ) -> Result<BuildOutcome<Self::BuiltPayload>, PayloadBuilderError> {
-        todo!()
+        let BuildArguments { cached_reads, .. } = args;
+        Ok(BuildOutcome::Aborted { fees: U256::ZERO, cached_reads })
     }
 
     fn on_missing_payload(
         &self,
         _args: BuildArguments<Pool, Client, Self::Attributes, Self::BuiltPayload>,
     ) -> MissingPayloadBehaviour<Self::BuiltPayload> {
-        todo!()
+        // todo: same with op, need recheck.
+        MissingPayloadBehaviour::AwaitInProgress
     }
 
     fn build_empty_payload(

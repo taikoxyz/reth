@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use alloy_rpc_types_engine::{ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4, ExecutionPayloadV1, ExecutionPayloadV2};
 use reth_chainspec::ChainSpec;
-use reth_node_api::{EngineApiMessageVersion, EngineObjectValidationError, EngineTypes, EngineValidator, PayloadOrAttributes, PayloadTypes};
+use reth_node_api::{validate_parent_beacon_block_root_presence, validate_version_specific_fields, validate_withdrawals_presence, EngineApiMessageVersion, EngineObjectValidationError, EngineTypes, EngineValidator, PayloadOrAttributes, PayloadTypes};
 use taiko_reth_engine_primitives::{TaikoBuiltPayload, TaikoExecutionPayloadEnvelopeV2, TaikoPayloadAttributes, TaikoPayloadBuilderAttributes};
 
 /// The types used in the default mainnet ethereum beacon consensus engine.
@@ -60,10 +60,10 @@ where
     Types: EngineTypes<PayloadAttributes=TaikoPayloadAttributes>,
 {
     fn validate_version_specific_fields(&self, version: EngineApiMessageVersion, payload_or_attrs: PayloadOrAttributes<'_, <Types as PayloadTypes>::PayloadAttributes>) -> Result<(), EngineObjectValidationError> {
-        todo!()
+        validate_version_specific_fields(&self.chain_spec, version, payload_or_attrs)
     }
 
     fn ensure_well_formed_attributes(&self, version: EngineApiMessageVersion, attributes: &<Types as PayloadTypes>::PayloadAttributes) -> Result<(), EngineObjectValidationError> {
-        todo!()
+        validate_version_specific_fields(&self.chain_spec, version, attributes.into())
     }
 }

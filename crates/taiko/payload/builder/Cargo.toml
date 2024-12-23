@@ -12,15 +12,18 @@ exclude.workspace = true
 # reth
 reth-chainspec = { workspace = true, features = ["taiko"] }
 reth-basic-payload-builder.workspace = true
-
-# taiko
-taiko-reth-evm.workspace = true
 reth-payload-primitives.workspace = true
-taiko-reth-engine-primitives.workspace = true
 reth-transaction-pool.workspace = true
 reth-evm.workspace = true
 reth-provider.workspace = true
+
+# taiko
+taiko-reth-evm.workspace = true
+taiko-reth-engine-primitives.workspace = true
 taiko-reth-provider.workspace = true
+
+# alloy
+alloy-primitives.workspace = true
 
 [lints]
 workspace = true
