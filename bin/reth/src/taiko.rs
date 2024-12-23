@@ -76,7 +76,7 @@ fn main() {
                     let handle = builder
                         .with_types_and_provider::<TaikoNode, BlockchainProvider2<_>>()
                         .with_components(TaikoNode::components())
-                         .with_add_ons(TaikoNode::default().add_ons())
+                        .with_add_ons(TaikoAddOns::default())
                         .launch_with_fn(|builder| {
                             let launcher = EngineNodeLauncher::new(
                                 builder.task_executor().clone(),

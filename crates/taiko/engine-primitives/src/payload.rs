@@ -44,7 +44,9 @@ impl reth_payload_primitives::PayloadAttributes for TaikoPayloadAttributes {
 
 /// This structure contains the information from l1 contract storage
 #[serde_as]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, RlpDecodable, RlpEncodable)]
+#[derive(
+    Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, RlpDecodable, RlpEncodable,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockMetadata {
     /// The Keccak 256-bit hash of the parent

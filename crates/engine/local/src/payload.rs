@@ -5,6 +5,7 @@ use alloy_primitives::{Address, B256};
 use reth_chainspec::EthereumHardforks;
 use reth_ethereum_engine_primitives::EthPayloadAttributes;
 use reth_payload_primitives::PayloadAttributesBuilder;
+use reth_taiko_engine_primitives::TaikoPayloadAttributes;
 use std::sync::Arc;
 
 /// The attributes builder for local Ethereum payload.
@@ -41,6 +42,21 @@ where
                 .then(B256::random),
             target_blobs_per_block: None,
             max_blobs_per_block: None,
+        }
+    }
+}
+
+impl<ChainSpec> PayloadAttributesBuilder<TaikoPayloadAttributes>
+    for LocalPayloadAttributesBuilder<ChainSpec>
+where
+    ChainSpec: Send + Sync + EthereumHardforks + 'static,
+{
+    fn build(&self, timestamp: u64) -> TaikoPayloadAttributes {
+        TaikoPayloadAttributes {
+            payload_attributes: self.build(timestamp),
+            base_fee_per_gas: Default::default(),
+            block_metadata: Default::default(),
+            l1_origin: Default::default(),
         }
     }
 }

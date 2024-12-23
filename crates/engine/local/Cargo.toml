@@ -28,6 +28,9 @@ reth-rpc-types-compat.workspace = true
 reth-transaction-pool.workspace = true
 reth-stages-api.workspace = true
 
+# taiko
+reth-taiko-engine-primitives.workspace = true
+
 # alloy
 alloy-consensus.workspace = true
 alloy-primitives.workspace = true

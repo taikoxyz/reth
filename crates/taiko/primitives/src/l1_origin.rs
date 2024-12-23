@@ -33,7 +33,16 @@ impl Decode for HeadL1OriginKey {
 
 /// `L1Origin` represents a `L1Origin` of a L2 block.
 #[derive(
-    Debug, Compact, Serialize, Deserialize, Clone, PartialEq, Eq, RlpDecodable, RlpEncodable,
+    Debug,
+    Default,
+    Compact,
+    Serialize,
+    Deserialize,
+    Clone,
+    PartialEq,
+    Eq,
+    RlpDecodable,
+    RlpEncodable,
 )]
 #[serde(rename_all = "camelCase")]
 pub struct L1Origin {

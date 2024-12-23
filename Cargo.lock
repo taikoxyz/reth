@@ -7358,6 +7358,7 @@ dependencies = [
  "reth-prune",
  "reth-rpc-types-compat",
  "reth-stages-api",
+ "reth-taiko-engine-primitives",
  "reth-transaction-pool",
  "tokio",
  "tokio-stream",
