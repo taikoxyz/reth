@@ -8,11 +8,9 @@ use alloy_eips::merge::BEACON_NONCE;
 use alloy_primitives::{Bloom, U256};
 use reth_basic_payload_builder::*;
 use reth_chain_state::ExecutedBlock;
-use reth_chainspec::ChainSpec;
 use reth_errors::{BlockExecutionError, BlockValidationError};
 use reth_evm::{
     execute::{BasicBlockExecutorProvider, BlockExecutionOutput, BlockExecutorProvider, Executor},
-    system_calls::SystemCaller,
     ConfigureEvm, NextBlockEnvAttributes,
 };
 use reth_payload_builder::EthBuiltPayload;
@@ -75,7 +73,7 @@ where
 impl<Pool, Client, EvmConfig> PayloadBuilder<Pool, Client> for TaikoPayloadBuilder<EvmConfig>
 where
     EvmConfig: ConfigureEvm<Header = Header, Transaction = TransactionSigned>,
-    Client: StateProviderFactory + ChainSpecProvider<ChainSpec = ChainSpec> + L1OriginWriter,
+    Client: StateProviderFactory + ChainSpecProvider<ChainSpec = TaikoChainSpec> + L1OriginWriter,
     Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>>,
 {
     type Attributes = TaikoPayloadBuilderAttributes;
@@ -124,7 +122,7 @@ fn taiko_payload_builder<EvmConfig, Pool, Client>(
 ) -> Result<EthBuiltPayload, PayloadBuilderError>
 where
     EvmConfig: ConfigureEvm<Header = Header, Transaction = TransactionSigned>,
-    Client: StateProviderFactory + ChainSpecProvider<ChainSpec = ChainSpec> + L1OriginWriter,
+    Client: StateProviderFactory + ChainSpecProvider<ChainSpec = TaikoChainSpec> + L1OriginWriter,
     Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>>,
 {
     let BuildArguments { client, pool: _, mut cached_reads, config, cancel: _, best_payload: _ } =

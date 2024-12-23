@@ -18,6 +18,7 @@ reth-primitives = { workspace = true }
 reth-consensus.workspace = true
 reth-chainspec.workspace = true
 reth-primitives-traits.workspace = true
+reth-ethereum-consensus.workspace = true
 
 tracing.workspace = true
 

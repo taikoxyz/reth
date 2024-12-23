@@ -5,7 +5,7 @@ use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
 use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadV2, PayloadAttributes, PayloadId};
 use reth_ethereum_engine_primitives::{EthBuiltPayload, EthPayloadBuilderAttributes};
-use reth_payload_primitives::{EngineApiMessageVersion, PayloadBuilderAttributes};
+use reth_payload_primitives::PayloadBuilderAttributes;
 use reth_rpc_types_compat::engine::payload::block_to_payload_v2;
 use reth_taiko_primitives::L1Origin;
 use serde::{Deserialize, Serialize};

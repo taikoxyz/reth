@@ -8,7 +8,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-pub use taiko_reth_engine_primitives::TaikoEngineTypes;
+pub use reth_taiko_engine_primitives::TaikoEngineTypes;
 
 pub mod evm;
 pub use evm::{TaikoEvmConfig, TaikoExecutorProvider};

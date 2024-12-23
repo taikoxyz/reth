@@ -10,6 +10,8 @@ use reth_node_core::node_config::NodeConfig;
 use reth_node_types::{HeaderTy, NodeTypes, NodeTypesWithDB, NodeTypesWithEngine, TxTy};
 use reth_payload_builder_primitives::PayloadBuilder;
 use reth_provider::FullProvider;
+#[cfg(feature = "taiko")]
+use reth_taiko_provider::TaikoProvider;
 use reth_tasks::TaskExecutor;
 use reth_transaction_pool::{PoolTransaction, TransactionPool};
 use std::{future::Future, marker::PhantomData};
@@ -22,6 +24,10 @@ pub trait FullNodeTypes: Send + Sync + Unpin + 'static {
     /// Node's types with the database.
     type Types: NodeTypesWithDB + NodeTypesWithEngine;
     /// The provider type used to interact with the node.
+    #[cfg(feature = "taiko")]
+    type Provider: FullProvider<Self::Types> + TaikoProvider;
+    /// The provider type used to interact with the node
+    #[cfg(not(feature = "taiko"))]
     type Provider: FullProvider<Self::Types>;
 }
 
@@ -34,10 +40,21 @@ pub struct FullNodeTypesAdapter<Types, Provider> {
     pub provider: PhantomData<Provider>,
 }
 
+#[cfg(not(feature = "taiko"))]
 impl<Types, Provider> FullNodeTypes for FullNodeTypesAdapter<Types, Provider>
 where
     Types: NodeTypesWithDB + NodeTypesWithEngine,
     Provider: FullProvider<Types>,
+{
+    type Types = Types;
+    type Provider = Provider;
+}
+
+#[cfg(feature = "taiko")]
+impl<Types, Provider> FullNodeTypes for FullNodeTypesAdapter<Types, Provider>
+where
+    Types: NodeTypesWithDB + NodeTypesWithEngine,
+    Provider: FullProvider<Types> + TaikoProvider,
 {
     type Types = Types;
     type Provider = Provider;

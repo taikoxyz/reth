@@ -11,14 +11,20 @@
 use alloy_consensus::EMPTY_OMMER_ROOT_HASH;
 use alloy_primitives::B64;
 use reth_chainspec::EthChainSpec;
-use reth_consensus::{Consensus, ConsensusError, HeaderValidator};
+use reth_consensus::{
+    Consensus, ConsensusError, FullConsensus, HeaderValidator, PostExecutionInput,
+};
 use reth_consensus_common::validation::{
     validate_4844_header_standalone, validate_against_parent_4844,
     validate_against_parent_hash_number, validate_block_pre_execution,
     validate_body_against_header, validate_header_base_fee, validate_header_extradata,
     validate_header_gas,
 };
-use reth_primitives::{BlockBody, EthereumHardforks, Header, SealedBlock, SealedHeader};
+use reth_ethereum_consensus::validate_block_post_execution;
+use reth_primitives::{
+    Block, BlockBody, BlockWithSenders, EthereumHardforks, Header, NodePrimitives, Receipt,
+    SealedBlock, SealedHeader,
+};
 use reth_primitives_traits::constants::MAXIMUM_GAS_LIMIT;
 use revm_primitives::U256;
 use std::{fmt::Debug, sync::Arc, time::SystemTime};
@@ -57,6 +63,25 @@ impl<ChainSpec> TaikoBeaconConsensus<ChainSpec> {
         }
 
         Ok(())
+    }
+}
+
+impl<ChainSpec, N> FullConsensus<N> for TaikoBeaconConsensus<ChainSpec>
+where
+    ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug,
+    N: NodePrimitives<
+        BlockHeader = Header,
+        BlockBody = BlockBody,
+        Block = Block,
+        Receipt = Receipt,
+    >,
+{
+    fn validate_block_post_execution(
+        &self,
+        block: &BlockWithSenders,
+        input: PostExecutionInput<'_>,
+    ) -> Result<(), ConsensusError> {
+        validate_block_post_execution(block, &self.chain_spec, input.receipts, input.requests)
     }
 }
 

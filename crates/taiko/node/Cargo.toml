@@ -20,12 +20,16 @@ reth-provider.workspace = true
 reth-transaction-pool.workspace = true
 reth-network.workspace = true
 reth-consensus.workspace = true
+reth-trie-db.workspace = true
+reth-primitives.workspace = true
+reth-ethereum-payload-builder.workspace = true
 
 # taiko
 reth-taiko-consensus.workspace = true
 reth-taiko-evm.workspace = true
 reth-taiko-engine-primitives.workspace = true
 reth-taiko-payload-builder.workspace = true
+reth-taiko-chainspec.workspace = true
 
 # misc
 eyre.workspace = true
