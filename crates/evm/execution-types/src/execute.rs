@@ -1,6 +1,6 @@
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::U256;
-use alloy_rpc_types_eth::transaction::Transaction;
+use reth_primitives::TransactionSigned;
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.
@@ -47,7 +47,7 @@ impl<'a, Block> From<(&'a Block, U256)> for BlockExecutionInput<'a, Block> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TaskResult {
     /// Transactions
-    pub txs: Vec<Transaction>,
+    pub txs: Vec<TransactionSigned>,
     /// Estimated gas used
     pub estimated_gas_used: u64,
     /// Bytes length

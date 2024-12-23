@@ -5,6 +5,8 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::{Header, Transaction as _};
 use alloy_eips::eip7685::Requests;
 use core::fmt::Display;
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 use reth_chainspec::{EthereumHardfork, EthereumHardforks};
 use reth_consensus::ConsensusError;
 use reth_ethereum_consensus::validate_block_post_execution;
@@ -19,14 +21,15 @@ use reth_evm::{
     ConfigureEvm, TxEnvOverrides,
 };
 use reth_evm_ethereum::dao_fork::{DAO_HARDFORK_BENEFICIARY, DAO_HARDKFORK_ACCOUNTS};
-use reth_execution_types::BlockExecutionInput;
+use reth_execution_types::{BlockExecutionInput, TaskResult};
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt, TransactionSigned};
 use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::{check_anchor_tx, decode_ontake_extra_data};
 use reth_taiko_forks::TaikoHardforks;
-use revm::JournaledState;
+use revm::{interpreter::Host, Evm, JournaledState};
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, HashSet, ResultAndState, U256};
+use std::io::{self, Write};
 use tracing::debug;
 
 /// Factory for [`OpExecutionStrategy`].
@@ -102,33 +105,22 @@ where
         let system_caller = SystemCaller::new(evm_config.clone(), chain_spec.clone());
         Self { state, chain_spec, evm_config, system_caller, tx_env_overrides: None }
     }
+}
 
+impl<DB, EvmConfig> TaikoExecutionStrategy<DB, EvmConfig>
+where
+    DB: Database<Error: Into<ProviderError> + Display>,
+    EvmConfig: ConfigureEvm<Header = alloy_consensus::Header, Transaction = TransactionSigned>,
+{
     fn build_transaction_list(
         &mut self,
         block: &BlockWithSenders,
         max_bytes_per_tx_list: u64,
         max_transactions_lists: u64,
+        total_difficulty: U256,
     ) -> Result<Vec<TaskResult>, BlockExecutionError> {
-        let env = self.evm_env_for_block(&block.header, U256::ZERO);
-        let mut evm = self.executor.evm_config.evm_with_env(&mut self.state, env);
-        // 2. configure the evm and execute
-        // apply pre execution changes
-        apply_beacon_root_contract_call(
-            &self.executor.chain_spec,
-            block.timestamp,
-            block.number,
-            block.parent_beacon_block_root,
-            &mut evm,
-        )?;
-
-        apply_blockhashes_update(
-            evm.db_mut(),
-            &self.executor.chain_spec,
-            block.timestamp,
-            block.number,
-            block.parent_hash,
-        )?;
-
+        let env = self.evm_env_for_block(&block.header, total_difficulty);
+        let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
         let mut target_list: Vec<TaskResult> = vec![];
         // get previous env
         let previous_env = Box::new(evm.context.env().clone());
@@ -142,15 +134,15 @@ where
             let mut tx_list: Vec<TransactionSigned> = vec![];
             let mut buf_len: u64 = 0;
 
-            for i in 0..block.body.len() {
-                let transaction = block.body.get(i).unwrap();
+            for i in 0..block.body.transactions.len() {
+                let ref transaction = block.body.transactions[i];
                 let sender = block.senders.get(i).unwrap();
                 let block_available_gas = block.header.gas_limit - cumulative_gas_used;
                 if transaction.gas_limit() > block_available_gas {
                     break;
                 }
 
-                EvmConfig::fill_tx_env(evm.tx_mut(), transaction, *sender);
+                self.evm_config.fill_tx_env(evm.tx_mut(), &transaction, *sender);
 
                 // Execute transaction.
                 let ResultAndState { result, state } = match evm.transact() {
@@ -178,11 +170,7 @@ where
                 break;
             }
             target_list.push(TaskResult {
-                txs: tx_list[..]
-                    .iter()
-                    .cloned()
-                    .map(|tx| reth_rpc_types_compat::transaction::from_signed(tx).unwrap())
-                    .collect(),
+                txs: tx_list,
                 estimated_gas_used: cumulative_gas_used,
                 bytes_length: buf_len,
             });
@@ -253,14 +241,22 @@ where
         } = input;
 
         if enable_build {
-            let target_list =
-                self.build_transaction_list(block, max_bytes_per_tx_list, max_transactions_lists)?;
-            Ok(ExecuteOutput { receipts: vec![], gas_used: 0, target_list, skipped_list: vec![] })
+            let target_list = self.build_transaction_list(
+                block,
+                max_bytes_per_tx_list,
+                max_transactions_lists,
+                total_difficulty,
+            )?;
+            return Ok(ExecuteOutput {
+                receipts: vec![],
+                gas_used: 0,
+                target_list,
+                skipped_list: vec![],
+            });
         }
 
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
-
         let mut cumulative_gas_used = 0;
         let mut receipts = Vec::with_capacity(block.body.transactions.len());
         let mut skipped_transactions = Vec::with_capacity(block.body.transactions.len());
@@ -286,7 +282,7 @@ where
             if transaction.gas_limit() > block_available_gas {
                 if !is_anchor && enable_skip {
                     debug!(target: "taiko::executor", hash = ?transaction.hash(), want = ?transaction.gas_limit(), got = block_available_gas, "Invalid gas limit for tx");
-                    skipped_transactions.push(transaction);
+                    skipped_transactions.push(idx);
                     continue;
                 }
                 return Err(BlockValidationError::TransactionGasLimitMoreThanAvailableBlockGas {
@@ -330,6 +326,7 @@ where
                             HashSet::default(),
                         );
                         debug!(target: "taiko::executor", hash = ?transaction.hash(), error = ?err, "Invalid execute for tx");
+                        skipped_transactions.push(idx);
                         continue;
                     }
                     return Err(err.into());
@@ -361,7 +358,7 @@ where
         Ok(ExecuteOutput {
             receipts,
             gas_used: cumulative_gas_used,
-            skipped_list,
+            skipped_list: skipped_transactions,
             target_list: vec![],
         })
     }
@@ -455,4 +452,11 @@ impl TaikoExecutorProvider {
     ) -> BasicBlockExecutorProvider<TaikoExecutionStrategyFactory> {
         BasicBlockExecutorProvider::new(TaikoExecutionStrategyFactory::taiko(chain_spec))
     }
+}
+
+fn encode_and_compress_tx_list(txs: &Vec<TransactionSigned>) -> io::Result<Vec<u8>> {
+    let encoded_buf = alloy_rlp::encode(txs);
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&encoded_buf)?;
+    encoder.finish()
 }
