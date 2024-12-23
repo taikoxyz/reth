@@ -1,7 +1,6 @@
 //! Ethereum Node types config.
 
 use crate::{TaikoEngineTypes, TaikoEvmConfig};
-use reth_auto_seal_consensus::AutoSealConsensus;
 use reth_basic_payload_builder::{BasicPayloadJobGenerator, BasicPayloadJobGeneratorConfig};
 use reth_evm::execute::BasicBlockExecutorProvider;
 use reth_network::{NetworkHandle, PeersInfo};
@@ -12,21 +11,19 @@ use reth_node_builder::{
     },
     node::{FullNodeTypes, NodeTypes},
     rpc::{EngineValidatorBuilder, RpcAddOns},
-    AddOnsContext, BuilderContext, ConfigureEvm, FullNodeComponents, HeaderTy, Node,
+    AddOnsContext, BuilderContext, FullNodeComponents, Node, NodeAdapter, NodeComponentsBuilder,
     NodeTypesWithDB, NodeTypesWithEngine, PayloadBuilderConfig, PayloadTypes, TxTy,
 };
 use reth_payload_builder::{EthBuiltPayload, PayloadBuilderHandle, PayloadBuilderService};
 use reth_primitives::{EthPrimitives, PooledTransactionsElement};
 use reth_provider::{CanonStateSubscriptions, EthStorage};
 use reth_rpc::EthApi;
-use reth_taiko_beacon_consensus::TaikoBeaconConsensus;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::TaikoBeaconConsensus;
 use reth_taiko_engine_primitives::{
-    TaikoEngineValidator, TaikoEngineValidatorBuilder, TaikoPayloadAttributes,
-    TaikoPayloadBuilderAttributes,
+    TaikoEngineValidator, TaikoPayloadAttributes, TaikoPayloadBuilderAttributes,
 };
-use reth_taiko_evm::{TaikoExecutionStrategyFactory, TaikoExecutorProvider};
+use reth_taiko_evm::TaikoExecutionStrategyFactory;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{
     blobstore::DiskFileBlobStore, EthTransactionPool, PoolTransaction, TransactionPool,
@@ -116,7 +113,7 @@ where
         TaikoConsensusBuilder,
     >;
 
-    fn components_builder(self) -> Self::ComponentsBuilder {
+    fn components_builder(&self) -> Self::ComponentsBuilder {
         Self::components()
     }
 
@@ -130,7 +127,7 @@ where
 #[non_exhaustive]
 pub struct TaikoExecutorBuilder;
 
-impl<Node> ExecutorBuilder<Node> for TaikoExecutorBuilder
+impl<Types, Node> ExecutorBuilder<Node> for TaikoExecutorBuilder
 where
     Types: NodeTypesWithEngine<ChainSpec = TaikoChainSpec, Primitives = EthPrimitives>,
     Node: FullNodeTypes<Types = Types>,
@@ -142,9 +139,10 @@ where
         self,
         ctx: &BuilderContext<Node>,
     ) -> eyre::Result<(Self::EVM, Self::Executor)> {
-        let chain_spec = ctx.chain_spec();
-        let evm_config = TaikoEvmConfig::default();
-        let executor = TaikoExecutorProvider::new(chain_spec, evm_config);
+        let evm_config = TaikoEvmConfig::new(ctx.chain_spec());
+        let strategy_factory =
+            TaikoExecutionStrategyFactory::new(ctx.chain_spec(), evm_config.clone());
+        let executor = BasicBlockExecutorProvider::new(strategy_factory);
 
         Ok((evm_config, executor))
     }
@@ -160,7 +158,7 @@ pub struct TaikoPoolBuilder {
     // TODO add options for txpool args
 }
 
-impl<Node> PoolBuilder<Node> for TaikoPoolBuilder
+impl<Types, Node> PoolBuilder<Node> for TaikoPoolBuilder
 where
     Types: NodeTypesWithEngine<ChainSpec = TaikoChainSpec, Primitives = EthPrimitives>,
     Node: FullNodeTypes<Types = Types>,
@@ -171,16 +169,18 @@ where
         let data_dir = ctx.config().datadir();
         let pool_config = ctx.pool_config();
         let blob_store = DiskFileBlobStore::open(data_dir.blobstore(), Default::default())?;
-        let validator = TransactionValidationTaskExecutor::eth_builder(ctx.chain_spec())
-            .with_head_timestamp(ctx.head().timestamp)
-            .kzg_settings(ctx.kzg_settings()?)
-            .with_local_transactions_config(pool_config.local_transactions_config.clone())
-            .with_additional_tasks(1)
-            .build_with_tasks(
-                ctx.provider().clone(),
-                ctx.task_executor().clone(),
-                blob_store.clone(),
-            );
+        let validator = TransactionValidationTaskExecutor::eth_builder(Arc::new(
+            ctx.chain_spec().inner.clone(),
+        ))
+        .with_head_timestamp(ctx.head().timestamp)
+        .kzg_settings(ctx.kzg_settings()?)
+        .with_local_transactions_config(pool_config.local_transactions_config.clone())
+        .with_additional_tasks(1)
+        .build_with_tasks(
+            ctx.provider().clone(),
+            ctx.task_executor().clone(),
+            blob_store.clone(),
+        );
 
         let transaction_pool =
             reth_transaction_pool::Pool::eth_pool(validator, blob_store, pool_config);
@@ -249,7 +249,8 @@ where
     ) -> eyre::Result<PayloadBuilderHandle<Types::Engine>> {
         let chain_spec = ctx.chain_spec();
         let evm_config = TaikoEvmConfig::new(chain_spec.clone());
-        let payload_builder = reth_taiko_payload_builder::TaikoPayloadBuilder::new(chain_spec);
+        let payload_builder =
+            reth_taiko_payload_builder::TaikoPayloadBuilder::new(evm_config, chain_spec);
         let conf = ctx.payload_builder_config();
 
         let payload_job_config = BasicPayloadJobGeneratorConfig::default()

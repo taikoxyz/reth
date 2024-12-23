@@ -22,7 +22,10 @@ reth-transaction-pool.workspace = true
 reth-evm.workspace = true
 reth-consensus.workspace = true
 reth-errors.workspace = true
+reth-execution-types.workspace = true
 
+#taiko
+reth-taiko-chainspec.workspace = true
 
 # async
 futures-util.workspace = true
@@ -31,3 +34,7 @@ tracing.workspace = true
 
 # misc
 alloy-rlp.workspace = true
+alloy-primitives.workspace = true
+alloy-eips.workspace = true
+
+revm-primitives = { workspace = true, features = ["taiko"] }

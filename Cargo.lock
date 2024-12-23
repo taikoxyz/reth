@@ -6569,6 +6569,8 @@ dependencies = [
  "reth-rpc-types-compat",
  "reth-stages",
  "reth-static-file",
+ "reth-taiko-chainspec",
+ "reth-taiko-forks",
  "reth-tasks",
  "reth-tracing",
  "reth-transaction-pool",
@@ -8142,7 +8144,6 @@ dependencies = [
  "reth-payload-builder-primitives",
  "reth-payload-primitives",
  "reth-provider",
- "reth-taiko-provider",
  "reth-tasks",
  "reth-transaction-pool",
 ]
@@ -8857,6 +8858,7 @@ dependencies = [
  "reth-stages-types",
  "reth-storage-api",
  "reth-storage-errors",
+ "reth-taiko-primitives",
  "reth-testing-utils",
  "reth-trie",
  "reth-trie-db",
@@ -9425,6 +9427,7 @@ dependencies = [
  "reth-prune-types",
  "reth-stages-types",
  "reth-storage-errors",
+ "reth-taiko-primitives",
  "reth-trie",
  "reth-trie-db",
  "revm",
@@ -9462,57 +9465,6 @@ dependencies = [
  "reth-taiko-forks",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "reth-taiko-cli"
-version = "1.1.4"
-dependencies = [
- "alloy-consensus",
- "alloy-eips",
- "alloy-primitives 0.8.14",
- "alloy-rlp",
- "clap",
- "derive_more 1.0.0",
- "eyre",
- "futures-util",
- "op-alloy-consensus",
- "proptest",
- "reth-chainspec",
- "reth-cli",
- "reth-cli-commands",
- "reth-cli-runner",
- "reth-config",
- "reth-consensus",
- "reth-db",
- "reth-db-api",
- "reth-db-common",
- "reth-downloaders",
- "reth-errors",
- "reth-execution-types",
- "reth-fs-util",
- "reth-network-p2p",
- "reth-node-builder",
- "reth-node-core",
- "reth-node-events",
- "reth-node-metrics",
- "reth-primitives",
- "reth-provider",
- "reth-prune",
- "reth-stages",
- "reth-stages-types",
- "reth-static-file",
- "reth-static-file-types",
- "reth-taiko-chainspec",
- "reth-taiko-evm",
- "reth-taiko-node",
- "reth-taiko-primitives",
- "reth-tracing",
- "serde",
- "tempfile",
- "tokio",
- "tokio-util",
- "tracing",
 ]
 
 [[package]]
@@ -9612,11 +9564,13 @@ dependencies = [
  "reth-basic-payload-builder",
  "reth-consensus",
  "reth-ethereum-payload-builder",
+ "reth-evm",
  "reth-network",
  "reth-node-builder",
  "reth-payload-builder",
  "reth-primitives",
  "reth-provider",
+ "reth-rpc",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-engine-primitives",
@@ -9650,7 +9604,6 @@ dependencies = [
  "reth-taiko-engine-primitives",
  "reth-taiko-evm",
  "reth-taiko-primitives",
- "reth-taiko-provider",
  "reth-transaction-pool",
  "revm-primitives",
  "thiserror 2.0.5",
@@ -9688,6 +9641,8 @@ dependencies = [
 name = "reth-taiko-proposer-consensus"
 version = "1.1.4"
 dependencies = [
+ "alloy-eips",
+ "alloy-primitives 0.8.14",
  "alloy-rlp",
  "futures-util",
  "reth-chainspec",
@@ -9695,29 +9650,15 @@ dependencies = [
  "reth-errors",
  "reth-evm",
  "reth-execution-errors",
+ "reth-execution-types",
  "reth-primitives",
  "reth-provider",
  "reth-revm",
+ "reth-taiko-chainspec",
  "reth-transaction-pool",
+ "revm-primitives",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "reth-taiko-provider"
-version = "1.1.4"
-dependencies = [
- "alloy-primitives 0.8.14",
- "auto_impl",
- "reth-db",
- "reth-db-api",
- "reth-node-types",
- "reth-primitives",
- "reth-primitives-traits",
- "reth-provider",
- "reth-storage-api",
- "reth-storage-errors",
- "reth-taiko-primitives",
 ]
 
 [[package]]
@@ -11149,26 +11090,6 @@ name = "tagptr"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
-
-[[package]]
-name = "taiko-reth"
-version = "1.1.4"
-dependencies = [
- "clap",
- "reth-cli-util",
- "reth-node-builder",
- "reth-provider",
- "reth-taiko-chainspec",
- "reth-taiko-cli",
- "reth-taiko-consensus",
- "reth-taiko-evm",
- "reth-taiko-forks",
- "reth-taiko-node",
- "reth-taiko-payload-builder",
- "reth-taiko-primitives",
- "reth-taiko-rpc",
- "tracing",
-]
 
 [[package]]
 name = "tap"

@@ -23,6 +23,7 @@ reth-consensus.workspace = true
 reth-trie-db.workspace = true
 reth-primitives.workspace = true
 reth-ethereum-payload-builder.workspace = true
+reth-rpc.workspace = true
 
 # taiko
 reth-taiko-consensus.workspace = true
@@ -30,6 +31,8 @@ reth-taiko-evm.workspace = true
 reth-taiko-engine-primitives.workspace = true
 reth-taiko-payload-builder.workspace = true
 reth-taiko-chainspec.workspace = true
+
+reth-evm = { workspace = true, features = ["taiko"] }
 
 # misc
 eyre.workspace = true

@@ -1,8 +1,8 @@
 //! This includes download client implementations for auto sealing miners.
 
 use crate::{TaskArgs, TaskResult};
+use alloy_primitives::Address;
 use reth_errors::RethError;
-use reth_primitives::Address;
 use std::fmt::Debug;
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
 

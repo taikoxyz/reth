@@ -31,7 +31,6 @@ revm-primitives = { workspace = true, features = ["taiko"] }
 reth-taiko-evm.workspace = true
 reth-taiko-engine-primitives.workspace = true
 reth-taiko-primitives.workspace = true
-reth-taiko-provider.workspace = true
 reth-taiko-consensus.workspace = true
 reth-taiko-chainspec.workspace = true
 

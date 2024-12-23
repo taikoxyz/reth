@@ -157,15 +157,13 @@ members = [
     "crates/taiko/consensus/proposer",
     "crates/taiko/engine-primitives/",
     "crates/taiko/evm",
-    "crates/taiko/bin",
-    "crates/taiko/cli",
     "crates/taiko/node",
     "crates/taiko/rpc",
     "crates/taiko/payload/builder",
     "crates/taiko/payload/validator",
     "crates/taiko/primitives/",
-    "crates/taiko/storage/",
     "crates/taiko/chainspec",
+    "crates/taiko/hardforks",
 ]
 default-members = ["bin/reth"]
 exclude = ["book/sources"]
@@ -441,12 +439,10 @@ reth-trie-sparse = { path = "crates/trie/sparse" }
 reth-zstd-compressors = { path = "crates/storage/zstd-compressors", default-features = false }
 
 # taiko
-taiko-reth = { path = "crates/taiko/bin" }
 reth-taiko-cli = { path = "crates/taiko/cli" }
 reth-taiko-consensus = { path = "crates/taiko/consensus/consensus" }
 reth-taiko-proposer-consensus = { path = "crates/taiko/consensus/proposer" }
 reth-taiko-primitives = { path = "crates/taiko/primitives" }
-reth-taiko-provider = { path = "crates/taiko/storage" }
 reth-taiko-evm = { path = "crates/taiko/evm" }
 reth-taiko-payload-builder = { path = "crates/taiko/payload/builder" }
 reth-taiko-payload-validator = { path = "crates/taiko/payload/validator" }

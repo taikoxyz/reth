@@ -35,9 +35,11 @@ use reth_primitives_traits::BlockBody as _;
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::{StageCheckpoint, StageId};
 use reth_storage_api::{
-    DBProvider, NodePrimitivesProvider, StateCommitmentProvider, StorageChangeSetReader,
+    DBProvider, L1OriginReader, L1OriginWriter, NodePrimitivesProvider, StateCommitmentProvider,
+    StorageChangeSetReader,
 };
 use reth_storage_errors::provider::ProviderResult;
+use reth_taiko_primitives::L1Origin;
 use reth_trie::HashedPostState;
 use reth_trie_db::StateCommitment;
 use revm::{
@@ -804,6 +806,25 @@ impl<N: ProviderNodeTypes> StateReader for BlockchainProvider2<N> {
         block: BlockNumber,
     ) -> ProviderResult<Option<ExecutionOutcome<Self::Receipt>>> {
         StateReader::get_state(&self.consistent_provider()?, block)
+    }
+}
+
+impl<N: ProviderNodeTypes> L1OriginReader for BlockchainProvider2<N> {
+    fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        self.database.provider()?.get_l1_origin(block_number)
+    }
+
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        self.database.provider()?.get_head_l1_origin()
+    }
+}
+
+impl<N: ProviderNodeTypes> L1OriginWriter for BlockchainProvider2<N> {
+    fn save_l1_origin(&self, block_number: BlockNumber, l1_origin: L1Origin) -> ProviderResult<()> {
+        let provider_rw = self.database_provider_rw()?;
+        provider_rw.save_l1_origin(block_number, l1_origin)?;
+        provider_rw.commit()?;
+        Ok(())
     }
 }
 
@@ -2762,7 +2783,7 @@ mod tests {
              canonical_in_memory_state: CanonicalInMemoryState,
              _factory: ProviderFactory<MockNodeTypesWithDB>| {
                 if let Some(tx) = canonical_in_memory_state.transaction_by_hash(hash) {
-                    return Ok::<_, ProviderError>(Some(tx))
+                    return Ok::<_, ProviderError>(Some(tx));
                 }
                 panic!("should not be in database");
                 // _factory.transaction_by_hash(hash)

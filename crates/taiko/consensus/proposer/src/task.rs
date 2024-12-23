@@ -1,10 +1,10 @@
-use crate::{Storage, TaskArgs};
+use crate::{build_and_execute, TaskArgs};
 use futures_util::{future::BoxFuture, FutureExt};
-use reth_chainspec::ChainSpec;
 use reth_evm::execute::BlockExecutorProvider;
-use reth_primitives::IntoRecoveredTransaction;
+use reth_primitives::{Block, NodePrimitives, TransactionSigned};
 use reth_provider::{BlockReaderIdExt, StateProviderFactory};
-use reth_transaction_pool::{TransactionPool, ValidPoolTransaction};
+use reth_taiko_chainspec::TaikoChainSpec;
+use reth_transaction_pool::{PoolTransaction, TransactionPool, ValidPoolTransaction};
 use std::{
     collections::VecDeque,
     future::Future,
@@ -18,7 +18,7 @@ use tracing::debug;
 /// A Future that listens for new ready transactions and puts new blocks into storage
 pub struct ProposerTask<Provider, Pool: TransactionPool, Executor> {
     /// The configured chain spec
-    chain_spec: Arc<ChainSpec>,
+    chain_spec: Arc<TaikoChainSpec>,
     /// The client used to interact with the state
     provider: Provider,
     /// Single active future that inserts a new block into `storage`
@@ -42,7 +42,7 @@ impl<Executor, Provider, Pool: TransactionPool> ProposerTask<Provider, Pool, Exe
     /// Creates a new instance of the task
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
-        chain_spec: Arc<ChainSpec>,
+        chain_spec: Arc<TaikoChainSpec>,
         provider: Provider,
         pool: Pool,
         block_executor: Executor,
@@ -62,10 +62,16 @@ impl<Executor, Provider, Pool: TransactionPool> ProposerTask<Provider, Pool, Exe
 
 impl<Executor, Provider, Pool> Future for ProposerTask<Provider, Pool, Executor>
 where
-    Provider: StateProviderFactory + BlockReaderIdExt + Clone + Unpin + 'static,
-    Pool: TransactionPool + Unpin + 'static,
-    <Pool as TransactionPool>::Transaction: IntoRecoveredTransaction,
+    Provider: StateProviderFactory
+        + BlockReaderIdExt<Header = reth_primitives::Header>
+        + Clone
+        + Unpin
+        + 'static,
+    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>>
+        + Unpin
+        + 'static,
     Executor: BlockExecutorProvider,
+    Executor::Primitives: NodePrimitives<Block = Block>,
 {
     type Output = ();
 
@@ -117,10 +123,8 @@ where
                 // Create the mining future that creates a block, notifies the engine that drives
                 // the pipeline
                 this.insert_task = Some(Box::pin(async move {
-                    let txs: Vec<_> = txs
-                        .into_iter()
-                        .map(|tx| tx.to_recovered_transaction().into_signed())
-                        .collect();
+                    let txs: Vec<_> =
+                        txs.into_iter().map(|tx| tx.to_consensus().into_signed()).collect();
                     let ommers = vec![];
 
                     let TaskArgs {
@@ -132,7 +136,7 @@ where
                         base_fee,
                         ..
                     } = trigger_args;
-                    let res = Storage::build_and_execute(
+                    let res = build_and_execute(
                         txs.clone(),
                         ommers,
                         &client,

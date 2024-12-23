@@ -35,6 +35,9 @@ reth-evm.workspace = true
 reth-chain-state.workspace = true
 reth-node-types.workspace = true
 
+# taiko
+reth-taiko-primitives.workspace = true
+
 # ethereum
 alloy-eips.workspace = true
 alloy-primitives.workspace = true

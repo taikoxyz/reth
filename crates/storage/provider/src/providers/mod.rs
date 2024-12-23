@@ -34,8 +34,9 @@ use reth_primitives::{
 };
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::{StageCheckpoint, StageId};
-use reth_storage_api::CanonChainTracker;
+use reth_storage_api::{CanonChainTracker, L1OriginReader, L1OriginWriter};
 use reth_storage_errors::provider::ProviderResult;
+use reth_taiko_primitives::L1Origin;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use std::{
     collections::BTreeMap,
@@ -727,7 +728,7 @@ impl<N: TreeNodeTypes> StateProviderFactory for BlockchainProvider<N> {
 
         if let Some(block) = self.tree.pending_block_num_hash() {
             if let Ok(pending) = self.tree.pending_state_provider(block.hash) {
-                return self.pending_with_provider(pending)
+                return self.pending_with_provider(pending);
             }
         }
 
@@ -737,7 +738,7 @@ impl<N: TreeNodeTypes> StateProviderFactory for BlockchainProvider<N> {
 
     fn pending_state_by_hash(&self, block_hash: B256) -> ProviderResult<Option<StateProviderBox>> {
         if let Some(state) = self.tree.find_pending_state_provider(block_hash) {
-            return Ok(Some(self.pending_with_provider(state)?))
+            return Ok(Some(self.pending_with_provider(state)?));
         }
         Ok(None)
     }
@@ -981,5 +982,24 @@ impl<N: ProviderNodeTypes> AccountReader for BlockchainProvider<N> {
     /// Get basic account information.
     fn basic_account(&self, address: Address) -> ProviderResult<Option<Account>> {
         self.database.provider()?.basic_account(address)
+    }
+}
+
+impl<N: ProviderNodeTypes> L1OriginReader for BlockchainProvider<N> {
+    fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        self.database.provider()?.get_l1_origin(block_number)
+    }
+
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        self.database.provider()?.get_head_l1_origin()
+    }
+}
+
+impl<N: ProviderNodeTypes> L1OriginWriter for BlockchainProvider<N> {
+    fn save_l1_origin(&self, block_number: BlockNumber, l1_origin: L1Origin) -> ProviderResult<()> {
+        let provider_rw = self.database_provider_rw()?;
+        provider_rw.save_l1_origin(block_number, l1_origin)?;
+        provider_rw.commit()?;
+        Ok(())
     }
 }

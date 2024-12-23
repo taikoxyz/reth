@@ -67,6 +67,10 @@ reth-consensus.workspace = true
 reth-engine-util.workspace = true
 reth-prune.workspace = true
 
+# taiko
+reth-taiko-chainspec.workspace = true
+reth-taiko-forks.workspace = true
+
 # crypto
 alloy-eips.workspace = true
 alloy-rlp.workspace = true
@@ -105,9 +109,9 @@ default = ["jemalloc"]
 dev = ["reth-cli-commands/arbitrary"]
 
 asm-keccak = [
-	"reth-node-core/asm-keccak",
-	"reth-primitives/asm-keccak",
-	"alloy-primitives/asm-keccak"
+    "reth-node-core/asm-keccak",
+    "reth-primitives/asm-keccak",
+    "alloy-primitives/asm-keccak",
 ]
 
 jemalloc = [
@@ -115,10 +119,7 @@ jemalloc = [
     "reth-node-core/jemalloc",
     "reth-node-metrics/jemalloc",
 ]
-jemalloc-prof = [
-	"reth-cli-util/jemalloc",
-	"reth-cli-util/jemalloc-prof"
-]
+jemalloc-prof = ["reth-cli-util/jemalloc", "reth-cli-util/jemalloc-prof"]
 tracy-allocator = ["reth-cli-util/tracy-allocator"]
 
 min-error-logs = ["tracing/release_max_level_error"]
@@ -130,3 +131,7 @@ min-trace-logs = ["tracing/release_max_level_trace"]
 [[bin]]
 name = "reth"
 path = "src/main.rs"
+
+[[bin]]
+name = "taiko-reth"
+path = "src/taiko.rs"

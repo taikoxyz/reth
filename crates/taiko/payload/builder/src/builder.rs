@@ -18,6 +18,7 @@ use reth_payload_primitives::{PayloadBuilderAttributes, PayloadBuilderError};
 use reth_primitives::{
     proofs, Block, BlockBody, BlockExt, EthereumHardforks, Header, TransactionSigned,
 };
+use reth_provider::L1OriginWriter;
 use reth_provider::{ChainSpecProvider, ExecutionOutcome, StateProviderFactory};
 use reth_revm::{
     database::StateProviderDatabase,
@@ -28,7 +29,6 @@ use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_engine_primitives::TaikoPayloadBuilderAttributes;
 use reth_taiko_evm::{TaikoEvmConfig, TaikoExecutionStrategyFactory, TaikoExecutorProvider};
 use reth_taiko_primitives::L1Origin;
-use reth_taiko_provider::L1OriginWriter;
 use reth_transaction_pool::{noop::NoopTransactionPool, PoolTransaction, TransactionPool};
 use revm_primitives::calc_excess_blob_gas;
 use tracing::{debug, warn};
@@ -43,9 +43,9 @@ pub struct TaikoPayloadBuilder<EvmConfig = TaikoEvmConfig> {
 
 impl TaikoPayloadBuilder {
     /// `TaikoPayloadBuilder` constructor.
-    pub fn new(chain_spec: Arc<TaikoChainSpec>) -> Self {
+    pub fn new(evm_config: TaikoEvmConfig, chain_spec: Arc<TaikoChainSpec>) -> Self {
         let block_executor = TaikoExecutorProvider::taiko(chain_spec.clone());
-        Self { block_executor, evm_config: TaikoEvmConfig::new(chain_spec) }
+        Self { block_executor, evm_config }
     }
 }
 

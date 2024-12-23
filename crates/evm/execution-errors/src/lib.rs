@@ -11,8 +11,6 @@
 
 extern crate alloc;
 
-use core::error;
-
 use alloc::{boxed::Box, string::String};
 use alloy_eips::BlockNumHash;
 use alloy_primitives::B256;
