@@ -5,7 +5,7 @@ use alloy_primitives::{Address, B256};
 use reth_chainspec::EthereumHardforks;
 use reth_ethereum_engine_primitives::EthPayloadAttributes;
 use reth_payload_primitives::PayloadAttributesBuilder;
-use reth_taiko_engine_primitives::TaikoPayloadAttributes;
+use reth_taiko_engine_types::TaikoPayloadAttributes;
 use std::sync::Arc;
 
 /// The attributes builder for local Ethereum payload.

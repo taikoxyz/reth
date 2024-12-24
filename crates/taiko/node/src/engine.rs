@@ -13,9 +13,9 @@ use reth_primitives::{Block, SealedBlock};
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_engine_primitives::{
     ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4, ExecutionPayloadV1,
-    TaikoExecutionPayloadEnvelopeV2, TaikoPayloadAttributes, TaikoPayloadBuilderAttributes,
+    TaikoExecutionPayloadEnvelopeV2, TaikoPayloadBuilderAttributes,
 };
-use reth_taiko_engine_types::TaikoExecutionPayload;
+use reth_taiko_engine_types::{TaikoExecutionPayload, TaikoPayloadAttributes};
 use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 
 /// The types used in the default mainnet ethereum beacon consensus engine.

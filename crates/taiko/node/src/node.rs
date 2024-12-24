@@ -20,7 +20,7 @@ use reth_provider::{CanonStateSubscriptions, EthStorage};
 use reth_rpc::EthApi;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::TaikoBeaconConsensus;
-use reth_taiko_engine_primitives::{TaikoPayloadAttributes, TaikoPayloadBuilderAttributes};
+use reth_taiko_engine_primitives::TaikoPayloadBuilderAttributes;
 use reth_taiko_evm::TaikoExecutionStrategyFactory;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{
@@ -29,6 +29,7 @@ use reth_transaction_pool::{
 };
 use reth_trie_db::MerklePatriciaTrie;
 use std::sync::Arc;
+use reth_taiko_engine_types::TaikoPayloadAttributes;
 
 /// Type configuration for a regular Ethereum node.
 #[derive(Debug, Default, Clone, Copy)]

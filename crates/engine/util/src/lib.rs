@@ -16,6 +16,7 @@ use skip_new_payload::EngineSkipNewPayload;
 
 pub mod reorg;
 use reorg::EngineReorg;
+use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 
 /// The collection of stream extensions for engine API message stream.
 pub trait EngineMessageStreamExt<Engine: EngineTypes>:
