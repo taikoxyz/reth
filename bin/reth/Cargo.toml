@@ -101,7 +101,6 @@ clap = { workspace = true, features = ["derive", "env"] }
 backon.workspace = true
 similar-asserts.workspace = true
 test-fuzz.workspace = true
-reth-taiko-engine-types.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
