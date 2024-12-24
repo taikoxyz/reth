@@ -1,6 +1,8 @@
 //! This includes download client implementations for auto sealing miners.
 
+use super::TaikoImplMessage;
 use crate::{TaskArgs, TaskResult};
+use alloy_eips::BlockId;
 use alloy_primitives::Address;
 use reth_errors::RethError;
 use std::fmt::Debug;
@@ -12,13 +14,13 @@ use tokio::sync::{mpsc::UnboundedSender, oneshot};
 /// When polled, the miner will assemble blocks when miners produce ready transactions and store the
 /// blocks in memory.
 #[derive(Debug, Clone)]
-pub struct ProposerClient {
-    trigger_args_tx: UnboundedSender<TaskArgs>,
+pub struct TaikoImplClient {
+    tx: UnboundedSender<TaikoImplMessage>,
 }
 
-impl ProposerClient {
-    pub(crate) const fn new(trigger_args_tx: UnboundedSender<TaskArgs>) -> Self {
-        Self { trigger_args_tx }
+impl TaikoImplClient {
+    pub(crate) const fn new(tx: UnboundedSender<TaikoImplMessage>) -> Self {
+        Self { tx }
     }
 
     /// get transactions from pool
@@ -34,8 +36,8 @@ impl ProposerClient {
         min_tip: u64,
     ) -> Result<Vec<TaskResult>, RethError> {
         let (tx, rx) = oneshot::channel();
-        self.trigger_args_tx
-            .send(TaskArgs {
+        self.tx
+            .send(TaikoImplMessage::PoolContent {
                 beneficiary,
                 base_fee,
                 block_max_gas_limit,
@@ -46,6 +48,17 @@ impl ProposerClient {
                 tx,
             })
             .unwrap();
+        rx.await.unwrap()
+    }
+
+    /// get proving pre flight
+    #[allow(clippy::too_many_arguments)]
+    pub async fn proving_pre_flight(
+        &self,
+        block_id: BlockId,
+    ) -> Result<Vec<TaskResult>, RethError> {
+        let (tx, rx) = oneshot::channel();
+        self.tx.send(TaikoImplMessage::ProvingPreFlight { block_id, tx }).unwrap();
         rx.await.unwrap()
     }
 }

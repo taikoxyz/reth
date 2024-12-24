@@ -20,7 +20,8 @@ use reth_provider::{CanonStateSubscriptions, EthStorage};
 use reth_rpc::EthApi;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::TaikoBeaconConsensus;
-use reth_taiko_engine_primitives::{TaikoPayloadAttributes, TaikoPayloadBuilderAttributes};
+use reth_taiko_engine_primitives::TaikoPayloadBuilderAttributes;
+use reth_taiko_engine_types::TaikoPayloadAttributes;
 use reth_taiko_evm::TaikoExecutionStrategyFactory;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{

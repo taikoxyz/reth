@@ -22,7 +22,6 @@ reth-network.workspace = true
 reth-consensus.workspace = true
 reth-trie-db.workspace = true
 reth-primitives.workspace = true
-reth-node-ethereum.workspace = true
 reth-rpc.workspace = true
 reth-payload-primitives.workspace = true
 

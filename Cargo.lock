@@ -6647,7 +6647,6 @@ dependencies = [
  "reth-payload-builder",
  "reth-payload-builder-primitives",
  "reth-payload-primitives",
- "reth-payload-validator",
  "reth-primitives",
  "reth-primitives-traits",
  "reth-provider",
@@ -7359,7 +7358,7 @@ dependencies = [
  "reth-prune",
  "reth-rpc-types-compat",
  "reth-stages-api",
- "reth-taiko-engine-primitives",
+ "reth-taiko-engine-types",
  "reth-transaction-pool",
  "tokio",
  "tokio-stream",
@@ -9466,16 +9465,13 @@ version = "1.1.4"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
- "alloy-eips",
  "alloy-genesis",
  "alloy-primitives 0.8.14",
  "alloy-serde 0.7.3",
  "derive_more 1.0.0",
- "once_cell",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-network-peers",
- "reth-primitives-traits",
  "reth-taiko-forks",
  "serde",
  "serde_json",
@@ -9506,9 +9502,7 @@ dependencies = [
  "reth-ethereum-consensus",
  "reth-primitives",
  "reth-primitives-traits",
- "reth-taiko-chainspec",
  "revm-primitives",
- "tracing",
 ]
 
 [[package]]
@@ -9557,23 +9551,17 @@ dependencies = [
  "flate2",
  "reth-chainspec",
  "reth-consensus",
- "reth-consensus-common",
  "reth-ethereum-consensus",
- "reth-ethereum-forks",
  "reth-evm",
  "reth-evm-ethereum",
- "reth-execution-errors",
  "reth-execution-types",
  "reth-optimism-chainspec",
  "reth-optimism-primitives",
  "reth-primitives",
- "reth-primitives-traits",
- "reth-prune-types",
  "reth-revm",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-forks",
- "reth-taiko-primitives",
  "revm",
  "revm-primitives",
  "tracing",
@@ -9584,8 +9572,6 @@ name = "reth-taiko-forks"
 version = "1.1.4"
 dependencies = [
  "alloy-chains",
- "alloy-genesis",
- "alloy-primitives 0.8.14",
  "reth-ethereum-forks",
 ]
 
@@ -9600,7 +9586,6 @@ dependencies = [
  "reth-evm",
  "reth-network",
  "reth-node-builder",
- "reth-node-ethereum",
  "reth-payload-builder",
  "reth-payload-primitives",
  "reth-primitives",
@@ -9676,30 +9661,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reth-taiko-proposer-consensus"
-version = "1.1.4"
-dependencies = [
- "alloy-eips",
- "alloy-primitives 0.8.14",
- "alloy-rlp",
- "futures-util",
- "reth-chainspec",
- "reth-consensus",
- "reth-errors",
- "reth-evm",
- "reth-execution-errors",
- "reth-execution-types",
- "reth-primitives",
- "reth-provider",
- "reth-revm",
- "reth-taiko-chainspec",
- "reth-transaction-pool",
- "revm-primitives",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "reth-taiko-rpc"
 version = "1.1.4"
 dependencies = [
@@ -9718,11 +9679,13 @@ dependencies = [
  "reth-chainspec",
  "reth-errors",
  "reth-evm",
+ "reth-execution-types",
  "reth-network-api",
  "reth-node-api",
  "reth-node-builder",
  "reth-primitives",
  "reth-provider",
+ "reth-revm",
  "reth-rpc",
  "reth-rpc-api",
  "reth-rpc-eth-api",
@@ -9735,7 +9698,6 @@ dependencies = [
  "reth-taiko-forks",
  "reth-taiko-payload-builder",
  "reth-taiko-primitives",
- "reth-taiko-proposer-consensus",
  "reth-tasks",
  "reth-transaction-pool",
  "revm",
@@ -12644,13 +12606,3 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
-
-[[patch.unused]]
-name = "c-kzg"
-version = "1.0.0"
-source = "git+https://github.com/brechtpd/c-kzg-4844?branch=for-alpha7#3bf0372e8c7a4ba908aff65da0508fcaaf9d38e6"
-
-[[patch.unused]]
-name = "secp256k1"
-version = "0.29.0"
-source = "git+https://github.com/CeciliaZ030/rust-secp256k1?branch=sp1-patch#26d5313e6fb992a0f393ffcbf9be3c03b23295f1"

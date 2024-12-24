@@ -15,7 +15,6 @@ workspace = true
 # reth
 reth-chainspec.workspace = true
 reth-ethereum-forks.workspace = true
-reth-primitives-traits.workspace = true
 reth-network-peers.workspace = true
 
 # taiko-reth
@@ -26,9 +25,7 @@ alloy-chains.workspace = true
 alloy-genesis.workspace = true
 alloy-primitives.workspace = true
 alloy-consensus.workspace = true
-alloy-eips.workspace = true
 alloy-serde.workspace = true
-
 
 # io
 serde.workspace = true
@@ -36,8 +33,6 @@ serde_json.workspace = true
 
 # misc
 derive_more.workspace = true
-once_cell.workspace = true
-
 
 [features]
 default = ["std"]
@@ -45,13 +40,10 @@ std = [
     "alloy-chains/std",
     "alloy-genesis/std",
     "alloy-primitives/std",
-    "alloy-eips/std",
     "reth-chainspec/std",
     "reth-ethereum-forks/std",
-    "reth-primitives-traits/std",
     "reth-taiko-forks/std",
     "alloy-consensus/std",
-    "once_cell/std",
     "derive_more/std",
     "reth-network-peers/std",
 ]

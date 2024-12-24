@@ -1,5 +1,8 @@
-use alloy_primitives::{Address, U256};
-use alloy_rpc_types_eth::Transaction;
+use alloy_eips::BlockId;
+use alloy_primitives::{Address, Bytes, B256, U256};
+use alloy_rpc_types_eth::{
+    Block as RpcBlock, EIP1186AccountProofResponse, Header as RpcHeader, Transaction,
+};
 use async_trait::async_trait;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use reth_errors::RethError;
@@ -19,6 +22,7 @@ use reth_taiko_proposer_consensus::{ProposerBuilder, ProposerClient};
 use reth_tasks::TaskSpawner;
 use reth_transaction_pool::{PoolConsensusTx, PoolTransaction, TransactionPool};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tracing::debug;
 
 /// Taiko rpc interface.
@@ -30,7 +34,7 @@ pub trait TaikoApi {
 
     /// L1OriginByID returns the L2 block's corresponding L1 origin.
     #[method(name = "l1OriginByID")]
-    async fn l1_origin_by_id(&self, block_id: U256) -> RpcResult<L1Origin>;
+    async fn l1_origin_by_id(&self, block_id: BlockId) -> RpcResult<L1Origin>;
 
     /// GetSyncMode returns the node sync mode.
     #[method(name = "getSyncMode")]
@@ -66,6 +70,30 @@ pub trait TaikoAuthApi {
         max_transactions_lists: u64,
         min_tip: u64,
     ) -> RpcResult<Vec<PreBuiltTxList>>;
+
+    /// GetSyncMode returns the node sync mode.
+    #[method(name = "provingPreFlight")]
+    async fn proving_pre_flight(&self, block_id: BlockId) -> RpcResult<ProvingPreFlight> {
+        todo!()
+    }
+}
+
+/// `PreFlight` is the pre-flight data for the proving process.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProvingPreFlight {
+    /// The block to be proven.
+    pub block: RpcBlock,
+    /// The parent header.
+    pub parent_header: RpcHeader,
+    /// The account proofs.
+    pub account_proofs: Vec<EIP1186AccountProofResponse>,
+    /// The parent account proofs.
+    pub parent_account_proofs: Vec<EIP1186AccountProofResponse>,
+    /// The contracts used.
+    pub contracts: HashMap<B256, Bytes>,
+    /// The ancestor used.
+    pub ancestor_headers: Vec<RpcHeader>,
 }
 
 /// `PreBuiltTxList` is a pre-built transaction list based on the latest chain state,

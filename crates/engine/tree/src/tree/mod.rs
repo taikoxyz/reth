@@ -12,7 +12,7 @@ use alloy_primitives::{
     BlockNumber, B256, U256,
 };
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
+    ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
     PayloadValidationError,
 };
 use reth_beacon_consensus::{
@@ -990,7 +990,6 @@ where
         state: ForkchoiceState,
         attrs: Option<T::PayloadAttributes>,
         version: EngineApiMessageVersion,
-        debug: bool,
     ) -> ProviderResult<TreeOutcome<OnForkChoiceUpdated>> {
         trace!(target: "engine::tree", ?attrs, "invoked forkchoice update");
         self.metrics.engine.forkchoice_updated_messages.increment(1);
@@ -1244,14 +1243,10 @@ where
                                 payload_attrs,
                                 tx,
                                 version,
-                                debug,
+                                debug: _debug,
                             } => {
-                                let mut output = self.on_forkchoice_updated(
-                                    state,
-                                    payload_attrs,
-                                    version,
-                                    debug,
-                                );
+                                let mut output =
+                                    self.on_forkchoice_updated(state, payload_attrs, version);
 
                                 if let Ok(res) = &mut output {
                                     // track last received forkchoice state

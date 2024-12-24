@@ -2,7 +2,6 @@
 
 use futures::Stream;
 use reth_engine_primitives::{BeaconEngineMessage, EngineTypes};
-use reth_payload_validator::ExecutionPayloadValidator;
 use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 use std::path::PathBuf;
 use tokio_util::either::Either;

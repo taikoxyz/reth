@@ -17,14 +17,8 @@ reth-ethereum-forks.workspace = true
 
 # ethereum
 alloy-chains.workspace = true
-alloy-primitives.workspace = true
-alloy-genesis.workspace = true
 
 [features]
+std = ["alloy-chains/std", "reth-ethereum-forks/std"]
 default = ["std"]
-std = ["alloy-primitives/std", "alloy-chains/std", "reth-ethereum-forks/std"]
-serde = [
-    "alloy-chains/serde",
-    "alloy-primitives/serde",
-    "reth-ethereum-forks/serde",
-]
+serde = ["alloy-chains/serde", "reth-ethereum-forks/serde"]

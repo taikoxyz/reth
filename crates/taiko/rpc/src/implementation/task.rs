@@ -16,7 +16,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::debug;
 
 /// A Future that listens for new ready transactions and puts new blocks into storage
-pub struct ProposerTask<Provider, Pool: TransactionPool, Executor> {
+pub struct TaikoImplTask<Provider, Pool: TransactionPool, Executor> {
     /// The configured chain spec
     chain_spec: Arc<TaikoChainSpec>,
     /// The client used to interact with the state
@@ -38,7 +38,7 @@ pub struct ProposerTask<Provider, Pool: TransactionPool, Executor> {
 
 // === impl MiningTask ===
 
-impl<Executor, Provider, Pool: TransactionPool> ProposerTask<Provider, Pool, Executor> {
+impl<Executor, Provider, Pool: TransactionPool> TaikoImplTask<Provider, Pool, Executor> {
     /// Creates a new instance of the task
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
@@ -60,7 +60,7 @@ impl<Executor, Provider, Pool: TransactionPool> ProposerTask<Provider, Pool, Exe
     }
 }
 
-impl<Executor, Provider, Pool> Future for ProposerTask<Provider, Pool, Executor>
+impl<Executor, Provider, Pool> Future for TaikoImplTask<Provider, Pool, Executor>
 where
     Provider: StateProviderFactory
         + BlockReaderIdExt<Header = reth_primitives::Header>
@@ -167,7 +167,7 @@ where
 }
 
 impl<Client, Pool: TransactionPool, EvmConfig: std::fmt::Debug> std::fmt::Debug
-    for ProposerTask<Client, Pool, EvmConfig>
+    for TaikoImplTask<Client, Pool, EvmConfig>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MiningTask").finish_non_exhaustive()

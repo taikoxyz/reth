@@ -1,6 +1,6 @@
 //! Stores engine API messages to disk for later inspection and replay.
 
-use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState};
+use alloy_rpc_types_engine::{ExecutionPayloadSidecar, ForkchoiceState};
 use futures::{Stream, StreamExt};
 use reth_engine_primitives::{BeaconEngineMessage, EngineTypes};
 use reth_fs_util as fs;
