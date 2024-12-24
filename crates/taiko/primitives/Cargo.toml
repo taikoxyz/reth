@@ -16,6 +16,7 @@ reth-codecs.workspace = true
 modular-bitfield.workspace = true
 bytes.workspace = true
 alloy-rlp.workspace = true
+test-fuzz.workspace = true
 
 [lints]
 workspace = true

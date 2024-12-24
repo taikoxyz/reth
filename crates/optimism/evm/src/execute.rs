@@ -26,6 +26,7 @@ use reth_primitives::{BlockWithSenders, Receipt, TransactionSigned, TxType};
 use reth_revm::{Database, State};
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, ResultAndState, U256};
 use tracing::trace;
+use reth_execution_types::BlockExecutionInput;
 
 /// Factory for [`OpExecutionStrategy`].
 #[derive(Debug, Clone)]
@@ -161,9 +162,9 @@ where
 
     fn execute_transactions(
         &mut self,
-        block: &BlockWithSenders,
-        total_difficulty: U256,
+        input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
 
