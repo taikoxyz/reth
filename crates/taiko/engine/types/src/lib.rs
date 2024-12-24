@@ -11,6 +11,6 @@
 mod payload;
 
 pub use payload::{
-    ExecutionPayloadInputV2, TaikoExecutionPayload, TaikoExecutionPayloadEnvelopeV2,
+    BlockMetadata, ExecutionPayloadInputV2, TaikoExecutionPayload, TaikoExecutionPayloadEnvelopeV2,
     TaikoExecutionPayloadInputV2, TaikoPayloadAttributes,
 };

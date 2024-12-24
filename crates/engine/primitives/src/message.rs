@@ -1,7 +1,7 @@
 use crate::{BeaconOnNewPayloadError, EngineApiMessageVersion, EngineTypes, ForkchoiceStatus};
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkChoiceUpdateResult, ForkchoiceState,
-    ForkchoiceUpdateError, ForkchoiceUpdated, PayloadId, PayloadStatus, PayloadStatusEnum,
+    ExecutionPayloadSidecar, ForkChoiceUpdateResult, ForkchoiceState, ForkchoiceUpdateError,
+    ForkchoiceUpdated, PayloadId, PayloadStatus, PayloadStatusEnum,
 };
 use futures::{future::Either, FutureExt};
 use reth_errors::RethResult;
@@ -160,6 +160,7 @@ pub enum BeaconEngineMessage<Engine: EngineTypes> {
         version: EngineApiMessageVersion,
         /// The sender for returning forkchoice updated result.
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
+        /// Debug mode flag.
         debug: bool,
     },
     /// Message with exchanged transition configuration.

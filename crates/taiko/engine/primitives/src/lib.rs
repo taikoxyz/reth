@@ -14,7 +14,4 @@ pub use alloy_rpc_types_engine::{
     ExecutionPayloadEnvelopeV2, ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4,
     ExecutionPayloadV1, PayloadAttributes as EthPayloadAttributes,
 };
-pub use payload::{
-    TaikoExecutionPayload, TaikoExecutionPayloadEnvelopeV2, TaikoPayloadAttributes,
-    TaikoPayloadBuilderAttributes,
-};
+pub use payload::{TaikoExecutionPayloadEnvelopeV2, TaikoPayloadBuilderAttributes};

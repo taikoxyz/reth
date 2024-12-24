@@ -13,7 +13,7 @@ mod error;
 use core::fmt;
 
 use alloy_consensus::BlockHeader;
-use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadSidecar, PayloadError};
+use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 pub use error::BeaconOnNewPayloadError;
 
 mod forkchoice;

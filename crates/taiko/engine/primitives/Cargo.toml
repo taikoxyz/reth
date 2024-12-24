@@ -14,22 +14,19 @@ workspace = true
 # reth
 reth-rpc-types-compat.workspace = true
 reth-payload-primitives.workspace = true
-reth-primitives.workspace = true
-reth-chain-state.workspace = true
 alloy-rpc-types-engine.workspace = true
 alloy-primitives.workspace = true
 alloy-eips.workspace = true
 
 # taiko
 reth-taiko-primitives.workspace = true
+reth-taiko-engine-types.workspace = true
 
 # ethereum
 reth-ethereum-engine-primitives.workspace = true
 
 # misc
 serde.workspace = true
-serde_with.workspace = true
-alloy-serde = "0.1.3"
 alloy-rlp.workspace = true
 sha2.workspace = true
 

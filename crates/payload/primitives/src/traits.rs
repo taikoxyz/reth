@@ -6,6 +6,7 @@ use alloy_primitives::{Address, B256, U256};
 use alloy_rpc_types_engine::{PayloadAttributes as EthPayloadAttributes, PayloadId};
 use reth_chain_state::ExecutedBlock;
 use reth_primitives::SealedBlock;
+use reth_taiko_engine_types::TaikoPayloadAttributes;
 
 /// Represents a built payload type that contains a built [`SealedBlock`] and can be converted into
 /// engine API execution payloads.
@@ -100,19 +101,19 @@ impl PayloadAttributes for EthPayloadAttributes {
     }
 }
 
-// impl PayloadAttributes for TaikoPayloadAttributes {
-//     fn timestamp(&self) -> u64 {
-//         self.payload_attributes.timestamp()
-//     }
+impl PayloadAttributes for TaikoPayloadAttributes {
+    fn timestamp(&self) -> u64 {
+        self.payload_attributes.timestamp()
+    }
 
-//     fn withdrawals(&self) -> Option<&Vec<Withdrawal>> {
-//         self.payload_attributes.withdrawals()
-//     }
+    fn withdrawals(&self) -> Option<&Vec<Withdrawal>> {
+        self.payload_attributes.withdrawals()
+    }
 
-//     fn parent_beacon_block_root(&self) -> Option<B256> {
-//         self.payload_attributes.parent_beacon_block_root()
-//     }
-// }
+    fn parent_beacon_block_root(&self) -> Option<B256> {
+        self.payload_attributes.parent_beacon_block_root()
+    }
+}
 
 #[cfg(feature = "op")]
 impl PayloadAttributes for op_alloy_rpc_types_engine::OpPayloadAttributes {

@@ -1,7 +1,6 @@
 use crate::{MessageValidationKind, PayloadAttributes};
 use alloy_eips::eip4895::Withdrawal;
 use alloy_primitives::B256;
-use alloy_rpc_types_engine::ExecutionPayload;
 use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// Either an [`ExecutionPayload`] or a types that implements the [`PayloadAttributes`] trait.

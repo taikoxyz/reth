@@ -8,9 +8,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use alloy_rpc_types::engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, MaybeCancunPayloadFields, PayloadError,
-};
+use alloy_rpc_types::engine::{ExecutionPayloadSidecar, MaybeCancunPayloadFields, PayloadError};
 use reth_chainspec::EthereumHardforks;
 use reth_primitives::{BlockExt, SealedBlock};
 use reth_rpc_types_compat::engine::payload::try_into_block;
