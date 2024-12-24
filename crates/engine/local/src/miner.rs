@@ -167,6 +167,7 @@ where
             payload_attrs: None,
             tx,
             version: EngineApiMessageVersion::default(),
+            debug: false,
         })?;
 
         let res = rx.await??;
@@ -194,6 +195,7 @@ where
             payload_attrs: Some(self.payload_attributes_builder.build(timestamp)),
             tx,
             version: EngineApiMessageVersion::default(),
+            debug: false,
         })?;
 
         let res = rx.await??.await?;

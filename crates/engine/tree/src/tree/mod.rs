@@ -990,6 +990,7 @@ where
         state: ForkchoiceState,
         attrs: Option<T::PayloadAttributes>,
         version: EngineApiMessageVersion,
+        debug: bool,
     ) -> ProviderResult<TreeOutcome<OnForkChoiceUpdated>> {
         trace!(target: "engine::tree", ?attrs, "invoked forkchoice update");
         self.metrics.engine.forkchoice_updated_messages.increment(1);
@@ -1243,9 +1244,14 @@ where
                                 payload_attrs,
                                 tx,
                                 version,
+                                debug,
                             } => {
-                                let mut output =
-                                    self.on_forkchoice_updated(state, payload_attrs, version);
+                                let mut output = self.on_forkchoice_updated(
+                                    state,
+                                    payload_attrs,
+                                    version,
+                                    debug,
+                                );
 
                                 if let Ok(res) = &mut output {
                                     // track last received forkchoice state

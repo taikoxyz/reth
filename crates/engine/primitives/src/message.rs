@@ -160,6 +160,7 @@ pub enum BeaconEngineMessage<Engine: EngineTypes> {
         version: EngineApiMessageVersion,
         /// The sender for returning forkchoice updated result.
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
+        debug: bool,
     },
     /// Message with exchanged transition configuration.
     TransitionConfigurationExchanged,
