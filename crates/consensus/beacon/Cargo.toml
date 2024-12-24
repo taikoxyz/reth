@@ -32,7 +32,7 @@ reth-tokio-util.workspace = true
 reth-engine-primitives.workspace = true
 reth-network-p2p.workspace = true
 reth-node-types.workspace = true
-reth-chainspec = { workspace = true, optional = true }
+reth-chainspec = { workspace = true }
 
 # taiko
 reth-taiko-engine-types.workspace = true
@@ -88,7 +88,6 @@ assert_matches.workspace = true
 optimism = [
     "reth-blockchain-tree/optimism",
     "reth-codecs/op",
-    "reth-chainspec",
     "reth-db-api/optimism",
     "reth-db/optimism",
     "reth-downloaders/optimism",

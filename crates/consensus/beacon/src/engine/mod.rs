@@ -489,6 +489,16 @@ where
             return true
         }
 
+        if reth_chainspec::EthChainSpec::is_taiko(&self.blockchain.chain_spec()) {
+            debug!(
+                target: "consensus::engine",
+                fcu_head_num=?header.number,
+                current_head_num=?head.number,
+                "[Taiko] Allowing beacon reorg to old head"
+            );
+            return true;
+        }
+
         // 2. Client software MAY skip an update of the forkchoice state and MUST NOT begin a
         //    payload build process if `forkchoiceState.headBlockHash` references a `VALID` ancestor
         //    of the head of canonical chain, i.e. the ancestor passed payload validation process
