@@ -30,8 +30,6 @@ mod execute;
 pub use execute::*;
 mod config;
 use config::revm_spec;
-mod error;
-pub use error::OpBlockExecutionError;
 use reth_evm_ethereum::revm_spec_by_timestamp_after_merge;
 
 use revm_primitives::{
