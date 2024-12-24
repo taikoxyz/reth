@@ -27,6 +27,9 @@ reth-engine-primitives.workspace = true
 reth-evm.workspace = true
 reth-transaction-pool.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # ethereum
 alloy-eips.workspace = true
 alloy-primitives.workspace = true

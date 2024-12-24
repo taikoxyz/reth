@@ -31,6 +31,8 @@ use reth_rpc_types_compat::engine::payload::{
     convert_payload_input_v2_to_payload, convert_to_payload_body_v1,
 };
 use reth_storage_api::{BlockReader, HeaderProvider, StateProviderFactory};
+use reth_taiko_engine_types::{TaikoExecutionPayload, TaikoExecutionPayloadInputV2};
+
 use reth_tasks::TaskSpawner;
 use reth_transaction_pool::TransactionPool;
 use std::{sync::Arc, time::Instant};
@@ -142,6 +144,7 @@ where
         payload: ExecutionPayloadV1,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
+        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload, None,
@@ -175,9 +178,11 @@ where
     /// See also <https://github.com/ethereum/execution-apis/blob/584905270d8ad665718058060267061ecfd79ca5/src/engine/shanghai.md#engine_newpayloadv2>
     pub async fn new_payload_v2(
         &self,
-        payload: ExecutionPayloadInputV2,
+        payload: TaikoExecutionPayloadInputV2,
     ) -> EngineApiResult<PayloadStatus> {
-        let payload = convert_payload_input_v2_to_payload(payload);
+        let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash } = payload;
+        let payload = convert_payload_input_v2_to_payload(execution_payload);
+        let payload = TaikoExecutionPayload::from((payload, tx_hash, withdrawals_hash));
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload, None,
@@ -196,10 +201,10 @@ where
     /// Metered version of `new_payload_v2`.
     pub async fn new_payload_v2_metered(
         &self,
-        payload: ExecutionPayloadInputV2,
+        payload: TaikoExecutionPayloadInputV2,
     ) -> EngineApiResult<PayloadStatus> {
         let start = Instant::now();
-        let gas_used = payload.execution_payload.gas_used;
+        let gas_used = payload.execution_payload.execution_payload.gas_used;
         let res = Self::new_payload_v2(self, payload).await;
         let elapsed = start.elapsed();
         self.inner.metrics.latency.new_payload_v2.record(elapsed);
@@ -215,6 +220,7 @@ where
         parent_beacon_block_root: B256,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
+        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload,
@@ -264,6 +270,7 @@ where
         execution_requests: Requests,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
+        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload,
@@ -760,7 +767,10 @@ where
 
     /// Handler for `engine_newPayloadV2`
     /// See also <https://github.com/ethereum/execution-apis/blob/584905270d8ad665718058060267061ecfd79ca5/src/engine/shanghai.md#engine_newpayloadv2>
-    async fn new_payload_v2(&self, payload: ExecutionPayloadInputV2) -> RpcResult<PayloadStatus> {
+    async fn new_payload_v2(
+        &self,
+        payload: TaikoExecutionPayloadInputV2,
+    ) -> RpcResult<PayloadStatus> {
         trace!(target: "rpc::engine", "Serving engine_newPayloadV2");
         Ok(self.new_payload_v2_metered(payload).await?)
     }

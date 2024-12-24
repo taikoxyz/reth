@@ -155,7 +155,8 @@ members = [
     # taiko
     "crates/taiko/consensus/consensus",
     "crates/taiko/consensus/proposer",
-    "crates/taiko/engine-primitives/",
+    "crates/taiko/engine/primitives",
+    "crates/taiko/engine/types",
     "crates/taiko/evm",
     "crates/taiko/cli",
     "crates/taiko/node",
@@ -447,7 +448,8 @@ reth-taiko-primitives = { path = "crates/taiko/primitives" }
 reth-taiko-evm = { path = "crates/taiko/evm" }
 reth-taiko-payload-builder = { path = "crates/taiko/payload/builder" }
 reth-taiko-payload-validator = { path = "crates/taiko/payload/validator" }
-reth-taiko-engine-primitives = { path = "crates/taiko/engine-primitives" }
+reth-taiko-engine-primitives = { path = "crates/taiko/engine/primitives" }
+reth-taiko-engine-types = { path = "crates/taiko/engine/types" }
 reth-taiko-node = { path = "crates/taiko/node" }
 reth-taiko-chainspec = { path = "crates/taiko/chainspec" }
 reth-taiko-forks = { path = "crates/taiko/hardforks" }

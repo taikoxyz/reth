@@ -17,5 +17,8 @@ reth-chainspec.workspace = true
 reth-primitives.workspace = true
 reth-rpc-types-compat.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # alloy
 alloy-rpc-types = { workspace = true, features = ["engine"] }

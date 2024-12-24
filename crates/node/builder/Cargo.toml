@@ -58,6 +58,9 @@ reth-tokio-util.workspace = true
 reth-tracing.workspace = true
 reth-transaction-pool.workspace = true
 
+# taiko
+reth-taiko-payload-validator.workspace = true
+
 ## ethereum
 alloy-primitives.workspace = true
 alloy-rpc-types = { workspace = true, features = ["engine"] }

@@ -12,7 +12,7 @@ use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 use reth_chainspec::EthereumHardforks;
 use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::SealedBlock;
-use reth_taiko_engine_primitives::TaikoExecutionPayload;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use std::{ops::Deref, sync::Arc};
 
 /// Execution payload validator.;
@@ -43,8 +43,9 @@ impl<ChainSpec: EthereumHardforks> TaikoExecutionPayloadValidator<ChainSpec> {
         payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlock, PayloadError> {
-        let TaikoExecutionPayload { payload_inner, tx_hash, withdrawals_hash } = payload;
-        let mut block = self.inner.ensure_well_formed_payload(payload_inner, sidecar)?;
+        let tx_hash = payload.tx_hash;
+        let withdrawals_hash = payload.withdrawals_hash;
+        let mut block = self.inner.ensure_well_formed_payload(payload, sidecar)?;
         block.body = Default::default();
         block.transactions_root = tx_hash;
         block.withdrawals_root = Some(withdrawals_hash);

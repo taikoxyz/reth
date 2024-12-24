@@ -32,6 +32,7 @@ use reth_provider::{
     ChainSpecProvider, ProviderError, StageCheckpointReader,
 };
 use reth_stages_api::{ControlFlow, Pipeline, PipelineTarget, StageId};
+use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 use reth_tasks::TaskSpawner;
 use reth_tokio_util::EventSender;
 use std::{
@@ -72,6 +73,8 @@ use hooks::{EngineHookContext, EngineHookEvent, EngineHooks, EngineHooksControll
 
 #[cfg(test)]
 pub mod test_utils;
+
+use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// The maximum number of invalid headers that can be tracked by the engine.
 const MAX_INVALID_HEADERS: u32 = 512u32;
@@ -199,7 +202,7 @@ where
     /// The payload store.
     payload_builder: PayloadBuilderHandle<N::Engine>,
     /// Validator for execution payloads
-    payload_validator: ExecutionPayloadValidator<N::ChainSpec>,
+    payload_validator: TaikoExecutionPayloadValidator<N::ChainSpec>,
     /// Current blockchain tree action.
     blockchain_tree_action: Option<BlockchainTreeAction<N::Engine>>,
     /// Pending forkchoice update.
@@ -313,7 +316,7 @@ where
         );
         let mut this = Self {
             sync,
-            payload_validator: ExecutionPayloadValidator::new(blockchain.chain_spec()),
+            payload_validator: TaikoExecutionPayloadValidator::new(blockchain.chain_spec()),
             blockchain,
             sync_state_updater,
             engine_message_stream,
@@ -1090,7 +1093,7 @@ where
     #[instrument(level = "trace", skip(self, payload, sidecar), fields(block_hash = ?payload.block_hash(), block_number = %payload.block_number(), is_pipeline_idle = %self.sync.is_pipeline_idle()), target = "consensus::engine")]
     fn on_new_payload(
         &mut self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<Either<PayloadStatus, SealedBlock>, BeaconOnNewPayloadError> {
         self.metrics.new_payload_messages.increment(1);

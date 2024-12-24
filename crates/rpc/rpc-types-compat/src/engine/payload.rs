@@ -8,7 +8,7 @@ use alloy_eips::{
 };
 use alloy_primitives::{B256, U256};
 use alloy_rpc_types_engine::{
-    payload::{ExecutionPayloadBodyV1, ExecutionPayloadFieldV2, ExecutionPayloadInputV2},
+    payload::{ExecutionPayloadBodyV1, ExecutionPayloadFieldV2},
     ExecutionPayload, ExecutionPayloadSidecar, ExecutionPayloadV1, ExecutionPayloadV2,
     ExecutionPayloadV3, PayloadError,
 };
@@ -17,6 +17,7 @@ use reth_primitives::{
     Block, BlockBody, BlockExt, SealedBlock, TransactionSigned,
 };
 use reth_primitives_traits::BlockBody as _;
+use reth_taiko_engine_types::ExecutionPayloadInputV2;
 
 /// Converts [`ExecutionPayloadV1`] to [`Block`]
 pub fn try_payload_v1_to_block(payload: ExecutionPayloadV1) -> Result<Block, PayloadError> {

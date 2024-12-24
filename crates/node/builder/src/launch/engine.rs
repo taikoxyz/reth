@@ -150,7 +150,7 @@ where
             .maybe_reorg(
                 ctx.blockchain_db().clone(),
                 ctx.components().evm_config().clone(),
-                reth_payload_validator::ExecutionPayloadValidator::new(ctx.chain_spec()),
+                reth_taiko_payload_validator::TaikoExecutionPayloadValidator::new(ctx.chain_spec()),
                 node_config.debug.reorg_frequency,
                 node_config.debug.reorg_depth,
             )

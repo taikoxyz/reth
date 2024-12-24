@@ -222,7 +222,7 @@ where
 
         let (tx, rx) = oneshot::channel();
         self.to_engine.send(BeaconEngineMessage::NewPayload {
-            payload: block_to_payload(payload.block().clone()),
+            payload: block_to_payload(payload.block().clone()).into(),
             // todo: prague support
             sidecar: cancun_fields
                 .map(ExecutionPayloadSidecar::v3)

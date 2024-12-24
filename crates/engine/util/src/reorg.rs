@@ -29,6 +29,8 @@ use reth_revm::{
     DatabaseCommit,
 };
 use reth_rpc_types_compat::engine::payload::block_to_payload;
+use reth_taiko_engine_types::TaikoExecutionPayload;
+use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 use revm_primitives::{calc_excess_blob_gas, EVMError, EnvWithHandlerCfg};
 use std::{
     collections::VecDeque,
@@ -64,7 +66,7 @@ pub struct EngineReorg<S, Engine: EngineTypes, Provider, Evm, Spec> {
     /// Evm configuration.
     evm_config: Evm,
     /// Payload validator.
-    payload_validator: ExecutionPayloadValidator<Spec>,
+    payload_validator: TaikoExecutionPayloadValidator<Spec>,
     /// The frequency of reorgs.
     frequency: usize,
     /// The depth of reorgs.
@@ -86,7 +88,7 @@ impl<S, Engine: EngineTypes, Provider, Evm, Spec> EngineReorg<S, Engine, Provide
         stream: S,
         provider: Provider,
         evm_config: Evm,
-        payload_validator: ExecutionPayloadValidator<Spec>,
+        payload_validator: TaikoExecutionPayloadValidator<Spec>,
         frequency: usize,
         depth: usize,
     ) -> Self {
@@ -250,11 +252,11 @@ where
 fn create_reorg_head<Provider, Evm, Spec>(
     provider: &Provider,
     evm_config: &Evm,
-    payload_validator: &ExecutionPayloadValidator<Spec>,
+    payload_validator: &TaikoExecutionPayloadValidator<Spec>,
     mut depth: usize,
-    next_payload: ExecutionPayload,
+    next_payload: TaikoExecutionPayload,
     next_sidecar: ExecutionPayloadSidecar,
-) -> RethResult<(ExecutionPayload, ExecutionPayloadSidecar)>
+) -> RethResult<(TaikoExecutionPayload, ExecutionPayloadSidecar)>
 where
     Provider: BlockReader<Block = reth_primitives::Block> + StateProviderFactory,
     Evm: ConfigureEvm<Header = Header, Transaction = reth_primitives::TransactionSigned>,
@@ -433,7 +435,7 @@ where
     .seal_slow();
 
     Ok((
-        block_to_payload(reorg_block),
+        block_to_payload(reorg_block).into(),
         // todo(onbjerg): how do we support execution requests?
         reorg_target
             .header

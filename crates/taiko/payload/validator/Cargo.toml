@@ -22,5 +22,5 @@ alloy-rpc-types-engine.workspace = true
 alloy-primitives.workspace = true
 
 # taiko
-reth-taiko-engine-primitives.workspace = true
+reth-taiko-engine-types.workspace = true
 reth-taiko-chainspec.workspace = true

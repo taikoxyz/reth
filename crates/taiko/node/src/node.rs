@@ -1,6 +1,6 @@
 //! Ethereum Node types config.
 
-use crate::{TaikoEngineTypes, TaikoEvmConfig};
+use crate::{TaikoEngineTypes, TaikoEngineValidator, TaikoEvmConfig};
 use reth_basic_payload_builder::{BasicPayloadJobGenerator, BasicPayloadJobGeneratorConfig};
 use reth_evm::execute::BasicBlockExecutorProvider;
 use reth_network::{NetworkHandle, PeersInfo};
@@ -20,9 +20,7 @@ use reth_provider::{CanonStateSubscriptions, EthStorage};
 use reth_rpc::EthApi;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::TaikoBeaconConsensus;
-use reth_taiko_engine_primitives::{
-    TaikoEngineValidator, TaikoPayloadAttributes, TaikoPayloadBuilderAttributes,
-};
+use reth_taiko_engine_primitives::{TaikoPayloadAttributes, TaikoPayloadBuilderAttributes};
 use reth_taiko_evm::TaikoExecutionStrategyFactory;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{

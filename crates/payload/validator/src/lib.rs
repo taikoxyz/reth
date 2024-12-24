@@ -14,6 +14,7 @@ use alloy_rpc_types::engine::{
 use reth_chainspec::EthereumHardforks;
 use reth_primitives::{BlockExt, SealedBlock};
 use reth_rpc_types_compat::engine::payload::try_into_block;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use std::sync::Arc;
 
 /// Execution payload validator.
@@ -114,13 +115,13 @@ impl<ChainSpec: EthereumHardforks> ExecutionPayloadValidator<ChainSpec> {
     /// <https://github.com/ethereum/execution-apis/blob/fe8e13c288c592ec154ce25c534e26cb7ce0530d/src/engine/cancun.md#specification>
     pub fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlock, PayloadError> {
         let expected_hash = payload.block_hash();
 
         // First parse the block
-        let sealed_block = try_into_block(payload, &sidecar)?.seal_slow();
+        let sealed_block = try_into_block(payload.payload_inner, &sidecar)?.seal_slow();
 
         // Ensure the hash included in the payload matches the block hash
         if expected_hash != sealed_block.hash() {

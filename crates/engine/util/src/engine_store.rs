@@ -4,6 +4,7 @@ use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadSidecar, Forkchoi
 use futures::{Stream, StreamExt};
 use reth_engine_primitives::{BeaconEngineMessage, EngineTypes};
 use reth_fs_util as fs;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -28,7 +29,7 @@ pub enum StoredEngineApiMessage<Attributes> {
     /// The on-disk representation of an `engine_newPayload` method call.
     NewPayload {
         /// The [`ExecutionPayload`] sent in the persisted call.
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         /// The execution payload sidecar with additional version-specific fields received by
         /// engine API.
         sidecar: ExecutionPayloadSidecar,

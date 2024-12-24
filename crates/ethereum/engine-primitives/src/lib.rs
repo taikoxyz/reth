@@ -25,6 +25,7 @@ use reth_payload_primitives::{
 };
 use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{Block, SealedBlock};
+use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// The types used in the default mainnet ethereum beacon consensus engine.
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
@@ -87,7 +88,7 @@ impl PayloadValidator for EthereumEngineValidator {
 
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlock, PayloadError> {
         self.inner.ensure_well_formed_payload(payload, sidecar)

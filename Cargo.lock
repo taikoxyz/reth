@@ -6658,6 +6658,8 @@ dependencies = [
  "reth-stages",
  "reth-stages-api",
  "reth-static-file",
+ "reth-taiko-engine-types",
+ "reth-taiko-payload-validator",
  "reth-tasks",
  "reth-testing-utils",
  "reth-tokio-util",
@@ -7379,6 +7381,7 @@ dependencies = [
  "reth-payload-primitives",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-taiko-engine-types",
  "reth-trie",
  "serde",
  "thiserror 2.0.5",
@@ -7456,6 +7459,7 @@ dependencies = [
  "reth-stages",
  "reth-stages-api",
  "reth-static-file",
+ "reth-taiko-engine-types",
  "reth-tasks",
  "reth-testing-utils",
  "reth-tracing",
@@ -7492,6 +7496,8 @@ dependencies = [
  "reth-provider",
  "reth-revm",
  "reth-rpc-types-compat",
+ "reth-taiko-engine-types",
+ "reth-taiko-payload-validator",
  "reth-trie",
  "revm-primitives",
  "serde",
@@ -7616,6 +7622,7 @@ dependencies = [
  "reth-payload-validator",
  "reth-primitives",
  "reth-rpc-types-compat",
+ "reth-taiko-engine-types",
  "serde",
  "serde_json",
  "sha2 0.10.8",
@@ -8204,6 +8211,7 @@ dependencies = [
  "reth-rpc-layer",
  "reth-stages",
  "reth-static-file",
+ "reth-taiko-payload-validator",
  "reth-tasks",
  "reth-tokio-util",
  "reth-tracing",
@@ -8721,6 +8729,7 @@ dependencies = [
  "reth-chainspec",
  "reth-errors",
  "reth-primitives",
+ "reth-taiko-engine-types",
  "revm-primitives",
  "serde",
  "thiserror 2.0.5",
@@ -8744,6 +8753,7 @@ dependencies = [
  "reth-chainspec",
  "reth-primitives",
  "reth-rpc-types-compat",
+ "reth-taiko-engine-types",
 ]
 
 [[package]]
@@ -9036,6 +9046,7 @@ dependencies = [
  "reth-engine-primitives",
  "reth-network-peers",
  "reth-rpc-eth-api",
+ "reth-taiko-engine-types",
 ]
 
 [[package]]
@@ -9135,6 +9146,7 @@ dependencies = [
  "reth-rpc-api",
  "reth-rpc-types-compat",
  "reth-storage-api",
+ "reth-taiko-engine-types",
  "reth-tasks",
  "reth-testing-utils",
  "reth-tokio-util",
@@ -9275,6 +9287,7 @@ dependencies = [
  "jsonrpsee-types",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-taiko-engine-types",
  "serde",
  "serde_json",
 ]
@@ -9509,19 +9522,31 @@ dependencies = [
  "alloy-rlp",
  "alloy-rpc-types-engine",
  "alloy-serde 0.1.4",
- "reth-chainspec",
- "reth-engine-primitives",
+ "reth-chain-state",
  "reth-ethereum-engine-primitives",
  "reth-payload-primitives",
- "reth-payload-validator",
  "reth-primitives",
  "reth-rpc-types-compat",
- "reth-taiko-chainspec",
  "reth-taiko-primitives",
  "serde",
  "serde_json",
  "serde_with",
  "sha2 0.10.8",
+]
+
+[[package]]
+name = "reth-taiko-engine-types"
+version = "1.1.4"
+dependencies = [
+ "alloy-eips",
+ "alloy-primitives 0.8.14",
+ "alloy-rlp",
+ "alloy-rpc-types-engine",
+ "alloy-serde 0.1.4",
+ "reth-taiko-primitives",
+ "serde",
+ "serde_json",
+ "serde_with",
 ]
 
 [[package]]
@@ -9573,6 +9598,7 @@ dependencies = [
 name = "reth-taiko-node"
 version = "1.1.4"
 dependencies = [
+ "alloy-rpc-types-engine",
  "eyre",
  "reth-basic-payload-builder",
  "reth-consensus",
@@ -9582,17 +9608,21 @@ dependencies = [
  "reth-node-builder",
  "reth-node-ethereum",
  "reth-payload-builder",
+ "reth-payload-primitives",
  "reth-primitives",
  "reth-provider",
  "reth-rpc",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-engine-primitives",
+ "reth-taiko-engine-types",
  "reth-taiko-evm",
  "reth-taiko-payload-builder",
+ "reth-taiko-payload-validator",
  "reth-tracing",
  "reth-transaction-pool",
  "reth-trie-db",
+ "serde",
 ]
 
 [[package]]
@@ -9635,7 +9665,7 @@ dependencies = [
  "reth-primitives",
  "reth-rpc-types-compat",
  "reth-taiko-chainspec",
- "reth-taiko-engine-primitives",
+ "reth-taiko-engine-types",
 ]
 
 [[package]]

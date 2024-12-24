@@ -6,6 +6,7 @@ use alloy_rpc_types_engine::{
 use futures::{future::Either, FutureExt};
 use reth_errors::RethResult;
 use reth_payload_builder_primitives::PayloadBuilderError;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use std::{
     fmt::Display,
     future::Future,
@@ -142,7 +143,7 @@ pub enum BeaconEngineMessage<Engine: EngineTypes> {
     /// Message with new payload.
     NewPayload {
         /// The execution payload received by Engine API.
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         /// The execution payload sidecar with additional version-specific fields received by
         /// engine API.
         sidecar: ExecutionPayloadSidecar,

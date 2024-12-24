@@ -20,6 +20,9 @@ reth-primitives-traits.workspace = true
 reth-trie.workspace = true
 reth-errors.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # alloy
 alloy-primitives.workspace = true
 alloy-consensus.workspace = true

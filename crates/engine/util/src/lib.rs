@@ -3,6 +3,7 @@
 use futures::Stream;
 use reth_engine_primitives::{BeaconEngineMessage, EngineTypes};
 use reth_payload_validator::ExecutionPayloadValidator;
+use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 use std::path::PathBuf;
 use tokio_util::either::Either;
 
@@ -98,7 +99,7 @@ pub trait EngineMessageStreamExt<Engine: EngineTypes>:
         self,
         provider: Provider,
         evm_config: Evm,
-        payload_validator: ExecutionPayloadValidator<Spec>,
+        payload_validator: TaikoExecutionPayloadValidator<Spec>,
         frequency: usize,
         depth: Option<usize>,
     ) -> EngineReorg<Self, Engine, Provider, Evm, Spec>
@@ -121,7 +122,7 @@ pub trait EngineMessageStreamExt<Engine: EngineTypes>:
         self,
         provider: Provider,
         evm_config: Evm,
-        payload_validator: ExecutionPayloadValidator<Spec>,
+        payload_validator: TaikoExecutionPayloadValidator<Spec>,
         frequency: Option<usize>,
         depth: Option<usize>,
     ) -> Either<EngineReorg<Self, Engine, Provider, Evm, Spec>, Self>

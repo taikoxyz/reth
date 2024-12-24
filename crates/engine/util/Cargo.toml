@@ -26,6 +26,10 @@ reth-ethereum-forks.workspace = true
 revm-primitives.workspace = true
 reth-trie.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+reth-taiko-payload-validator.workspace = true
+
 # alloy
 alloy-eips.workspace = true
 alloy-primitives.workspace = true

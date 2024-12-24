@@ -9,8 +9,7 @@ use reth_payload_primitives::PayloadBuilderAttributes;
 use reth_rpc_types_compat::engine::payload::block_to_payload_v2;
 use reth_taiko_primitives::L1Origin;
 use serde::{Deserialize, Serialize};
-use serde_with::base64::Base64;
-use serde_with::serde_as;
+use serde_with::{base64::Base64, serde_as};
 use std::convert::Infallible;
 
 /// Taiko Payload Attributes
@@ -220,6 +219,16 @@ impl TaikoExecutionPayload {
     /// Returns the parent hash
     pub const fn parent_hash(&self) -> B256 {
         self.payload_inner.parent_hash()
+    }
+
+    /// Returns the withdrawals
+    pub const fn withdrawals(&self) -> Option<&Vec<Withdrawal>> {
+        self.payload_inner.withdrawals()
+    }
+
+    /// Returns the timestamp
+    pub const fn timestamp(&self) -> u64 {
+        self.payload_inner.timestamp()
     }
 }
 
