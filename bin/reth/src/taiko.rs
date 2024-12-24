@@ -5,7 +5,6 @@ static ALLOC: reth_cli_util::allocator::Allocator = reth_cli_util::allocator::ne
 
 use clap::{Args, Parser};
 use reth::cli::taiko::Cli;
-use reth_node_builder::Node;
 use reth_node_builder::{
     engine_tree_config::{
         TreeConfig, DEFAULT_MEMORY_BLOCK_BUFFER_TARGET, DEFAULT_PERSISTENCE_THRESHOLD,

@@ -6,7 +6,7 @@ use crate::{
     version::{LONG_VERSION, SHORT_VERSION},
 };
 use clap::{value_parser, Parser, Subcommand};
-use reth_chainspec::{ChainSpec, EthChainSpec};
+use reth_chainspec::EthChainSpec;
 use reth_cli::chainspec::ChainSpecParser;
 use reth_cli_commands::{
     config_cmd, db, dump_genesis, import, init_cmd, init_state,
@@ -15,9 +15,7 @@ use reth_cli_commands::{
 };
 use reth_cli_runner::CliRunner;
 use reth_db::DatabaseEnv;
-use reth_ethereum_cli::chainspec::EthereumChainSpecParser;
 use reth_node_builder::{NodeBuilder, WithLaunchContext};
-use reth_node_ethereum::{EthExecutorProvider, EthereumNode};
 use reth_node_metrics::recorder::install_prometheus_recorder;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_cli::chainspec::TaikoChainSpecParser;
