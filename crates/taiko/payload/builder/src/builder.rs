@@ -18,7 +18,9 @@ use reth_payload_primitives::{PayloadBuilderAttributes, PayloadBuilderError};
 use reth_primitives::{
     proofs, Block, BlockBody, BlockExt, EthereumHardforks, Header, TransactionSigned,
 };
-use reth_provider::{ChainSpecProvider, ExecutionOutcome, L1OriginWriter, StateProviderFactory};
+use reth_provider::{
+    BlockExecutionInput, ChainSpecProvider, ExecutionOutcome, L1OriginWriter, StateProviderFactory,
+};
 use reth_revm::{
     database::StateProviderDatabase,
     primitives::{BlockEnv, CfgEnvWithHandlerCfg},
@@ -206,7 +208,17 @@ where
         .ok_or(BlockExecutionError::Validation(BlockValidationError::SenderRecoveryError))?;
 
     // execute the block
-    let output = executor.executor(&mut db).execute((&block, U256::ZERO).into())?;
+    let block_input = BlockExecutionInput {
+        block: &block,
+        total_difficulty: U256::ZERO,
+        enable_anchor: true,
+        enable_skip: true,
+        enable_build: false,
+        max_bytes_per_tx_list: 0,
+        max_transactions_lists: 0,
+    };
+    // execute the block
+    let output = executor.executor(&mut db).execute(block_input)?;
     output.apply_skip(&mut block);
     let BlockExecutionOutput { state, receipts, requests, gas_used, .. } = output;
     let execution_outcome =

@@ -12,7 +12,7 @@ pub struct BlockExecutionInput<'a, Block> {
     pub total_difficulty: U256,
     /// Enable anchor transaction. Default is true.
     pub enable_anchor: bool,
-    /// Enable skip invalid transaction. Default is true.
+    /// Enable skip invalid transaction.
     pub enable_skip: bool,
     /// Enable build transaction lists.
     pub enable_build: bool,
