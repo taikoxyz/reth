@@ -266,7 +266,7 @@ where
                 BestTransactionsAttributes::new(base_fee, None),
             );
             best_txs.skip_blobs();
-            debug!(target: "taiko::proposer", txs = ?best_txs.size_hint(), "Proposer get best transactions");
+            debug!(target: "taiko::api", txs = ?best_txs.size_hint(), "Proposer get best transactions");
             let (mut local_txs, remote_txs): (Vec<_>, Vec<_>) = best_txs
                 .filter(|tx| {
                     tx.effective_tip_per_gas(base_fee)
@@ -351,9 +351,9 @@ where
 
             let block = Block { header, body: BlockBody { transactions: txs, ommers, withdrawals } }
                 .with_recovered_senders()
-                .ok_or(EthApiError::Internal(BlockExecutionError::Validation(BlockValidationError::SenderRecoveryError).into()))?;
+                .ok_or_else(||EthApiError::InvalidTransactionSignature)?;
 
-            debug!(target: "taiko::proposer", transactions=?&block.body, "before executing transactions");
+            debug!(target: "taiko::api", transactions = ?&block.body, "before executing transactions");
 
             let mut db =
                 StateProviderDatabase::new(this.provider().latest().map_err(Eth::Error::from_eth_err)?);
@@ -417,6 +417,7 @@ where
         max_transactions_lists: u64,
         min_tip: u64,
     ) -> RpcResult<Vec<PreBuiltTxList>> {
+        let _permit = self.acquire_trace_permit().await;
         debug!(
             target: "rpc::taiko",
             ?beneficiary,
