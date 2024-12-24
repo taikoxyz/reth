@@ -28,6 +28,7 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_node_ethereum::{node::EthereumAddOns, BasicBlockExecutorProvider, EthereumNode};
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt};
 use std::{fmt::Display, sync::Arc};
+use reth::providers::BlockExecutionInput;
 
 pub const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
 pub const WITHDRAWALS_ADDRESS: Address = address!("4200000000000000000000000000000000000000");
@@ -159,10 +160,9 @@ where
 
     fn execute_transactions(
         &mut self,
-        _block: &BlockWithSenders,
-        _total_difficulty: U256,
+        input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
-        Ok(ExecuteOutput { receipts: vec![], gas_used: 0 })
+        Ok(ExecuteOutput { receipts: vec![], gas_used: 0, target_list: vec![], skipped_list: vec![] })
     }
 
     fn apply_post_execution_changes(

@@ -6580,6 +6580,7 @@ dependencies = [
  "serde_json",
  "similar-asserts",
  "tempfile",
+ "test-fuzz",
  "tokio",
  "tracing",
 ]
@@ -6647,7 +6648,6 @@ dependencies = [
  "reth-payload-builder",
  "reth-payload-builder-primitives",
  "reth-payload-primitives",
- "reth-payload-validator",
  "reth-primitives",
  "reth-primitives-traits",
  "reth-provider",
@@ -7477,27 +7477,23 @@ name = "reth-engine-util"
 version = "1.1.4"
 dependencies = [
  "alloy-consensus",
- "alloy-eips",
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "eyre",
  "futures",
  "itertools 0.13.0",
  "pin-project",
- "reth-consensus-common",
  "reth-engine-primitives",
  "reth-errors",
  "reth-ethereum-forks",
  "reth-evm",
  "reth-fs-util",
- "reth-payload-validator",
  "reth-primitives",
  "reth-provider",
  "reth-revm",
  "reth-rpc-types-compat",
  "reth-taiko-engine-types",
  "reth-taiko-payload-validator",
- "reth-trie",
  "revm-primitives",
  "serde",
  "serde_json",
@@ -9466,16 +9462,13 @@ version = "1.1.4"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
- "alloy-eips",
  "alloy-genesis",
  "alloy-primitives 0.8.14",
  "alloy-serde 0.7.3",
  "derive_more 1.0.0",
- "once_cell",
  "reth-chainspec",
  "reth-ethereum-forks",
  "reth-network-peers",
- "reth-primitives-traits",
  "reth-taiko-forks",
  "serde",
  "serde_json",
@@ -9506,9 +9499,7 @@ dependencies = [
  "reth-ethereum-consensus",
  "reth-primitives",
  "reth-primitives-traits",
- "reth-taiko-chainspec",
  "revm-primitives",
- "tracing",
 ]
 
 [[package]]
@@ -9557,23 +9548,16 @@ dependencies = [
  "flate2",
  "reth-chainspec",
  "reth-consensus",
- "reth-consensus-common",
  "reth-ethereum-consensus",
  "reth-ethereum-forks",
  "reth-evm",
  "reth-evm-ethereum",
- "reth-execution-errors",
  "reth-execution-types",
- "reth-optimism-chainspec",
- "reth-optimism-primitives",
  "reth-primitives",
- "reth-primitives-traits",
- "reth-prune-types",
  "reth-revm",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-forks",
- "reth-taiko-primitives",
  "revm",
  "revm-primitives",
  "tracing",
@@ -9584,8 +9568,6 @@ name = "reth-taiko-forks"
 version = "1.1.4"
 dependencies = [
  "alloy-chains",
- "alloy-genesis",
- "alloy-primitives 0.8.14",
  "reth-ethereum-forks",
 ]
 
@@ -9652,13 +9634,10 @@ dependencies = [
 name = "reth-taiko-payload-validator"
 version = "1.1.4"
 dependencies = [
- "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "reth-chainspec",
  "reth-payload-validator",
  "reth-primitives",
- "reth-rpc-types-compat",
- "reth-taiko-chainspec",
  "reth-taiko-engine-types",
 ]
 
@@ -9673,6 +9652,7 @@ dependencies = [
  "reth-codecs",
  "reth-db-api",
  "serde",
+ "test-fuzz",
 ]
 
 [[package]]

@@ -12,15 +12,12 @@ workspace = true
 
 [dependencies]
 # reth
-reth-taiko-chainspec = { workspace = true }
 reth-consensus-common.workspace = true
 reth-primitives = { workspace = true }
 reth-consensus.workspace = true
 reth-chainspec.workspace = true
 reth-primitives-traits.workspace = true
 reth-ethereum-consensus.workspace = true
-
-tracing.workspace = true
 
 # Alloy
 alloy-sol-types.workspace = true

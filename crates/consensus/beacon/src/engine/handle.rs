@@ -2,7 +2,7 @@
 
 use crate::{BeaconConsensusEngineEvent, BeaconForkChoiceUpdateError};
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, ForkchoiceUpdated, PayloadStatus,
+    ExecutionPayloadSidecar, ForkchoiceState, ForkchoiceUpdated, PayloadStatus,
 };
 use futures::TryFutureExt;
 use reth_engine_primitives::{

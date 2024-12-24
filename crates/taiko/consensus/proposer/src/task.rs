@@ -91,7 +91,7 @@ where
                 let (mut local_txs, remote_txs): (Vec<_>, Vec<_>) = best_txs
                     .filter(|tx| {
                         tx.effective_tip_per_gas(trigger_args.base_fee)
-                            .map_or(false, |tip| tip >= trigger_args.min_tip as u128)
+                            .is_some_and(|tip| tip >= trigger_args.min_tip as u128)
                     })
                     .partition(|tx| {
                         trigger_args

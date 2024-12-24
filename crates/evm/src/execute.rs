@@ -703,8 +703,7 @@ mod tests {
 
         fn execute_transactions(
             &mut self,
-            _block: &BlockWithSenders,
-            _total_difficulty: U256,
+            _input: BlockExecutionInput<'_, BlockWithSenders>,
         ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
             Ok(self.execute_transactions_result.clone())
         }
@@ -750,7 +749,7 @@ mod tests {
         let provider = TestExecutorProvider;
         let db = CacheDB::<EmptyDBTyped<ProviderError>>::default();
         let executor = provider.executor(db);
-        let _ = executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
+        let _ = executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
     }
 
     #[test]
@@ -776,7 +775,7 @@ mod tests {
         let db = CacheDB::<EmptyDBTyped<ProviderError>>::default();
         let executor = provider.executor(db);
         let result =
-            executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
+            executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
 
         assert!(result.is_ok());
         let block_execution_output = result.unwrap();
@@ -809,7 +808,7 @@ mod tests {
             tx_env.nonce.take();
         }));
         let result =
-            executor.execute(BlockExecutionInput::new(&mut Default::default(), U256::ZERO));
+            executor.execute(BlockExecutionInput::new(&Default::default(), U256::ZERO));
         assert!(result.is_ok());
     }
 

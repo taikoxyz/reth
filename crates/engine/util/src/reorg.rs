@@ -3,7 +3,7 @@
 use alloy_consensus::{Header, Transaction};
 use alloy_primitives::U256;
 use alloy_rpc_types_engine::{
-    CancunPayloadFields, ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus,
+    CancunPayloadFields, ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus,
 };
 use futures::{stream::FuturesUnordered, Stream, StreamExt, TryFutureExt};
 use itertools::Either;
@@ -17,7 +17,6 @@ use reth_evm::{
     state_change::post_block_withdrawals_balance_increments, system_calls::SystemCaller,
     ConfigureEvm,
 };
-use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{
     proofs, transaction::SignedTransactionIntoRecoveredExt, Block, BlockBody, BlockExt, Receipt,
     Receipts,
