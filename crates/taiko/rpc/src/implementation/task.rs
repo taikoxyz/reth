@@ -1,8 +1,9 @@
-use futures_util::{future::BoxFuture, FutureExt};
+use futures_util::FutureExt;
 use reth_evm::execute::BlockExecutorProvider;
 use reth_primitives::{Block, NodePrimitives, TransactionSigned};
 use reth_provider::{BlockReaderIdExt, StateProviderFactory};
 use reth_taiko_chainspec::TaikoChainSpec;
+use reth_tasks::TaskSpawner;
 use reth_transaction_pool::{PoolTransaction, TransactionPool, ValidPoolTransaction};
 use std::{
     collections::VecDeque,
@@ -11,19 +12,20 @@ use std::{
     sync::Arc,
     task::{Context, Poll},
 };
-use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 use tracing::debug;
 
 use super::TaikoImplMessage;
 
 /// A Future that listens for new ready transactions and puts new blocks into storage
 pub struct TaikoImplTask<Provider, Pool: TransactionPool, Executor> {
+    task_spawner: Box<dyn TaskSpawner>,
     /// The configured chain spec
     chain_spec: Arc<TaikoChainSpec>,
     /// The client used to interact with the state
     provider: Provider,
     /// Single active future that inserts a new block into `storage`
-    insert_task: Option<BoxFuture<'static, ()>>,
+    inflight_task: Option<JoinHandle<()>>,
     /// Pool where transactions are stored
     pool: Pool,
     /// backlog of sets of transactions ready to be mined
@@ -43,6 +45,7 @@ impl<Executor, Provider, Pool: TransactionPool> TaikoImplTask<Provider, Pool, Ex
     /// Creates a new instance of the task
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
+        task_spawner: Box<dyn TaskSpawner>,
         chain_spec: Arc<TaikoChainSpec>,
         provider: Provider,
         pool: Pool,
@@ -50,9 +53,10 @@ impl<Executor, Provider, Pool: TransactionPool> TaikoImplTask<Provider, Pool, Ex
         rx: UnboundedReceiver<TaikoImplMessage>,
     ) -> Self {
         Self {
+            task_spawner,
             chain_spec,
             provider,
-            insert_task: None,
+            inflight_task: None,
             pool,
             queued: Default::default(),
             block_executor,
@@ -87,9 +91,7 @@ where
                 _ => None,
             } {
                 match &msg {
-                    TaikoImplMessage::PoolContent {
-                        base_fee, local_accounts, min_tip, tx, ..
-                    } => {
+                    TaikoImplMessage::PoolContent { base_fee, local_accounts, min_tip, .. } => {
                         let mut best_txs = this.pool.best_transactions();
                         best_txs.skip_blobs();
                         debug!(target: "taiko::proposer", txs = ?best_txs.size_hint(), "Proposer get best transactions");
@@ -114,8 +116,7 @@ where
                     }
                 }
             };
-
-            if this.insert_task.is_none() {
+            if this.inflight_task.is_none() {
                 if this.queued.is_empty() {
                     // nothing to insert
                     break;
@@ -130,7 +131,7 @@ where
 
                 // Create the mining future that creates a block, notifies the engine that drives
                 // the pipeline
-                this.insert_task = Some(Box::pin(async move {
+                let task = Box::pin(async move {
                     match msg {
                         TaikoImplMessage::PoolContent {
                             beneficiary,
@@ -164,14 +165,16 @@ where
                             let _ = tx.send(res);
                         }
                     }
-                }));
+                });
+                let handle = this.task_spawner.spawn(task);
+                this.inflight_task = Some(handle);
             }
 
-            if let Some(mut fut) = this.insert_task.take() {
+            if let Some(mut fut) = this.inflight_task.take() {
                 match fut.poll_unpin(cx) {
                     Poll::Ready(_) => {}
                     Poll::Pending => {
-                        this.insert_task = Some(fut);
+                        this.inflight_task = Some(fut);
                         break;
                     }
                 }
@@ -186,6 +189,6 @@ impl<Client, Pool: TransactionPool, EvmConfig: std::fmt::Debug> std::fmt::Debug
     for TaikoImplTask<Client, Pool, EvmConfig>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MiningTask").finish_non_exhaustive()
+        f.debug_struct("TaikoImplTask").finish_non_exhaustive()
     }
 }

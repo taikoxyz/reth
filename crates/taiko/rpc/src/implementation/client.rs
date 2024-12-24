@@ -17,12 +17,16 @@ use tokio::sync::{mpsc::UnboundedSender, oneshot};
 /// blocks in memory.
 #[derive(Debug, Clone)]
 pub struct TaikoImplClient {
-    tx: UnboundedSender<TaikoImplMessage>,
+    pool_content_tx: UnboundedSender<TaikoImplMessage>,
+    proving_preflight_tx: UnboundedSender<TaikoImplMessage>,
 }
 
 impl TaikoImplClient {
-    pub(crate) const fn new(tx: UnboundedSender<TaikoImplMessage>) -> Self {
-        Self { tx }
+    pub(crate) const fn new(
+        pool_content_tx: UnboundedSender<TaikoImplMessage>,
+        proving_preflight_tx: UnboundedSender<TaikoImplMessage>,
+    ) -> Self {
+        Self { pool_content_tx, proving_preflight_tx }
     }
 
     /// get transactions from pool
@@ -38,7 +42,7 @@ impl TaikoImplClient {
         min_tip: u64,
     ) -> Result<Vec<TaskResult>, RethError> {
         let (tx, rx) = oneshot::channel();
-        self.tx
+        self.pool_content_tx
             .send(TaikoImplMessage::PoolContent {
                 beneficiary,
                 base_fee,
@@ -60,7 +64,9 @@ impl TaikoImplClient {
         block_id: BlockId,
     ) -> Result<ProvingPreflight, RethError> {
         let (tx, rx) = oneshot::channel();
-        self.tx.send(TaikoImplMessage::ProvingPreFlight { block_id, tx }).unwrap();
+        self.proving_preflight_tx
+            .send(TaikoImplMessage::ProvingPreFlight { block_id, tx })
+            .unwrap();
         rx.await.unwrap()
     }
 }

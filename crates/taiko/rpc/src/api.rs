@@ -13,15 +13,15 @@ use reth_provider::{
     BlockNumReader, BlockReaderIdExt, ChainSpecProvider, EvmEnvProvider, L1OriginReader,
     StateProviderFactory,
 };
-use reth_rpc_eth_api::TransactionCompat;
+use reth_rpc_eth_api::{helpers::SpawnBlocking, EthApiTypes, FromEthApiError, TransactionCompat};
 use reth_rpc_server_types::ToRpcResult;
 use reth_rpc_types_compat::transaction::from_recovered;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_primitives::L1Origin;
-use reth_tasks::TaskSpawner;
+use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner};
 use reth_transaction_pool::{PoolConsensusTx, PoolTransaction, TransactionPool};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use tracing::debug;
 
 use crate::implementation::{TaikoImplBuilder, TaikoImplClient};
@@ -108,12 +108,80 @@ pub struct PreBuiltTxList {
     pub bytes_length: u64,
 }
 
+/// Taiko API
+#[derive(Debug)]
+pub struct TaikoApi<Eth> {
+    inner: Arc<TaikoApiInner<Eth>>,
+}
+
+#[derive(Debug)]
+struct TaikoApiInner<Eth> {
+    /// The implementation of `eth` API
+    eth_api: Eth,
+}
+
+impl<Eth> TaikoApi<Eth> {
+    /// Create a new instance of the [`DebugApi`]
+    pub fn new(eth: Eth) -> Self {
+        let inner = Arc::new(TaikoApiInner { eth_api: eth });
+        Self { inner }
+    }
+
+    /// Access the underlying `Eth` API.
+    pub fn eth_api(&self) -> &Eth {
+        &self.inner.eth_api
+    }
+}
+
+#[async_trait]
+impl<Eth> TaikoApiServer for TaikoApi<Eth>
+where
+    Eth: EthApiTypes + SpawnBlocking + L1OriginReader + 'static,
+{
+    /// HeadL1Origin returns the latest L2 block's corresponding L1 origin.
+    async fn head_l1_origin(&self) -> RpcResult<L1Origin> {
+        let res = self
+            .eth_api()
+            .spawn_blocking_io(move |this| {
+                this.get_head_l1_origin().map_err(Eth::Error::from_eth_err)
+            })
+            .await
+            .map_err(Into::into);
+        debug!(target: "rpc::taiko", ?res, "Read head l1 origin");
+        res
+    }
+
+    /// L1OriginByID returns the L2 block's corresponding L1 origin.
+    async fn l1_origin_by_id(&self, block_id: BlockId) -> RpcResult<L1Origin> {
+        let block_number =
+            block_id.as_u64().ok_or_else(|| RethError::msg("invalid block id")).to_rpc_result()?;
+        let res = self
+            .eth_api()
+            .spawn_blocking_io(move |this| {
+                this.get_l1_origin(block_number).map_err(Eth::Error::from_eth_err)
+            })
+            .await
+            .map_err(Into::into);
+        debug!(target: "rpc::taiko", ?block_number, ?res, "Read l1 origin by id");
+        res
+    }
+}
+
 /// Taiko API.
 #[derive(Debug)]
 pub struct TaikoAuthApi<Provider, Pool, BlockExecutor, Eth> {
     taiko_impl_client: TaikoImplClient,
     tx_resp_builder: Eth,
     _marker: std::marker::PhantomData<(Provider, Pool, BlockExecutor)>,
+}
+
+struct TaikoAuthApiInner<Eth, BlockExecutor> {
+    /// The implementation of `eth` API
+    eth_api: Eth,
+    // restrict the number of concurrent calls to blocking calls
+    blocking_task_guard: BlockingTaskGuard,
+    /// block executor for debug & trace apis
+    block_executor: BlockExecutor,
 }
 
 impl<Provider, Pool, BlockExecutor, Eth> TaikoAuthApi<Provider, Pool, BlockExecutor, Eth>
@@ -139,45 +207,10 @@ where
         tx_resp_builder: Eth,
     ) -> Self {
         let chain_spec = provider.chain_spec();
-        let (_, taiko_impl_client, proposer_task) =
-            TaikoImplBuilder::new(chain_spec, provider, pool, block_executor).build();
-        task_spawner.spawn(Box::pin(proposer_task));
+        let (_, taiko_impl_client) =
+            TaikoImplBuilder::new(chain_spec, provider, pool, block_executor, task_spawner).build();
 
         Self { taiko_impl_client, tx_resp_builder, _marker: Default::default() }
-    }
-}
-/// Taiko API
-#[derive(Debug)]
-pub struct TaikoApi<Provider> {
-    provider: Provider,
-}
-
-impl<Provider> TaikoApi<Provider> {
-    /// Creates a new instance of `Taiko`.
-    pub const fn new(provider: Provider) -> Self {
-        Self { provider }
-    }
-}
-
-#[async_trait]
-impl<Provider> TaikoApiServer for TaikoApi<Provider>
-where
-    Provider: L1OriginReader + 'static,
-{
-    /// HeadL1Origin returns the latest L2 block's corresponding L1 origin.
-    async fn head_l1_origin(&self) -> RpcResult<L1Origin> {
-        let res = self.provider.get_head_l1_origin().to_rpc_result();
-        debug!(target: "rpc::taiko", ?res, "Read head l1 origin");
-        res
-    }
-
-    /// L1OriginByID returns the L2 block's corresponding L1 origin.
-    async fn l1_origin_by_id(&self, block_id: BlockId) -> RpcResult<L1Origin> {
-        let block_number =
-            block_id.as_u64().ok_or_else(|| RethError::msg("invalid block id")).to_rpc_result()?;
-        let res = self.provider.get_l1_origin(block_number).to_rpc_result();
-        debug!(target: "rpc::taiko", ?block_number, ?res, "Read l1 origin by id");
-        res
     }
 }
 
