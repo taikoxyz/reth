@@ -41,7 +41,7 @@ use reth_static_file::StaticFileProducer;
 use reth_tasks::TokioTaskExecutor;
 use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{oneshot, watch};
-use reth_stages_api::ExecOutput;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 
 type DatabaseEnv = TempDatabase<DE>;
 
@@ -74,7 +74,7 @@ impl<DB> TestEnv<DB> {
         payload: T,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
-        self.engine_handle.new_payload(payload, sidecar).await
+        self.engine_handle.new_payload(TaikoExecutionPayload::from(payload.into()), sidecar).await
     }
 
     /// Sends the `ExecutionPayload` message to the consensus engine and retries if the engine

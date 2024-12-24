@@ -71,6 +71,9 @@ alloy-rpc-types-trace.workspace = true
 alloy-rpc-types-engine.workspace = true
 alloy-eips.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }
 serde_json.workspace = true
 clap = { workspace = true, features = ["derive"] }

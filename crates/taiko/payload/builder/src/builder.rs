@@ -44,7 +44,7 @@ pub struct TaikoPayloadBuilder<EvmConfig = TaikoEvmConfig> {
 impl TaikoPayloadBuilder {
     /// `TaikoPayloadBuilder` constructor.
     pub fn new(evm_config: TaikoEvmConfig, chain_spec: Arc<TaikoChainSpec>) -> Self {
-        let block_executor = TaikoExecutorProvider::taiko(chain_spec.clone());
+        let block_executor = TaikoExecutorProvider::taiko(chain_spec);
         Self { block_executor, evm_config }
     }
 }

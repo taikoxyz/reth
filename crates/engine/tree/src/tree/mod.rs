@@ -2880,6 +2880,7 @@ mod tests {
                         payload_attrs: None,
                         tx,
                         version: EngineApiMessageVersion::default(),
+                        debug: false,
                     }
                     .into(),
                 ))
@@ -2922,7 +2923,7 @@ mod tests {
             let payload = block_to_payload_v3(block.block.clone());
             self.tree
                 .on_new_payload(
-                    payload.into(),
+                    TaikoExecutionPayload::from(alloy_rpc_types_engine::ExecutionPayload::from(payload)),
                     ExecutionPayloadSidecar::v3(CancunPayloadFields {
                         parent_beacon_block_root: block.parent_beacon_block_root.unwrap(),
                         versioned_hashes: vec![],
@@ -3170,6 +3171,7 @@ mod tests {
                     payload_attrs: None,
                     tx,
                     version: EngineApiMessageVersion::default(),
+                    debug: false,
                 }
                 .into(),
             ))
@@ -3192,7 +3194,10 @@ mod tests {
 
         let outcome = test_harness
             .tree
-            .on_new_payload(payload.into(), ExecutionPayloadSidecar::none())
+            .on_new_payload(
+                TaikoExecutionPayload::from(alloy_rpc_types_engine::ExecutionPayload::from(payload)),
+                ExecutionPayloadSidecar::none(),
+            )
             .unwrap();
         assert!(outcome.outcome.is_syncing());
 
@@ -3236,7 +3241,7 @@ mod tests {
             .tree
             .on_engine_message(FromEngine::Request(
                 BeaconEngineMessage::NewPayload {
-                    payload: payload.clone().into(),
+                    payload: TaikoExecutionPayload::from(alloy_rpc_types_engine::ExecutionPayload::from(payload)),
                     sidecar: ExecutionPayloadSidecar::none(),
                     tx,
                 }
