@@ -1,39 +1,49 @@
-use alloy_consensus::BlockHeader;
-use alloy_eips::BlockId;
+use alloy_consensus::{proofs, BlockHeader, Header, Transaction as _};
+use alloy_eips::{
+    calc_excess_blob_gas, eip4895::Withdrawals, eip7685::Requests, merge::BEACON_NONCE, BlockId,
+};
+use alloy_network::Network;
 use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rpc_types_eth::{
     Block as RpcBlock, EIP1186AccountProofResponse, Header as RpcHeader, Transaction,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use reth_errors::RethError;
-use reth_evm::execute::BlockExecutorProvider;
+use reth_chainspec::EthereumHardforks;
+use reth_errors::{BlockExecutionError, BlockValidationError, ProviderError, RethError};
+use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_node_api::NodePrimitives;
-use reth_primitives::{Block, SealedBlockWithSenders, TransactionSigned};
-use reth_primitives_traits::{Block as _, BlockBody, SignedTransaction};
+use reth_primitives::{Block, BlockBody, BlockExt as _, SealedBlockWithSenders, TransactionSigned};
+use reth_primitives_traits::{Block as _, BlockBody as _, SignedTransaction};
 use reth_provider::{
-    BlockIdReader, BlockNumReader, BlockReaderIdExt, ChainSpecProvider, EvmEnvProvider,
-    L1OriginReader, ProviderBlock, StateProviderFactory,
+    BlockExecutionInput, BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReaderIdExt,
+    ChainSpecProvider, EvmEnvProvider, L1OriginReader, ProviderBlock, StateProviderFactory,
+    TaskResult, TransactionsProvider,
 };
 use reth_revm::database::StateProviderDatabase;
 use reth_rpc_eth_api::{
     helpers::{SpawnBlocking, TraceExt},
     EthApiTypes, FromEthApiError, RpcNodeCore, TransactionCompat,
 };
+use reth_rpc_eth_types::EthApiError;
 use reth_rpc_server_types::ToRpcResult;
 use reth_rpc_types_compat::transaction::from_recovered;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_primitives::L1Origin;
 use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner};
-use reth_transaction_pool::{PoolConsensusTx, PoolTransaction, TransactionPool};
+use reth_transaction_pool::{
+    BestTransactionsAttributes, PoolConsensusTx, PoolTransaction, TransactionPool,
+};
 use revm::db::CacheDB;
 use revm_primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use tokio::sync::{AcquireError, OwnedSemaphorePermit};
 use tracing::debug;
-
-use crate::implementation::{TaikoImplBuilder, TaikoImplClient};
 
 /// Taiko rpc interface.
 #[rpc(server, client, namespace = "taiko")]
@@ -198,6 +208,10 @@ impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
     pub fn eth_api(&self) -> &Eth {
         &self.inner.eth_api
     }
+
+    pub fn block_executor(&self) -> &BlockExecutor {
+        &self.inner.block_executor
+    }
 }
 
 impl<Eth: RpcNodeCore, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
@@ -217,11 +231,17 @@ struct TaikoAuthApiInner<Eth, BlockExecutor> {
     block_executor: BlockExecutor,
 }
 
+impl<Eth, BlockExecutor> Clone for TaikoAuthApi<Eth, BlockExecutor> {
+    fn clone(&self) -> Self {
+        Self { inner: Arc::clone(&self.inner) }
+    }
+}
+
 impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor>
 where
     Eth: EthApiTypes + TraceExt + 'static,
-    BlockExecutor:
-        BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
+    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned> + 'static,
+    BlockExecutor: BlockExecutorProvider<Primitives: NodePrimitives<Block = Block>>,
 {
     /// Acquires a permit to execute a tracing call.
     async fn acquire_trace_permit(&self) -> Result<OwnedSemaphorePermit, AcquireError> {
@@ -237,63 +257,132 @@ where
         local_accounts: Option<Vec<Address>>,
         max_transactions_lists: u64,
         min_tip: u64,
-    ) -> Result<Vec<PreBuiltTxList>, Eth::Error> {
+    ) -> Result<Vec<TaskResult>, Eth::Error> {
+        let that = self.clone();
         let last_num = self.provider().last_block_number().map_err(Eth::Error::from_eth_err)?;
-        let ((cfg, block_env, _), block) = futures::try_join!(
-            self.eth_api().evm_env_at(last_num.into()),
-            self.eth_api().block_with_senders(last_num.into()),
-        )?;
-
         // replay all transactions of the block
-        let this = self.clone();
-        self.eth_api()
-            .spawn_with_state_at_block(last_num.into(), move |state| {
-                let mut db = CacheDB::new(StateProviderDatabase::new(state));
+        self.eth_api().spawn_tracing(move |this| {
+            let mut best_txs = this.pool().best_transactions_with_attributes(
+                BestTransactionsAttributes::new(base_fee, None),
+            );
+            best_txs.skip_blobs();
+            debug!(target: "taiko::proposer", txs = ?best_txs.size_hint(), "Proposer get best transactions");
+            let (mut local_txs, remote_txs): (Vec<_>, Vec<_>) = best_txs
+                .filter(|tx| {
+                    tx.effective_tip_per_gas(base_fee)
+                        .is_some_and(|tip| tip >= min_tip as u128)
+                })
+                .partition(|tx| {
+                    local_accounts.as_ref().is_some_and(|local_accounts| {
+                        local_accounts.contains(&tx.sender())
+                    })
+                });
+            local_txs.extend(remote_txs);
+            let txs: Vec<_> = local_txs.into_iter().map(|tx| tx.to_consensus().into_signed()).collect();
 
-                todo!()
-            })
-            .await
-    }
-}
+            let ommers = vec![];
 
-impl<Provider, Pool, BlockExecutor, Eth> TaikoAuthApi<Provider, Pool, BlockExecutor, Eth>
-where
-    Provider: StateProviderFactory
-        + BlockReaderIdExt<Header = reth_primitives::Header>
-        + ChainSpecProvider<ChainSpec = TaikoChainSpec>
-        + Clone
-        + Unpin
-        + 'static,
-    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>>
-        + Unpin
-        + 'static,
-    BlockExecutor: BlockExecutorProvider,
-    BlockExecutor::Primitives: NodePrimitives<Block = Block>,
-{
-    /// Creates a new instance of `Taiko`.
-    pub fn new(
-        provider: Provider,
-        pool: Pool,
-        block_executor: BlockExecutor,
-        task_spawner: Box<dyn TaskSpawner>,
-        tx_resp_builder: Eth,
-    ) -> Self {
-        let chain_spec = provider.chain_spec();
-        let (_, taiko_impl_client) =
-            TaikoImplBuilder::new(chain_spec, provider, pool, block_executor, task_spawner).build();
+            let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
 
-        Self { taiko_impl_client, tx_resp_builder, _marker: Default::default() }
+            let chain_spec = that.provider().chain_spec();
+
+            // if shanghai is active, include empty withdrawals
+            let withdrawals =
+                chain_spec.is_shanghai_active_at_timestamp(timestamp).then_some(Withdrawals::default());
+            // if prague is active, include empty requests
+            let requests =
+                chain_spec.is_prague_active_at_timestamp(timestamp).then_some(Requests::default());
+
+            let base_fee_per_gas = Some(base_fee);
+
+            let blob_gas_used = chain_spec.is_cancun_active_at_timestamp(timestamp).then(|| {
+                let mut sum_blob_gas_used = 0;
+                for tx in &txs {
+                    if let Some(tx_blob_gas) = tx.blob_gas_used() {
+                        sum_blob_gas_used +=tx_blob_gas;
+                    }
+                }
+                sum_blob_gas_used
+            });
+            let latest_block =
+                this.provider().latest_header().map_err(Eth::Error::from_eth_err)?.ok_or_else(||EthApiError::HeaderNotFound(last_num.into()))?;
+            let mut header = Header {
+                parent_hash: latest_block.hash(),
+                ommers_hash: proofs::calculate_ommers_root(&ommers),
+                beneficiary,
+                state_root: Default::default(),
+                transactions_root: proofs::calculate_transaction_root(&txs),
+                receipts_root: Default::default(),
+                withdrawals_root: withdrawals.as_ref().map(|w| proofs::calculate_withdrawals_root(w)),
+                logs_bloom: Default::default(),
+                difficulty: U256::ZERO,
+                number: latest_block.number() + 1,
+                gas_limit: block_max_gas_limit,
+                gas_used: 0,
+                timestamp,
+                mix_hash: Default::default(),
+                nonce: BEACON_NONCE.into(),
+                base_fee_per_gas,
+                blob_gas_used,
+                excess_blob_gas: None,
+                extra_data: Default::default(),
+                parent_beacon_block_root: None,
+                requests_hash: requests.map(|r| r.requests_hash()),
+                target_blobs_per_block: None,
+            };
+
+            if chain_spec.is_cancun_active_at_timestamp(timestamp) {
+                header.parent_beacon_block_root = latest_block.parent_beacon_block_root();
+                header.blob_gas_used = Some(0);
+
+                let (parent_excess_blob_gas, parent_blob_gas_used) =
+                    if chain_spec.is_cancun_active_at_timestamp(latest_block.timestamp()) {
+                        (
+                            latest_block.excess_blob_gas().unwrap_or_default(),
+                            latest_block.blob_gas_used().unwrap_or_default(),
+                        )
+                    } else {
+                        (0, 0)
+                    };
+
+                header.excess_blob_gas =
+                    Some(calc_excess_blob_gas(parent_excess_blob_gas, parent_blob_gas_used))
+            }
+
+            let block = Block { header, body: BlockBody { transactions: txs, ommers, withdrawals } }
+                .with_recovered_senders()
+                .ok_or(EthApiError::Internal(BlockExecutionError::Validation(BlockValidationError::SenderRecoveryError).into()))?;
+
+            debug!(target: "taiko::proposer", transactions=?&block.body, "before executing transactions");
+
+            let mut db =
+                StateProviderDatabase::new(this.provider().latest().map_err(Eth::Error::from_eth_err)?);
+
+            // execute the block
+            let block_input = BlockExecutionInput {
+                block: &block,
+                total_difficulty: U256::ZERO,
+                enable_anchor: false,
+                enable_skip: false,
+                enable_build: true,
+                max_bytes_per_tx_list,
+                max_transactions_lists,
+            };
+            let BlockExecutionOutput { target_list, .. } =
+                that.block_executor().executor(&mut db).execute(block_input).map_err(|err|EthApiError::Internal(err.into()))?;
+
+            Ok(target_list)
+        }).await
     }
 }
 
 #[async_trait]
-impl<Provider, Pool, BlockExecutor, Eth> TaikoAuthApiServer
-    for TaikoAuthApi<Provider, Pool, BlockExecutor, Eth>
+impl<Eth, BlockExecutor> TaikoAuthApiServer for TaikoAuthApi<Eth, BlockExecutor>
 where
-    Provider: StateProviderFactory + ChainSpecProvider + EvmEnvProvider + BlockNumReader + 'static,
-    Pool: TransactionPool<Transaction: PoolTransaction<Consensus = TransactionSigned>> + 'static,
-    BlockExecutor: Send + Sync + 'static,
-    Eth: TransactionCompat<PoolConsensusTx<Pool>, Transaction = Transaction> + 'static,
+    Eth: EthApiTypes + TraceExt + 'static,
+    <Eth as EthApiTypes>::NetworkTypes: Network<TransactionResponse = Transaction>,
+    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned> + 'static,
+    BlockExecutor: BlockExecutorProvider<Primitives: NodePrimitives<Block = Block>>,
 {
     /// TxPoolContent retrieves the transaction pool content with the given upper limits.
     async fn tx_pool_content(
@@ -340,8 +429,7 @@ where
             "Read tx pool context"
         );
         let res = self
-            .taiko_impl_client
-            .tx_pool_content_with_min_tip(
+            .pool_content(
                 beneficiary,
                 base_fee,
                 block_max_gas_limit,
@@ -359,22 +447,25 @@ where
                             .txs
                             .iter()
                             .filter_map(|tx| tx.clone().into_ecrecovered())
-                            .filter_map(|tx| from_recovered(tx, &self.tx_resp_builder).ok())
+                            .filter_map(|tx| {
+                                from_recovered(tx, self.eth_api().tx_resp_builder()).ok()
+                            })
                             .collect(),
                         estimated_gas_used: tx_list.estimated_gas_used,
                         bytes_length: tx_list.bytes_length,
                     })
                     .collect()
             })
-            .to_rpc_result();
+            .map_err(Into::into);
         debug!(target: "rpc::taiko", ?res, "Read tx pool context");
         res
     }
 
     async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight> {
-        debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
-        let res = self.taiko_impl_client.proving_pre_flight(block_id).await.to_rpc_result();
-        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
-        res
+        // debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
+        // let res = self.taiko_impl_client.proving_pre_flight(block_id).await.to_rpc_result();
+        // debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
+        // res
+        todo!()
     }
 }
