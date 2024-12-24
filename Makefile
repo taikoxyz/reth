@@ -58,6 +58,13 @@ install-op: ## Build and install the op-reth binary under `~/.cargo/bin`.
 		--profile "$(PROFILE)" \
 		$(CARGO_INSTALL_EXTRA_FLAGS)
 
+.PHONY: install-taiko
+install-taiko: ## Build and install the op-reth binary under `~/.cargo/bin`.
+	cargo install --path bin/reth --bin taiko-reth --force --locked \
+		--features "$(FEATURES)" \
+		--profile "$(PROFILE)" \
+		$(CARGO_INSTALL_EXTRA_FLAGS)
+
 .PHONY: build
 build: ## Build the reth binary into `target` directory.
 	cargo build --bin reth --features "$(FEATURES)" --profile "$(PROFILE)"
@@ -80,12 +87,19 @@ build-debug: ## Build the reth binary into `target/debug` directory.
 build-op: ## Build the op-reth binary into `target` directory.
 	cargo build --bin op-reth --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
 
+.PHONY: build-taiko
+build-taiko: ## Build the op-reth binary into `target` directory.
+	cargo build --bin taiko-reth --features "$(FEATURES)" --profile "$(PROFILE)"
+
 # Builds the reth binary natively.
 build-native-%:
 	cargo build --bin reth --target $* --features "$(FEATURES)" --profile "$(PROFILE)"
 
 op-build-native-%:
 	cargo build --bin op-reth --target $* --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
+
+taiko-build-native-%:
+	cargo build --bin taiko-reth --target $* --features "$(FEATURES)" --profile "$(PROFILE)"
 
 # The following commands use `cross` to build a cross-compile.
 #
@@ -104,10 +118,12 @@ op-build-native-%:
 # pages. See: https://github.com/paradigmxyz/reth/issues/6742
 build-aarch64-unknown-linux-gnu: export JEMALLOC_SYS_WITH_LG_PAGE=16
 op-build-aarch64-unknown-linux-gnu: export JEMALLOC_SYS_WITH_LG_PAGE=16
+taiko-build-aarch64-unknown-linux-gnu: export JEMALLOC_SYS_WITH_LG_PAGE=16
 
 # No jemalloc on Windows
 build-x86_64-pc-windows-gnu: FEATURES := $(filter-out jemalloc jemalloc-prof,$(FEATURES))
 op-build-x86_64-pc-windows-gnu: FEATURES := $(filter-out jemalloc jemalloc-prof,$(FEATURES))
+taiko-build-x86_64-pc-windows-gnu: FEATURES := $(filter-out jemalloc jemalloc-prof,$(FEATURES))
 
 # Note: The additional rustc compiler flags are for intrinsics needed by MDBX.
 # See: https://github.com/cross-rs/cross/wiki/FAQ#undefined-reference-with-build-std
@@ -118,6 +134,10 @@ build-%:
 op-build-%:
 	RUSTFLAGS="-C link-arg=-lgcc -Clink-arg=-static-libgcc" \
 		cross build --bin op-reth --target $* --features "optimism $(FEATURES)" --profile "$(PROFILE)" --manifest-path crates/optimism/bin/Cargo.toml
+
+taiko-build-%:
+	RUSTFLAGS="-C link-arg=-lgcc -Clink-arg=-static-libgcc" \
+		cross build --bin taiko-reth --target $* --features "$(FEATURES)" --profile "$(PROFILE)"
 
 # Unfortunately we can't easily use cross to build for Darwin because of licensing issues.
 # If we wanted to, we would need to build a custom Docker image with the SDK available.
@@ -133,6 +153,10 @@ op-build-x86_64-apple-darwin:
 	$(MAKE) op-build-native-x86_64-apple-darwin
 op-build-aarch64-apple-darwin:
 	$(MAKE) op-build-native-aarch64-apple-darwin
+taiko-build-x86_64-apple-darwin:
+	$(MAKE) taiko-build-native-x86_64-apple-darwin
+taiko-build-aarch64-apple-darwin:
+	$(MAKE) taiko-build-native-aarch64-apple-darwin
 
 # Create a `.tar.gz` containing a binary for a specific target.
 define tarball_release_binary
@@ -160,6 +184,7 @@ build-release-tarballs: ## Create a series of `.tar.gz` files in the BIN_DIR dir
 
 UNIT_TEST_ARGS := --locked --workspace --features 'jemalloc-prof' -E 'kind(lib)' -E 'kind(bin)' -E 'kind(proc-macro)'
 UNIT_TEST_ARGS_OP := --locked --workspace --features 'jemalloc-prof,optimism' -E 'kind(lib)' -E 'kind(bin)' -E 'kind(proc-macro)'
+UNIT_TEST_ARGS_TAIKO := --locked --workspace --features 'jemalloc-prof' -E 'kind(lib)' -E 'kind(bin)' -E 'kind(proc-macro)'
 COV_FILE := lcov.info
 
 .PHONY: test-unit
@@ -172,6 +197,11 @@ test-unit-op: ## Run unit tests (with optimism feature flag enabled).
 	cargo install cargo-nextest --locked
 	cargo nextest run $(UNIT_TEST_ARGS_OP)
 
+.PHONY: test-unit-taiko
+test-unit-taiko: ## Run unit tests (with optimism feature flag enabled).
+	cargo install cargo-nextest --locked
+	cargo nextest run $(UNIT_TEST_ARGS_TAIKO)
+
 .PHONY: cov-unit
 cov-unit: ## Run unit tests with coverage.
 	rm -f $(COV_FILE)
@@ -181,6 +211,11 @@ cov-unit: ## Run unit tests with coverage.
 cov-unit-op: ## Run unit tests with coverage (with optimism feature flag enabled).
 	rm -f $(COV_FILE)
 	cargo llvm-cov nextest --lcov --output-path $(COV_FILE) $(UNIT_TEST_ARGS_OP)
+
+.PHONY: cov-unit-taiko
+cov-unit-taiko: ## Run unit tests with coverage (with optimism feature flag enabled).
+	rm -f $(COV_FILE)
+	cargo llvm-cov nextest --lcov --output-path $(COV_FILE) $(UNIT_TEST_ARGS_TAIKO)
 
 .PHONY: cov-report-html
 cov-report-html: cov-unit ## Generate a HTML coverage report and open it in the browser.
@@ -304,6 +339,58 @@ define op_docker_build_push
 		--push
 endef
 
+##@ Taiko docker
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-push
+taiko-docker-build-push: ## Build and push a cross-arch Docker image tagged with the latest git tag.
+	$(call taiko_docker_build_push,$(GIT_TAG),$(GIT_TAG))
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-push-git-sha
+taiko-docker-build-push-git-sha: ## Build and push a cross-arch Docker image tagged with the latest git sha.
+	$(call taiko_docker_build_push,$(GIT_SHA),$(GIT_SHA))
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-push-latest
+taiko-docker-build-push-latest: ## Build and push a cross-arch Docker image tagged with the latest git tag and `latest`.
+	$(call taiko_docker_build_push,$(GIT_TAG),latest)
+
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --name cross-builder`
+.PHONY: taiko-docker-build-push-nightly
+taiko-docker-build-push-nightly: ## Build and push cross-arch Docker image tagged with the latest git tag with a `-nightly` suffix, and `latest-nightly`.
+	$(call taiko_docker_build_push,$(GIT_TAG)-nightly,latest-nightly)
+
+# Create a cross-arch Docker image with the given tags and push it
+define taiko_docker_build_push
+	$(MAKE) taiko-build-x86_64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/amd64
+	cp $(CARGO_TARGET_DIR)/x86_64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/amd64/taiko-reth
+
+	$(MAKE) taiko-build-aarch64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/arm64
+	cp $(CARGO_TARGET_DIR)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
+
+	docker buildx build --file ./DockerfileOp.cross . \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(DOCKER_IMAGE_NAME):$(1) \
+		--tag $(DOCKER_IMAGE_NAME):$(2) \
+		--provenance=false \
+		--push
+endef
+
 ##@ Other
 
 .PHONY: clean
@@ -343,6 +430,10 @@ maxperf: ## Builds `reth` with the most aggressive optimisations.
 maxperf-op: ## Builds `op-reth` with the most aggressive optimisations.
 	RUSTFLAGS="-C target-cpu=native" cargo build --profile maxperf --features jemalloc,asm-keccak,optimism --bin op-reth --manifest-path crates/optimism/bin/Cargo.toml
 
+.PHONY: maxperf-taiko
+maxperf-taiko: ## Builds `taiko-reth` with the most aggressive optimisations.
+	RUSTFLAGS="-C target-cpu=native" cargo build --profile maxperf --features jemalloc,asm-keccak --bin taiko-reth
+
 .PHONY: maxperf-no-asm
 maxperf-no-asm: ## Builds `reth` with the most aggressive optimisations, minus the "asm-keccak" feature.
 	RUSTFLAGS="-C target-cpu=native" cargo build --profile maxperf --features jemalloc
@@ -371,6 +462,17 @@ lint-op-reth:
 	--tests \
 	--benches \
 	--features "optimism $(BIN_OTHER_FEATURES)" \
+	-- -D warnings
+
+lint-taiko-reth:
+	cargo +nightly clippy \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib \
+	--examples \
+	--tests \
+	--benches \
+	--features "$(BIN_OTHER_FEATURES)" \
 	-- -D warnings
 
 lint-other-targets:
@@ -427,6 +529,20 @@ fix-lint-op-reth:
 	--allow-dirty \
 	-- -D warnings
 
+fix-lint-taiko-reth:
+	cargo +nightly clippy \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib \
+	--examples \
+	--tests \
+	--benches \
+	--features "$(BIN_OTHER_FEATURES)" \
+	--fix \
+	--allow-staged \
+	--allow-dirty \
+	-- -D warnings
+
 fix-lint-other-targets:
 	cargo +nightly clippy \
 	--workspace \
@@ -443,6 +559,7 @@ fix-lint-other-targets:
 fix-lint:
 	make fix-lint-reth && \
 	make fix-lint-op-reth && \
+	make fix-lint-taiko-reth && \
 	make fix-lint-other-targets && \
 	make fmt
 
@@ -475,6 +592,15 @@ test-op-reth:
 	--benches \
 	--features "optimism $(BIN_OTHER_FEATURES)"
 
+test-taiko-reth:
+	cargo test \
+	--workspace \
+	--bin "taiko-reth" \
+	--lib --examples \
+	--tests \
+	--benches \
+	--features "$(BIN_OTHER_FEATURES)"
+
 test-other-targets:
 	cargo test \
 	--workspace \
@@ -491,6 +617,7 @@ test-doc:
 test:
 	make test-reth && \
 	make test-op-reth && \
+	make test-taiko-reth && \
 	make test-doc && \
 	make test-other-targets
 
