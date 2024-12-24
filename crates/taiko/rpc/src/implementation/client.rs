@@ -1,10 +1,12 @@
 //! This includes download client implementations for auto sealing miners.
 
+use crate::ProvingPreflight;
+
 use super::TaikoImplMessage;
-use crate::{TaskArgs, TaskResult};
 use alloy_eips::BlockId;
 use alloy_primitives::Address;
 use reth_errors::RethError;
+use reth_provider::TaskResult;
 use std::fmt::Debug;
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
 
@@ -56,7 +58,7 @@ impl TaikoImplClient {
     pub async fn proving_pre_flight(
         &self,
         block_id: BlockId,
-    ) -> Result<Vec<TaskResult>, RethError> {
+    ) -> Result<ProvingPreflight, RethError> {
         let (tx, rx) = oneshot::channel();
         self.tx.send(TaikoImplMessage::ProvingPreFlight { block_id, tx }).unwrap();
         rx.await.unwrap()

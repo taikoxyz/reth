@@ -15,15 +15,16 @@ use reth_provider::{
 };
 use reth_rpc_eth_api::TransactionCompat;
 use reth_rpc_server_types::ToRpcResult;
-use reth_rpc_types_compat::transaction::{from_recovered, from_recovered_with_block_context};
+use reth_rpc_types_compat::transaction::from_recovered;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_primitives::L1Origin;
-use reth_taiko_proposer_consensus::{ProposerBuilder, ProposerClient};
 use reth_tasks::TaskSpawner;
 use reth_transaction_pool::{PoolConsensusTx, PoolTransaction, TransactionPool};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tracing::debug;
+
+use crate::implementation::{TaikoImplBuilder, TaikoImplClient};
 
 /// Taiko rpc interface.
 #[rpc(server, client, namespace = "taiko")]
@@ -72,16 +73,14 @@ pub trait TaikoAuthApi {
     ) -> RpcResult<Vec<PreBuiltTxList>>;
 
     /// GetSyncMode returns the node sync mode.
-    #[method(name = "provingPreFlight")]
-    async fn proving_pre_flight(&self, block_id: BlockId) -> RpcResult<ProvingPreFlight> {
-        todo!()
-    }
+    #[method(name = "provingPreflight")]
+    async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight>;
 }
 
 /// `PreFlight` is the pre-flight data for the proving process.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ProvingPreFlight {
+pub struct ProvingPreflight {
     /// The block to be proven.
     pub block: RpcBlock,
     /// The parent header.
@@ -112,7 +111,7 @@ pub struct PreBuiltTxList {
 /// Taiko API.
 #[derive(Debug)]
 pub struct TaikoAuthApi<Provider, Pool, BlockExecutor, Eth> {
-    proposer_client: ProposerClient,
+    taiko_impl_client: TaikoImplClient,
     tx_resp_builder: Eth,
     _marker: std::marker::PhantomData<(Provider, Pool, BlockExecutor)>,
 }
@@ -140,11 +139,11 @@ where
         tx_resp_builder: Eth,
     ) -> Self {
         let chain_spec = provider.chain_spec();
-        let (_, proposer_client, proposer_task) =
-            ProposerBuilder::new(chain_spec, provider, pool, block_executor).build();
+        let (_, taiko_impl_client, proposer_task) =
+            TaikoImplBuilder::new(chain_spec, provider, pool, block_executor).build();
         task_spawner.spawn(Box::pin(proposer_task));
 
-        Self { proposer_client, tx_resp_builder, _marker: Default::default() }
+        Self { taiko_impl_client, tx_resp_builder, _marker: Default::default() }
     }
 }
 /// Taiko API
@@ -173,8 +172,9 @@ where
     }
 
     /// L1OriginByID returns the L2 block's corresponding L1 origin.
-    async fn l1_origin_by_id(&self, block_id: U256) -> RpcResult<L1Origin> {
-        let block_number = block_id.try_into().map_err(RethError::other).to_rpc_result()?;
+    async fn l1_origin_by_id(&self, block_id: BlockId) -> RpcResult<L1Origin> {
+        let block_number =
+            block_id.as_u64().ok_or_else(|| RethError::msg("invalid block id")).to_rpc_result()?;
         let res = self.provider.get_l1_origin(block_number).to_rpc_result();
         debug!(target: "rpc::taiko", ?block_number, ?res, "Read l1 origin by id");
         res
@@ -235,7 +235,7 @@ where
             "Read tx pool context"
         );
         let res = self
-            .proposer_client
+            .taiko_impl_client
             .tx_pool_content_with_min_tip(
                 beneficiary,
                 base_fee,
@@ -263,6 +263,13 @@ where
             })
             .to_rpc_result();
         debug!(target: "rpc::taiko", ?res, "Read tx pool context");
+        res
+    }
+
+    async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight> {
+        debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
+        let res = self.taiko_impl_client.proving_pre_flight(block_id).await.to_rpc_result();
+        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
         res
     }
 }

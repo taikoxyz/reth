@@ -1,4 +1,3 @@
-use crate::{build_and_execute, TaskArgs};
 use futures_util::{future::BoxFuture, FutureExt};
 use reth_evm::execute::BlockExecutorProvider;
 use reth_primitives::{Block, NodePrimitives, TransactionSigned};
@@ -15,6 +14,8 @@ use std::{
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::debug;
 
+use super::{proposer::build_and_execute, TaikoImplMessage};
+
 /// A Future that listens for new ready transactions and puts new blocks into storage
 pub struct TaikoImplTask<Provider, Pool: TransactionPool, Executor> {
     /// The configured chain spec
@@ -28,12 +29,12 @@ pub struct TaikoImplTask<Provider, Pool: TransactionPool, Executor> {
     /// backlog of sets of transactions ready to be mined
     #[allow(clippy::type_complexity)]
     queued: VecDeque<(
-        TaskArgs,
+        TaikoImplMessage,
         Vec<Arc<ValidPoolTransaction<<Pool as TransactionPool>::Transaction>>>,
     )>,
     /// The type used for block execution
     block_executor: Executor,
-    trigger_args_rx: UnboundedReceiver<TaskArgs>,
+    rx: UnboundedReceiver<TaikoImplMessage>,
 }
 
 // === impl MiningTask ===
@@ -46,7 +47,7 @@ impl<Executor, Provider, Pool: TransactionPool> TaikoImplTask<Provider, Pool, Ex
         provider: Provider,
         pool: Pool,
         block_executor: Executor,
-        trigger_args_rx: UnboundedReceiver<TaskArgs>,
+        rx: UnboundedReceiver<TaikoImplMessage>,
     ) -> Self {
         Self {
             chain_spec,
@@ -55,7 +56,7 @@ impl<Executor, Provider, Pool: TransactionPool> TaikoImplTask<Provider, Pool, Ex
             pool,
             queued: Default::default(),
             block_executor,
-            trigger_args_rx,
+            rx,
         }
     }
 }
@@ -80,30 +81,38 @@ where
 
         // this drives block production and
         loop {
-            if let Some(trigger_args) = match this.trigger_args_rx.poll_recv(cx) {
-                Poll::Ready(Some(args)) => Some(args),
+            if let Some(msg) = match this.rx.poll_recv(cx) {
+                Poll::Ready(Some(msg)) => Some(msg),
                 Poll::Ready(None) => return Poll::Ready(()),
                 _ => None,
             } {
-                let mut best_txs = this.pool.best_transactions();
-                best_txs.skip_blobs();
-                debug!(target: "taiko::proposer", txs = ?best_txs.size_hint(), "Proposer get best transactions");
-                let (mut local_txs, remote_txs): (Vec<_>, Vec<_>) = best_txs
-                    .filter(|tx| {
-                        tx.effective_tip_per_gas(trigger_args.base_fee)
-                            .is_some_and(|tip| tip >= trigger_args.min_tip as u128)
-                    })
-                    .partition(|tx| {
-                        trigger_args
-                            .local_accounts
-                            .as_ref()
-                            .is_some_and(|local_accounts| local_accounts.contains(&tx.sender()))
-                    });
-                local_txs.extend(remote_txs);
-                debug!(target: "taiko::proposer", txs = ?local_txs.len(), "Proposer filter best transactions");
+                match &msg {
+                    TaikoImplMessage::PoolContent {
+                        base_fee, local_accounts, min_tip, tx, ..
+                    } => {
+                        let mut best_txs = this.pool.best_transactions();
+                        best_txs.skip_blobs();
+                        debug!(target: "taiko::proposer", txs = ?best_txs.size_hint(), "Proposer get best transactions");
+                        let (mut local_txs, remote_txs): (Vec<_>, Vec<_>) = best_txs
+                            .filter(|tx| {
+                                tx.effective_tip_per_gas(*base_fee)
+                                    .is_some_and(|tip| tip >= *min_tip as u128)
+                            })
+                            .partition(|tx| {
+                                local_accounts.as_ref().is_some_and(|local_accounts| {
+                                    local_accounts.contains(&tx.sender())
+                                })
+                            });
+                        local_txs.extend(remote_txs);
+                        debug!(target: "taiko::proposer", txs = ?local_txs.len(), "Proposer filter best transactions");
 
-                // miner returned a set of transaction that we feed to the producer
-                this.queued.push_back((trigger_args, local_txs));
+                        // miner returned a set of transaction that we feed to the producer
+                        this.queued.push_back((msg, local_txs));
+                    }
+                    TaikoImplMessage::ProvingPreFlight { .. } => {
+                        this.queued.push_back((msg, vec![]));
+                    }
+                }
             };
 
             if this.insert_task.is_none() {
@@ -113,7 +122,7 @@ where
                 }
 
                 // ready to queue in new insert task;
-                let (trigger_args, txs) = this.queued.pop_front().expect("not empty");
+                let (msg, txs) = this.queued.pop_front().expect("not empty");
 
                 let client = this.provider.clone();
                 let chain_spec = Arc::clone(&this.chain_spec);
@@ -122,32 +131,35 @@ where
                 // Create the mining future that creates a block, notifies the engine that drives
                 // the pipeline
                 this.insert_task = Some(Box::pin(async move {
-                    let txs: Vec<_> =
-                        txs.into_iter().map(|tx| tx.to_consensus().into_signed()).collect();
-                    let ommers = vec![];
-
-                    let TaskArgs {
-                        tx,
-                        beneficiary,
-                        block_max_gas_limit,
-                        max_bytes_per_tx_list,
-                        max_transactions_lists,
-                        base_fee,
-                        ..
-                    } = trigger_args;
-                    let res = build_and_execute(
-                        txs,
-                        ommers,
-                        &client,
-                        chain_spec,
-                        &executor,
-                        beneficiary,
-                        block_max_gas_limit,
-                        max_bytes_per_tx_list,
-                        max_transactions_lists,
-                        base_fee,
-                    );
-                    let _ = tx.send(res);
+                    match msg {
+                        TaikoImplMessage::PoolContent {
+                            beneficiary,
+                            base_fee,
+                            block_max_gas_limit,
+                            max_bytes_per_tx_list,
+                            max_transactions_lists,
+                            tx,
+                            ..
+                        } => {
+                            let txs: Vec<_> =
+                                txs.into_iter().map(|tx| tx.to_consensus().into_signed()).collect();
+                            let ommers = vec![];
+                            let res = build_and_execute(
+                                txs,
+                                ommers,
+                                &client,
+                                chain_spec,
+                                &executor,
+                                beneficiary,
+                                block_max_gas_limit,
+                                max_bytes_per_tx_list,
+                                max_transactions_lists,
+                                base_fee,
+                            );
+                            let _ = tx.send(res);
+                        }
+                        TaikoImplMessage::ProvingPreFlight { block_id, tx } => todo!(),
+                    }
                 }));
             }
 

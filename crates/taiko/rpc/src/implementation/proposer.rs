@@ -1,9 +1,6 @@
-use super::task::TaikoImplTask;
-use crate::ProvingPreFlight;
 use alloy_eips::{eip4895::Withdrawals, eip7685::Requests, merge::BEACON_NONCE};
 use alloy_primitives::{Address, U256};
 use reth_chainspec::EthereumHardforks;
-use reth_consensus::noop::NoopConsensus;
 use reth_errors::RethError;
 use reth_evm::execute::{
     BlockExecutionInput, BlockExecutionOutput, BlockExecutorProvider, Executor,
@@ -18,13 +15,11 @@ use reth_primitives::{
 use reth_provider::{BlockReaderIdExt, StateProviderFactory};
 use reth_revm::database::StateProviderDatabase;
 use reth_taiko_chainspec::TaikoChainSpec;
-use reth_transaction_pool::TransactionPool;
 use revm_primitives::calc_excess_blob_gas;
 use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tokio::sync::oneshot;
 use tracing::debug;
 
 /// Fills in pre-execution header fields based on the current best block and given
@@ -108,7 +103,7 @@ where
 ///
 /// This returns the header of the executed block, as well as the poststate from execution.
 #[allow(clippy::too_many_arguments)]
-fn build_and_execute<Provider, Executor>(
+pub fn build_and_execute<Provider, Executor>(
     transactions: Vec<TransactionSigned>,
     ommers: Vec<Header>,
     provider: &Provider,

@@ -7,46 +7,22 @@
 //! These downloaders poll the miner, assemble the block, and return transactions that are ready to
 //! be mined.
 
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/paradigmxyz/reth/main/assets/reth-docs.png",
-    html_favicon_url = "https://avatars0.githubusercontent.com/u/97369466?s=256",
-    issue_tracker_base_url = "https://github.com/paradigmxyz/reth/issues/"
-)]
-
 mod client;
 mod proposer;
 mod task;
 
-pub use crate::client::ProposerClient;
-use crate::ProvingPreFlight;
-use alloy_eips::{eip4895::Withdrawals, eip7685::Requests, merge::BEACON_NONCE, BlockId};
-use alloy_primitives::{Address, U256};
-use reth_chainspec::EthereumHardforks;
+use crate::ProvingPreflight;
+use alloy_eips::BlockId;
+use alloy_primitives::Address;
+pub use client::TaikoImplClient;
 use reth_consensus::noop::NoopConsensus;
 use reth_errors::RethError;
-use reth_evm::execute::{
-    BlockExecutionInput, BlockExecutionOutput, BlockExecutorProvider, Executor,
-};
-use reth_execution_errors::{
-    BlockExecutionError, BlockValidationError, InternalBlockExecutionError,
-};
 use reth_execution_types::TaskResult;
-use reth_primitives::{
-    proofs, Block, BlockBody, BlockExt, Header, NodePrimitives, TransactionSigned,
-};
-use reth_provider::{BlockReaderIdExt, StateProviderFactory};
-use reth_revm::database::StateProviderDatabase;
 use reth_taiko_chainspec::TaikoChainSpec;
-use reth_taiko_rpc::ProvingPreFlight;
 use reth_transaction_pool::TransactionPool;
-use revm_primitives::calc_excess_blob_gas;
-use std::{
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::Arc;
 pub use task::TaikoImplTask;
 use tokio::sync::oneshot;
-use tracing::debug;
 
 /// Builder type for configuring the setup
 #[derive(Debug)]
@@ -76,11 +52,11 @@ where
     #[track_caller]
     pub fn build(
         self,
-    ) -> (NoopConsensus, ProposerClient, TaikoImplTask<Provider, Pool, BlockExecutor>) {
+    ) -> (NoopConsensus, TaikoImplClient, TaikoImplTask<Provider, Pool, BlockExecutor>) {
         let Self { provider: client, consensus, chain_spec, pool, block_executor: evm_config } =
             self;
         let (trigger_args_tx, trigger_args_rx) = tokio::sync::mpsc::unbounded_channel();
-        let auto_client = ProposerClient::new(trigger_args_tx);
+        let auto_client = TaikoImplClient::new(trigger_args_tx);
         let task =
             TaikoImplTask::new(Arc::clone(&chain_spec), client, pool, evm_config, trigger_args_rx);
         (consensus, auto_client, task)
@@ -89,7 +65,7 @@ where
 
 /// Message types for the proposer
 #[derive(Debug)]
-pub enum TaikoImplMessage {
+enum TaikoImplMessage {
     PoolContent {
         /// Address of the beneficiary
         beneficiary: Address,
@@ -111,6 +87,6 @@ pub enum TaikoImplMessage {
     ProvingPreFlight {
         block_id: BlockId,
         /// Response channel
-        tx: oneshot::Sender<Result<ProvingPreFlight, RethError>>,
+        tx: oneshot::Sender<Result<ProvingPreflight, RethError>>,
     },
 }
