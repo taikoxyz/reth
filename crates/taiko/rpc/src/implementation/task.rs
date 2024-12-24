@@ -14,7 +14,7 @@ use std::{
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::debug;
 
-use super::{proposer::build_and_execute, TaikoImplMessage};
+use super::TaikoImplMessage;
 
 /// A Future that listens for new ready transactions and puts new blocks into storage
 pub struct TaikoImplTask<Provider, Pool: TransactionPool, Executor> {
@@ -144,7 +144,7 @@ where
                             let txs: Vec<_> =
                                 txs.into_iter().map(|tx| tx.to_consensus().into_signed()).collect();
                             let ommers = vec![];
-                            let res = build_and_execute(
+                            let res = super::proposer::build_and_execute(
                                 txs,
                                 ommers,
                                 &client,
@@ -158,7 +158,11 @@ where
                             );
                             let _ = tx.send(res);
                         }
-                        TaikoImplMessage::ProvingPreFlight { block_id, tx } => todo!(),
+                        TaikoImplMessage::ProvingPreFlight { block_id, tx } => {
+                            let res =
+                                super::preflight::build_and_execute(&client, &executor, block_id);
+                            let _ = tx.send(res);
+                        }
                     }
                 }));
             }

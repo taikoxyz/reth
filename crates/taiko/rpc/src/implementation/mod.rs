@@ -8,6 +8,7 @@
 //! be mined.
 
 mod client;
+mod preflight;
 mod proposer;
 mod task;
 
