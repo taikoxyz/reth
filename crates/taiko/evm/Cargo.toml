@@ -14,8 +14,8 @@ workspace = true
 # Reth
 reth-chainspec.workspace = true
 reth-evm = { workspace = true, features = ["taiko"] }
-reth-primitives.workspace = true
-reth-revm.workspace = true
+reth-primitives = { workspace = true, features = ["taiko"] }
+reth-revm = { workspace = true, features = ["taiko"] }
 reth-execution-types.workspace = true
 reth-consensus.workspace = true
 reth-evm-ethereum.workspace = true
@@ -43,7 +43,7 @@ flate2.workspace = true
 
 [dev-dependencies]
 reth-evm = { workspace = true, features = ["test-utils"] }
-reth-revm = { workspace = true, features = ["test-utils"] }
+reth-revm = { workspace = true, features = ["test-utils", "taiko"] }
 reth-primitives = { workspace = true, features = ["test-utils"] }
 alloy-genesis.workspace = true
 alloy-consensus.workspace = true

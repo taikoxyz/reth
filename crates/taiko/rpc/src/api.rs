@@ -1,3 +1,4 @@
+use alloy_consensus::BlockHeader;
 use alloy_eips::BlockId;
 use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rpc_types_eth::{
@@ -8,20 +9,28 @@ use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use reth_errors::RethError;
 use reth_evm::execute::BlockExecutorProvider;
 use reth_node_api::NodePrimitives;
-use reth_primitives::{Block, TransactionSigned};
+use reth_primitives::{Block, SealedBlockWithSenders, TransactionSigned};
+use reth_primitives_traits::{Block as _, BlockBody, SignedTransaction};
 use reth_provider::{
-    BlockNumReader, BlockReaderIdExt, ChainSpecProvider, EvmEnvProvider, L1OriginReader,
-    StateProviderFactory,
+    BlockIdReader, BlockNumReader, BlockReaderIdExt, ChainSpecProvider, EvmEnvProvider,
+    L1OriginReader, ProviderBlock, StateProviderFactory,
 };
-use reth_rpc_eth_api::{helpers::SpawnBlocking, EthApiTypes, FromEthApiError, TransactionCompat};
+use reth_revm::database::StateProviderDatabase;
+use reth_rpc_eth_api::{
+    helpers::{SpawnBlocking, TraceExt},
+    EthApiTypes, FromEthApiError, RpcNodeCore, TransactionCompat,
+};
 use reth_rpc_server_types::ToRpcResult;
 use reth_rpc_types_compat::transaction::from_recovered;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_primitives::L1Origin;
 use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner};
 use reth_transaction_pool::{PoolConsensusTx, PoolTransaction, TransactionPool};
+use revm::db::CacheDB;
+use revm_primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
+use tokio::sync::{AcquireError, OwnedSemaphorePermit};
 use tracing::debug;
 
 use crate::implementation::{TaikoImplBuilder, TaikoImplClient};
@@ -169,12 +178,36 @@ where
 
 /// Taiko API.
 #[derive(Debug)]
-pub struct TaikoAuthApi<Provider, Pool, BlockExecutor, Eth> {
-    taiko_impl_client: TaikoImplClient,
-    tx_resp_builder: Eth,
-    _marker: std::marker::PhantomData<(Provider, Pool, BlockExecutor)>,
+pub struct TaikoAuthApi<Eth, BlockExecutor> {
+    inner: Arc<TaikoAuthApiInner<Eth, BlockExecutor>>,
 }
 
+impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
+    /// Create a new instance of the [`DebugApi`]
+    pub fn new(
+        eth: Eth,
+        blocking_task_guard: BlockingTaskGuard,
+        block_executor: BlockExecutor,
+    ) -> Self {
+        let inner =
+            Arc::new(TaikoAuthApiInner { eth_api: eth, blocking_task_guard, block_executor });
+        Self { inner }
+    }
+
+    /// Access the underlying `Eth` API.
+    pub fn eth_api(&self) -> &Eth {
+        &self.inner.eth_api
+    }
+}
+
+impl<Eth: RpcNodeCore, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
+    /// Access the underlying provider.
+    pub fn provider(&self) -> &Eth::Provider {
+        self.inner.eth_api.provider()
+    }
+}
+
+#[derive(Debug)]
 struct TaikoAuthApiInner<Eth, BlockExecutor> {
     /// The implementation of `eth` API
     eth_api: Eth,
@@ -182,6 +215,45 @@ struct TaikoAuthApiInner<Eth, BlockExecutor> {
     blocking_task_guard: BlockingTaskGuard,
     /// block executor for debug & trace apis
     block_executor: BlockExecutor,
+}
+
+impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor>
+where
+    Eth: EthApiTypes + TraceExt + 'static,
+    BlockExecutor:
+        BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
+{
+    /// Acquires a permit to execute a tracing call.
+    async fn acquire_trace_permit(&self) -> Result<OwnedSemaphorePermit, AcquireError> {
+        self.inner.blocking_task_guard.clone().acquire_owned().await
+    }
+
+    async fn pool_content(
+        &self,
+        beneficiary: Address,
+        base_fee: u64,
+        block_max_gas_limit: u64,
+        max_bytes_per_tx_list: u64,
+        local_accounts: Option<Vec<Address>>,
+        max_transactions_lists: u64,
+        min_tip: u64,
+    ) -> Result<Vec<PreBuiltTxList>, Eth::Error> {
+        let last_num = self.provider().last_block_number().map_err(Eth::Error::from_eth_err)?;
+        let ((cfg, block_env, _), block) = futures::try_join!(
+            self.eth_api().evm_env_at(last_num.into()),
+            self.eth_api().block_with_senders(last_num.into()),
+        )?;
+
+        // replay all transactions of the block
+        let this = self.clone();
+        self.eth_api()
+            .spawn_with_state_at_block(last_num.into(), move |state| {
+                let mut db = CacheDB::new(StateProviderDatabase::new(state));
+
+                todo!()
+            })
+            .await
+    }
 }
 
 impl<Provider, Pool, BlockExecutor, Eth> TaikoAuthApi<Provider, Pool, BlockExecutor, Eth>

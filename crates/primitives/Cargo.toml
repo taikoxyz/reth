@@ -172,6 +172,8 @@ serde-bincode-compat = [
 	"reth-trie-common/serde-bincode-compat",
 ]
 
+taiko = ["revm-primitives/taiko"]
+
 [[bench]]
 name = "recover_ecdsa_crit"
 harness = false

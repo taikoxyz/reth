@@ -16,7 +16,7 @@ use alloc::{sync::Arc, vec::Vec};
 use alloy_consensus::Header;
 use alloy_primitives::{Address, U256};
 use core::convert::Infallible;
-use reth_evm::{ConfigureEvm, ConfigureEvmEnv, NextBlockEnvAttributes};
+use reth_evm::{ConfigureEvm, ConfigureEvmEnv, EnvExt, NextBlockEnvAttributes};
 use reth_primitives::{transaction::FillTxEnv, Head, TransactionSigned};
 use reth_revm::{
     inspector_handle_register,
@@ -24,6 +24,8 @@ use reth_revm::{
     Database, Evm, EvmBuilder, GetInspector,
 };
 use reth_taiko_chainspec::TaikoChainSpec;
+use reth_taiko_consensus::decode_ontake_extra_data;
+use reth_taiko_forks::TaikoHardforks;
 mod execute;
 pub use execute::*;
 mod config;
@@ -59,8 +61,26 @@ impl ConfigureEvmEnv for TaikoEvmConfig {
     type Transaction = TransactionSigned;
     type Error = Infallible;
 
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
+    fn fill_tx_env(
+        &self,
+        tx_env: &mut TxEnv,
+        transaction: &TransactionSigned,
+        sender: Address,
+        ext: Option<EnvExt<'_>>,
+    ) {
         transaction.fill_tx_env(tx_env, sender);
+
+        let EnvExt { is_anchor, block_number, extra_data } = ext.unwrap();
+        // Set taiko specific data
+        tx_env.taiko.is_anchor = is_anchor;
+        // set the treasury address
+        let treasury = self.chain_spec.treasury();
+        tx_env.taiko.treasury = treasury;
+
+        if self.chain_spec.is_ontake_active_at_block(block_number) {
+            // set the basefee ratio
+            tx_env.taiko.basefee_ratio = decode_ontake_extra_data(extra_data);
+        }
     }
 
     fn fill_tx_env_system_contract_call(

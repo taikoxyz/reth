@@ -17,6 +17,10 @@ hardfork!(
     /// [`TaikoHardfork`].
     TaikoHardfork {
         /// The Ontake hardfork.
+        Kalta,
+        /// The Hekla hardfork.
+        Hekla,
+        /// The Ontake hardfork.
         Ontake,
     }
 );

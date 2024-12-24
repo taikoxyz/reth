@@ -225,6 +225,7 @@ where
     let mut evm = evm_config.evm_with_env(&mut db, env);
 
     let mut receipts = Vec::new();
+    let mut idx = 0;
     while let Some(pool_tx) = best_txs.next() {
         // ensure we still have capacity for this transaction
         if cumulative_gas_used + pool_tx.gas_limit() > block_gas_limit {
@@ -268,7 +269,8 @@ where
         }
 
         // Configure the environment for the tx.
-        *evm.tx_mut() = evm_config.tx_env(tx.as_signed(), tx.signer());
+        *evm.tx_mut() = evm_config.tx_env(tx.as_signed(), tx.signer(), idx, block_number, &[]);
+        idx += 1;
 
         let ResultAndState { result, state } = match evm.transact() {
             Ok(res) => res,

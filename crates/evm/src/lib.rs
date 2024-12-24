@@ -106,6 +106,17 @@ pub trait ConfigureEvm: ConfigureEvmEnv {
     fn default_external_context<'a>(&self) -> Self::DefaultExternalContext<'a>;
 }
 
+/// Env extra configuration.
+#[derive(Debug, Clone, Copy)]
+pub struct EnvExt<'a> {
+    /// is_anchor flag for taiko
+    pub is_anchor: bool,
+    /// block number
+    pub block_number: u64,
+    /// extra data
+    pub extra_data: &'a [u8],
+}
+
 /// This represents the set of methods used to configure the EVM's environment before block
 /// execution.
 ///
@@ -122,14 +133,25 @@ pub trait ConfigureEvmEnv: Send + Sync + Unpin + Clone + 'static {
     type Error: core::error::Error + Send + Sync;
 
     /// Returns a [`TxEnv`] from a transaction and [`Address`].
-    fn tx_env(&self, transaction: &Self::Transaction, signer: Address) -> TxEnv {
+    fn tx_env(
+        &self,
+        transaction: &Self::Transaction,
+        signer: Address,
+        ext: Option<EnvExt<'_>>,
+    ) -> TxEnv {
         let mut tx_env = TxEnv::default();
-        self.fill_tx_env(&mut tx_env, transaction, signer);
+        self.fill_tx_env(&mut tx_env, transaction, signer, ext);
         tx_env
     }
 
     /// Fill transaction environment from a transaction  and the given sender address.
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &Self::Transaction, sender: Address);
+    fn fill_tx_env(
+        &self,
+        tx_env: &mut TxEnv,
+        transaction: &Self::Transaction,
+        sender: Address,
+        ext: Option<EnvExt<'_>>,
+    );
 
     /// Fill transaction environment with a system contract call.
     fn fill_tx_env_system_contract_call(

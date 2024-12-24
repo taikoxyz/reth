@@ -116,7 +116,7 @@ where
                         env: Env::boxed(
                             cfg.cfg_env.clone(),
                             block_env.clone(),
-                            this.eth_api().evm_config().tx_env(tx, *signer),
+                            this.eth_api().evm_config().tx_env(tx, *signer, None),
                         ),
                         handler_cfg: cfg.handler_cfg,
                     };
@@ -264,7 +264,7 @@ where
                     env: Env::boxed(
                         cfg.cfg_env.clone(),
                         block_env,
-                        this.eth_api().evm_config().tx_env(tx.as_signed(), tx.signer()),
+                        this.eth_api().evm_config().tx_env(tx.as_signed(), tx.signer(), None),
                     ),
                     handler_cfg: cfg.handler_cfg,
                 };
@@ -545,7 +545,7 @@ where
                             env: Env::boxed(
                                 cfg.cfg_env.clone(),
                                 block_env.clone(),
-                                this.eth_api().evm_config().tx_env(tx, *signer),
+                                this.eth_api().evm_config().tx_env(tx, *signer, None),
                             ),
                             handler_cfg: cfg.handler_cfg,
                         };

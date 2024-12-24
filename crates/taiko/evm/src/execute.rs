@@ -5,8 +5,7 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::{Header, Transaction as _};
 use alloy_eips::eip7685::Requests;
 use core::fmt::Display;
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
+use flate2::{write::ZlibEncoder, Compression};
 use reth_chainspec::{EthereumHardfork, EthereumHardforks};
 use reth_consensus::ConsensusError;
 use reth_ethereum_consensus::validate_block_post_execution;
@@ -18,15 +17,14 @@ use reth_evm::{
     },
     state_change::post_block_balance_increments,
     system_calls::{OnStateHook, SystemCaller},
-    ConfigureEvm, TxEnvOverrides,
+    ConfigureEvm, EnvExt, TxEnvOverrides,
 };
 use reth_evm_ethereum::dao_fork::{DAO_HARDFORK_BENEFICIARY, DAO_HARDKFORK_ACCOUNTS};
 use reth_execution_types::{BlockExecutionInput, TaskResult};
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt, TransactionSigned};
 use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
-use reth_taiko_consensus::{check_anchor_tx, decode_ontake_extra_data};
-use reth_taiko_forks::TaikoHardforks;
+use reth_taiko_consensus::check_anchor_tx;
 use revm::{interpreter::Host, JournaledState};
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, HashSet, ResultAndState, U256};
 use std::io::{self, Write};
@@ -142,7 +140,7 @@ where
                     break;
                 }
 
-                self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender);
+                self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender, None);
 
                 // Execute transaction.
                 let ResultAndState { result, state } = match evm.transact() {
@@ -292,20 +290,19 @@ where
                 .into());
             }
 
-            self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender);
+            self.evm_config.fill_tx_env(
+                evm.tx_mut(),
+                transaction,
+                *sender,
+                Some(EnvExt {
+                    is_anchor,
+                    block_number: block.number,
+                    extra_data: &block.extra_data,
+                }),
+            );
 
             if let Some(tx_env_overrides) = &mut self.tx_env_overrides {
                 tx_env_overrides.apply(evm.tx_mut());
-            }
-
-            // Set taiko specific data
-            evm.tx_mut().taiko.is_anchor = is_anchor;
-            // set the treasury address
-            evm.tx_mut().taiko.treasury = treasury;
-
-            if self.chain_spec.is_ontake_active_at_block(block.number) {
-                // set the basefee ratio
-                evm.tx_mut().taiko.basefee_ratio = decode_ontake_extra_data(&block.extra_data);
             }
 
             // Execute transaction.
