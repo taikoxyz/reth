@@ -9099,6 +9099,7 @@ dependencies = [
  "reth-rpc-layer",
  "reth-rpc-server-types",
  "reth-rpc-types-compat",
+ "reth-taiko-engine-types",
  "reth-tasks",
  "reth-tracing",
  "reth-transaction-pool",

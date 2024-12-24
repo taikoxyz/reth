@@ -71,7 +71,15 @@ where
     // Execute the block to produce a block execution output
     let mut block_execution_output = EthExecutorProvider::ethereum(chain_spec)
         .executor(StateProviderDatabase::new(LatestStateProviderRef::new(&provider)))
-        .execute(BlockExecutionInput { block, total_difficulty: U256::ZERO })?;
+        .execute(BlockExecutionInput {
+            block,
+            total_difficulty: U256::ZERO,
+            enable_anchor: false,
+            enable_skip: false,
+            enable_build: false,
+            max_bytes_per_tx_list: 0,
+            max_transactions_lists: 0,
+        })?;
     block_execution_output.state.reverts.sort();
 
     // Convert the block execution output to an execution outcome for committing to the database
