@@ -18,11 +18,9 @@ use reth_payload_primitives::{PayloadBuilderAttributes, PayloadBuilderError};
 use reth_primitives::{
     proofs, Block, BlockBody, BlockExt, EthereumHardforks, Header, TransactionSigned,
 };
-use reth_provider::L1OriginWriter;
-use reth_provider::{ChainSpecProvider, ExecutionOutcome, StateProviderFactory};
+use reth_provider::{ChainSpecProvider, ExecutionOutcome, L1OriginWriter, StateProviderFactory};
 use reth_revm::{
     database::StateProviderDatabase,
-    db::State,
     primitives::{BlockEnv, CfgEnvWithHandlerCfg},
 };
 use reth_taiko_chainspec::TaikoChainSpec;
@@ -130,8 +128,7 @@ where
     let chain_spec = client.chain_spec();
     let state_provider = client.state_by_block_hash(config.parent_header.hash())?;
     let state = StateProviderDatabase::new(state_provider);
-    let mut db =
-        State::builder().with_database(cached_reads.as_db_mut(state)).with_bundle_update().build();
+    let mut db = cached_reads.as_db_mut(state);
     let PayloadConfig { parent_header, attributes, extra_data: _ } = config;
 
     debug!(target: "taiko_payload_builder", id=%attributes.payload_attributes.payload_id(), parent_hash = ?parent_header.hash(), parent_number = parent_header.number, "building new payload");
@@ -222,9 +219,9 @@ where
     block.header.requests_hash = requests.as_ref().map(|r| r.requests_hash());
     // now we need to update certain header fields with the results of the execution
     block.header.transactions_root = proofs::calculate_transaction_root(&block.body.transactions);
-    let hashed_state = db.database.db.hashed_post_state(execution_outcome.state());
+    let hashed_state = db.inner().hashed_post_state(execution_outcome.state());
     let (state_root, trie_output) = {
-        db.database.inner().state_root_with_updates(hashed_state.clone()).inspect_err(|err| {
+        db.inner().state_root_with_updates(hashed_state.clone()).inspect_err(|err| {
             warn!(target: "payload_builder",
                 parent_hash=%parent_header.hash(),
                 %err,

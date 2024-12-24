@@ -463,6 +463,8 @@ where
     }
 
     async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight> {
+        let _permit = self.acquire_trace_permit().await;
+        self.eth_api().spawn_with_state_at_block(block_id, move |this| todo!()).await;
         // debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
         // let res = self.taiko_impl_client.proving_pre_flight(block_id).await.to_rpc_result();
         // debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
