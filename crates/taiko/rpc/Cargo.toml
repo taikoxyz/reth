@@ -22,7 +22,6 @@ reth-rpc-server-types.workspace = true
 reth-tasks = { workspace = true, features = ["rayon"] }
 reth-transaction-pool.workspace = true
 reth-node-api.workspace = true
-reth-chainspec.workspace = true
 reth-errors.workspace = true
 reth-rpc-types-compat.workspace = true
 reth-revm = { workspace = true, features = ["taiko"] }

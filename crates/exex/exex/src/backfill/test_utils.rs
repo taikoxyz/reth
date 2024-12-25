@@ -76,9 +76,6 @@ where
             total_difficulty: U256::ZERO,
             enable_anchor: false,
             enable_skip: false,
-            enable_build: false,
-            max_bytes_per_tx_list: 0,
-            max_transactions_lists: 0,
         })?;
     block_execution_output.state.reverts.sort();
 

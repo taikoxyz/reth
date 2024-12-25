@@ -9666,7 +9666,6 @@ dependencies = [
  "async-trait",
  "futures",
  "jsonrpsee",
- "reth-chainspec",
  "reth-errors",
  "reth-evm",
  "reth-node-api",

@@ -250,6 +250,7 @@ where
         self.inner.blocking_task_guard.clone().acquire_owned().await
     }
 
+    #[allow(clippy::type_complexity)]
     fn get_block_info(
         &self,
         block_number: u64,
@@ -353,6 +354,7 @@ where
             .await
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn pool_content(
         &self,
         _beneficiary: Address,
