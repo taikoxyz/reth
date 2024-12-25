@@ -143,7 +143,6 @@ where
         payload: ExecutionPayloadV1,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
-        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload, None,
@@ -155,7 +154,7 @@ where
         Ok(self
             .inner
             .beacon_consensus
-            .new_payload(payload, ExecutionPayloadSidecar::none())
+            .new_payload(TaikoExecutionPayload::from(payload), ExecutionPayloadSidecar::none())
             .await
             .inspect(|_| self.inner.on_new_payload_response())?)
     }
@@ -181,7 +180,6 @@ where
     ) -> EngineApiResult<PayloadStatus> {
         let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash } = payload;
         let payload = convert_payload_input_v2_to_payload(execution_payload);
-        let payload = TaikoExecutionPayload::from((payload, tx_hash, withdrawals_hash));
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload, None,
@@ -192,7 +190,10 @@ where
         Ok(self
             .inner
             .beacon_consensus
-            .new_payload(payload, ExecutionPayloadSidecar::none())
+            .new_payload(
+                TaikoExecutionPayload::from((payload, tx_hash, withdrawals_hash)),
+                ExecutionPayloadSidecar::none(),
+            )
             .await
             .inspect(|_| self.inner.on_new_payload_response())?)
     }
@@ -219,7 +220,6 @@ where
         parent_beacon_block_root: B256,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
-        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload,
@@ -233,7 +233,7 @@ where
             .inner
             .beacon_consensus
             .new_payload(
-                payload,
+                TaikoExecutionPayload::from(payload),
                 ExecutionPayloadSidecar::v3(CancunPayloadFields {
                     versioned_hashes,
                     parent_beacon_block_root,
@@ -269,7 +269,6 @@ where
         execution_requests: Requests,
     ) -> EngineApiResult<PayloadStatus> {
         let payload = ExecutionPayload::from(payload);
-        let payload = TaikoExecutionPayload::from(payload);
         let payload_or_attrs =
             PayloadOrAttributes::<'_, EngineT::PayloadAttributes>::from_execution_payload(
                 &payload,
@@ -283,7 +282,7 @@ where
             .inner
             .beacon_consensus
             .new_payload(
-                payload,
+                TaikoExecutionPayload::from(payload),
                 ExecutionPayloadSidecar::v4(
                     CancunPayloadFields { versioned_hashes, parent_beacon_block_root },
                     PraguePayloadFields {
