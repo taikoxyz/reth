@@ -1,6 +1,6 @@
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::U256;
-use reth_primitives::{BlockWithSenders, TransactionSigned};
+use reth_primitives::BlockWithSenders;
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.

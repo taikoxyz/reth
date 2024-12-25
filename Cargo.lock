@@ -9587,7 +9587,6 @@ dependencies = [
  "reth-primitives",
  "reth-provider",
  "reth-rpc",
- "reth-rpc-api",
  "reth-taiko-chainspec",
  "reth-taiko-consensus",
  "reth-taiko-engine-primitives",

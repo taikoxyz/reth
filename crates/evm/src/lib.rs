@@ -109,7 +109,7 @@ pub trait ConfigureEvm: ConfigureEvmEnv {
 /// Env extra configuration.
 #[derive(Debug, Clone, Copy)]
 pub struct EnvExt<'a> {
-    /// is_anchor flag for taiko
+    /// flag for anchor transaction
     pub is_anchor: bool,
     /// block number
     pub block_number: u64,

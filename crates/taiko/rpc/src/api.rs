@@ -1,45 +1,36 @@
-use alloy_consensus::{proofs, BlockHeader, Header, Transaction as _};
-use alloy_eips::{
-    calc_excess_blob_gas, eip4895::Withdrawals, eip7685::Requests, merge::BEACON_NONCE, BlockId,
-};
+use alloy_consensus::BlockHeader;
+use alloy_eips::BlockId;
 use alloy_network::Network;
 use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rpc_types_eth::{
     Block as RpcBlock, BlockTransactionsKind, EIP1186AccountProofResponse, Header as RpcHeader,
-    Transaction,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use reth_chainspec::EthereumHardforks;
 use reth_errors::RethError;
 use reth_evm::{
     execute::{BlockExecutorProvider, Executor},
     ConfigureEvmEnv,
 };
 use reth_node_api::NodePrimitives;
-use reth_primitives::{
-    Block, BlockBody, BlockExt as _, InvalidTransactionError, SealedBlockWithSenders,
-    TransactionSigned,
-};
+use reth_primitives::{InvalidTransactionError, SealedBlockWithSenders};
 use reth_provider::{
-    BlockExecutionInput, BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReader,
-    BlockReaderIdExt, ChainSpecProvider, HeaderProvider, L1OriginReader, ProviderBlock,
-    ProviderHeader, ProviderTx, StateProofProvider, StateProviderFactory, TransactionsProvider,
+    BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReader, HeaderProvider,
+    L1OriginReader, ProviderBlock, ProviderHeader, StateProofProvider, StateProviderFactory,
 };
 use reth_revm::database::StateProviderDatabase;
 use reth_rpc_eth_api::{
-    helpers::{SpawnBlocking, TraceExt},
-    EthApiTypes, FromEthApiError as _, FromEvmError as _, RpcNodeCore,
+    helpers::TraceExt, EthApiTypes, FromEthApiError as _, FromEvmError as _, RpcNodeCore,
 };
 use reth_rpc_eth_types::EthApiError;
 use reth_rpc_server_types::ToRpcResult;
-use reth_rpc_types_compat::{block::from_block, transaction::from_recovered, TransactionCompat};
+use reth_rpc_types_compat::{block::from_block, transaction::from_recovered};
 use reth_taiko_evm::encode_and_compress_tx_list;
 use reth_taiko_primitives::L1Origin;
 use reth_tasks::pool::BlockingTaskGuard;
 use reth_transaction_pool::{
     error::InvalidPoolTransactionError, pool::BestTransactionsWithPrioritizedSenders,
-    BestTransactions, BestTransactionsAttributes, PoolTransaction, TransactionPool,
+    BestTransactions, BestTransactionsAttributes, TransactionPool,
 };
 use revm::{
     db::{BundleState, CacheDB, State},
@@ -47,11 +38,7 @@ use revm::{
     DatabaseCommit,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{AcquireError, OwnedSemaphorePermit};
 use tracing::debug;
 
@@ -368,16 +355,16 @@ where
 
     async fn pool_content(
         &self,
-        beneficiary: Address,
+        _beneficiary: Address,
         base_fee: u64,
-        block_max_gas_limit: u64,
+        _block_max_gas_limit: u64,
         max_bytes_per_tx_list: u64,
         local_accounts: Option<Vec<Address>>,
         max_transactions_lists: u64,
         min_tip: u64,
     ) -> Result<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>, Eth::Error> {
         let last_num = self.provider().last_block_number().map_err(Eth::Error::from_eth_err)?;
-        let ((cfg, block_env, _), block) = futures::try_join!(
+        let ((cfg, block_env, _), _block) = futures::try_join!(
             self.eth_api().evm_env_at(last_num.into()),
             self.eth_api().block_with_senders(last_num.into()),
         )?;

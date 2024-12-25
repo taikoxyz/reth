@@ -177,7 +177,6 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
-                target_list: vec![],
                 skipped_list: vec![],
             })
         }
@@ -194,7 +193,6 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
-                target_list: vec![],
                 skipped_list: vec![],
             })
         }
@@ -214,7 +212,6 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
-                target_list: vec![],
                 skipped_list: vec![],
             })
         }
@@ -248,9 +245,6 @@ mod tests {
             total_difficulty: Default::default(),
             enable_anchor: false,
             enable_skip: false,
-            enable_build: false,
-            max_bytes_per_tx_list: 0,
-            max_transactions_lists: 0,
         };
 
         let (tx, _rx) = mpsc::channel();
@@ -306,9 +300,6 @@ mod tests {
             total_difficulty: Default::default(),
             enable_anchor: false,
             enable_skip: false,
-            enable_build: false,
-            max_bytes_per_tx_list: 0,
-            max_transactions_lists: 0,
         };
 
         let (tx, rx) = mpsc::channel();

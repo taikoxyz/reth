@@ -26,7 +26,7 @@ use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt, TransactionSigne
 use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::check_anchor_tx;
-use revm::{interpreter::Host, JournaledState};
+use revm::JournaledState;
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, HashSet, ResultAndState, U256};
 use std::io::{self, Write};
 use tracing::debug;

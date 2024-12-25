@@ -756,7 +756,6 @@ mod tests {
         let expected_execute_transactions_result = ExecuteOutput::<Receipt> {
             receipts: expected_receipts.clone(),
             gas_used: expected_gas_used,
-            target_list: vec![],
             skipped_list: vec![],
         };
         let expected_apply_post_execution_changes_result = Requests::new(vec![bytes!("deadbeef")]);
@@ -787,7 +786,6 @@ mod tests {
             execute_transactions_result: ExecuteOutput {
                 receipts: vec![Receipt::default()],
                 gas_used: 10,
-                target_list: vec![],
                 skipped_list: vec![],
             },
             apply_post_execution_changes_result: Requests::new(vec![bytes!("deadbeef")]),
