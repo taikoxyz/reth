@@ -69,12 +69,12 @@ use reth_payload_builder::{
     EthBuiltPayload, EthPayloadBuilderAttributes, PayloadBuilderError, PayloadBuilderHandle,
     PayloadBuilderService,
 };
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_tracing::{RethTracer, Tracer};
 use reth_trie_db::MerklePatriciaTrie;
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, sync::Arc};
 use thiserror::Error;
-use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// A custom payload attributes type.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

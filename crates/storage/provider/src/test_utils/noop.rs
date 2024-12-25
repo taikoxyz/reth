@@ -4,6 +4,15 @@ use std::{
     sync::Arc,
 };
 
+use crate::{
+    providers::StaticFileProvider,
+    traits::{BlockSource, ReceiptProvider},
+    AccountReader, BlockHashReader, BlockIdReader, BlockNumReader, BlockReader, BlockReaderIdExt,
+    ChainSpecProvider, ChangeSetReader, EvmEnvProvider, HeaderProvider, PruneCheckpointReader,
+    ReceiptProviderIdExt, StageCheckpointReader, StateProvider, StateProviderBox,
+    StateProviderFactory, StateRootProvider, StaticFileProviderFactory, TransactionVariant,
+    TransactionsProvider, WithdrawalsProvider,
+};
 use alloy_consensus::Header;
 use alloy_eips::{
     eip4895::{Withdrawal, Withdrawals},
@@ -27,23 +36,17 @@ use reth_primitives::{
 };
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::{StageCheckpoint, StageId};
-use reth_storage_api::{HashedPostStateProvider, L1OriginReader, L1OriginWriter, NodePrimitivesProvider, StateProofProvider, StorageRootProvider};
+use reth_storage_api::{
+    HashedPostStateProvider, L1OriginReader, L1OriginWriter, NodePrimitivesProvider,
+    StateProofProvider, StorageRootProvider,
+};
 use reth_storage_errors::provider::ProviderResult;
+use reth_taiko_primitives::L1Origin;
 use reth_trie::{
     updates::TrieUpdates, AccountProof, HashedPostState, HashedStorage, MultiProof, TrieInput,
 };
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use tokio::sync::{broadcast, watch};
-use reth_taiko_primitives::L1Origin;
-use crate::{
-    providers::StaticFileProvider,
-    traits::{BlockSource, ReceiptProvider},
-    AccountReader, BlockHashReader, BlockIdReader, BlockNumReader, BlockReader, BlockReaderIdExt,
-    ChainSpecProvider, ChangeSetReader, EvmEnvProvider, HeaderProvider, PruneCheckpointReader,
-    ReceiptProviderIdExt, StageCheckpointReader, StateProvider, StateProviderBox,
-    StateProviderFactory, StateRootProvider, StaticFileProviderFactory, TransactionVariant,
-    TransactionsProvider, WithdrawalsProvider,
-};
 
 /// Supports various api interfaces for testing purposes.
 #[derive(Debug, Clone, Default, Copy)]
@@ -605,7 +608,11 @@ impl L1OriginReader for NoopProvider {
 }
 
 impl L1OriginWriter for NoopProvider {
-    fn save_l1_origin(&self, _block_number: BlockNumber, _l1_origin: L1Origin) -> ProviderResult<()> {
+    fn save_l1_origin(
+        &self,
+        _block_number: BlockNumber,
+        _l1_origin: L1Origin,
+    ) -> ProviderResult<()> {
         todo!()
     }
 }

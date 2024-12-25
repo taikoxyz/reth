@@ -126,12 +126,12 @@ impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> HeaderVa
         validate_header_extradata(header.header())?;
 
         // EIP-4895: Beacon chain push withdrawals as operations
-        if self.chain_spec.is_shanghai_active_at_timestamp(header.timestamp)
-            && header.withdrawals_root.is_none()
+        if self.chain_spec.is_shanghai_active_at_timestamp(header.timestamp) &&
+            header.withdrawals_root.is_none()
         {
             return Err(ConsensusError::WithdrawalsRootMissing);
-        } else if !self.chain_spec.is_shanghai_active_at_timestamp(header.timestamp)
-            && header.withdrawals_root.is_some()
+        } else if !self.chain_spec.is_shanghai_active_at_timestamp(header.timestamp) &&
+            header.withdrawals_root.is_some()
         {
             return Err(ConsensusError::WithdrawalsRootUnexpected);
         }

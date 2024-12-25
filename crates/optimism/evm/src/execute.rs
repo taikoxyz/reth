@@ -18,6 +18,7 @@ use reth_evm::{
     system_calls::{OnStateHook, SystemCaller},
     ConfigureEvm, TxEnvOverrides,
 };
+use reth_execution_types::BlockExecutionInput;
 use reth_optimism_chainspec::OpChainSpec;
 use reth_optimism_consensus::validate_block_post_execution;
 use reth_optimism_forks::OpHardfork;
@@ -26,7 +27,6 @@ use reth_primitives::{BlockWithSenders, Receipt, TransactionSigned, TxType};
 use reth_revm::{Database, State};
 use revm_primitives::{db::DatabaseCommit, EnvWithHandlerCfg, ResultAndState, U256};
 use tracing::trace;
-use reth_execution_types::BlockExecutionInput;
 
 /// Factory for [`OpExecutionStrategy`].
 #[derive(Debug, Clone)]

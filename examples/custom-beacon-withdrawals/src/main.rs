@@ -10,7 +10,7 @@ use reth::{
     api::{ConfigureEvm, ConfigureEvmEnv, NodeTypesWithEngine},
     builder::{components::ExecutorBuilder, BuilderContext, FullNodeTypes},
     cli::Cli,
-    providers::ProviderError,
+    providers::{BlockExecutionInput, ProviderError},
     revm::{
         interpreter::Host,
         primitives::{address, Address, Bytes, Env, EnvWithHandlerCfg, TransactTo, TxEnv, U256},
@@ -26,7 +26,6 @@ use reth_evm_ethereum::EthEvmConfig;
 use reth_node_ethereum::{node::EthereumAddOns, BasicBlockExecutorProvider, EthereumNode};
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt};
 use std::{fmt::Display, sync::Arc};
-use reth::providers::BlockExecutionInput;
 
 pub const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
 pub const WITHDRAWALS_ADDRESS: Address = address!("4200000000000000000000000000000000000000");

@@ -38,10 +38,10 @@ use reth_prune::Pruner;
 use reth_prune_types::PruneModes;
 use reth_stages::{sets::DefaultStages, test_utils::TestStages, ExecOutput, Pipeline, StageError};
 use reth_static_file::StaticFileProducer;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_tasks::TokioTaskExecutor;
 use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{oneshot, watch};
-use reth_taiko_engine_types::TaikoExecutionPayload;
 
 type DatabaseEnv = TempDatabase<DE>;
 

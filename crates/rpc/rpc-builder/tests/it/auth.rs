@@ -20,11 +20,15 @@ where
 {
     let block = Block::default().seal_slow();
     EngineApiClient::new_payload_v1(client, block_to_payload_v1(block.clone())).await;
-    EngineApiClient::new_payload_v2(client, TaikoExecutionPayloadInputV2 {
-        execution_payload: convert_block_to_payload_input_v2(block),
-        tx_hash: Default::default(),
-        withdrawals_hash: Default::default(),
-    }).await;
+    EngineApiClient::new_payload_v2(
+        client,
+        TaikoExecutionPayloadInputV2 {
+            execution_payload: convert_block_to_payload_input_v2(block),
+            tx_hash: Default::default(),
+            withdrawals_hash: Default::default(),
+        },
+    )
+    .await;
     EngineApiClient::fork_choice_updated_v1(client, ForkchoiceState::default(), None).await;
     EngineApiClient::get_payload_v1(client, PayloadId::new([0, 0, 0, 0, 0, 0, 0, 0])).await;
     EngineApiClient::get_payload_v2(client, PayloadId::new([0, 0, 0, 0, 0, 0, 0, 0])).await;
