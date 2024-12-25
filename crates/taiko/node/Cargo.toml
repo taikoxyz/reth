@@ -24,6 +24,7 @@ reth-trie-db.workspace = true
 reth-primitives = { workspace = true, features = ["taiko"] }
 reth-rpc.workspace = true
 reth-payload-primitives.workspace = true
+reth-rpc-api.workspace = true
 
 # taiko
 reth-taiko-consensus.workspace = true

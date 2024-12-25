@@ -3,7 +3,7 @@
 use alloy_primitives::{uint, Address, TxKind, U256};
 use eyre::{bail, ensure, eyre, OptionExt, Result};
 use once_cell::sync::Lazy;
-use reth_primitives::{Block, Header, TransactionSigned};
+use reth_primitives::{Header, TransactionSigned};
 use std::str::FromStr;
 
 /// Anchor tx gas limit

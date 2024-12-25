@@ -31,6 +31,9 @@ reth-transaction-pool.workspace = true
 reth-evm.workspace = true
 reth-engine-primitives.workspace = true
 
+# taiko
+reth-taiko-rpc.workspace = true
+
 # rpc/net
 jsonrpsee = { workspace = true, features = ["server"] }
 tower-http = { workspace = true, features = ["full"] }

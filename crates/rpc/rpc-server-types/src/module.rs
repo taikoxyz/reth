@@ -271,6 +271,8 @@ pub enum RethRpcModule {
     Flashbots,
     /// `miner_` module
     Miner,
+    /// `taiko_` module
+    Taiko,
 }
 
 // === impl RethRpcModule ===

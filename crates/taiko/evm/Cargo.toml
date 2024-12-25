@@ -37,7 +37,6 @@ revm = { workspace = true, features = ["taiko"] }
 revm-primitives = { workspace = true, features = ["taiko"] }
 
 # misc
-derive_more.workspace = true
 tracing.workspace = true
 flate2.workspace = true
 
@@ -60,6 +59,5 @@ std = [
     "alloy-primitives/std",
     "revm-primitives/std",
     "revm/std",
-    "derive_more/std",
     "reth-taiko-forks/std",
 ]

@@ -5,37 +5,33 @@ use alloy_eips::{
 use alloy_network::Network;
 use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rpc_types_eth::{
-    Block as RpcBlock, EIP1186AccountProofResponse, Header as RpcHeader, Transaction,
+    Block as RpcBlock, BlockTransactionsKind, EIP1186AccountProofResponse, Header as RpcHeader,
+    Transaction,
 };
 use async_trait::async_trait;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use reth_chainspec::EthereumHardforks;
-use reth_errors::{BlockExecutionError, BlockValidationError, ProviderError, RethError};
+use reth_errors::RethError;
 use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_node_api::NodePrimitives;
 use reth_primitives::{Block, BlockBody, BlockExt as _, SealedBlockWithSenders, TransactionSigned};
-use reth_primitives_traits::{Block as _, BlockBody as _, SignedTransaction};
 use reth_provider::{
-    BlockExecutionInput, BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReaderIdExt,
-    ChainSpecProvider, EvmEnvProvider, L1OriginReader, ProviderBlock, StateProviderFactory,
-    TaskResult, TransactionsProvider,
+    BlockExecutionInput, BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReader,
+    BlockReaderIdExt, ChainSpecProvider, HeaderProvider, L1OriginReader, StateProofProvider,
+    StateProviderFactory, TaskResult, TransactionsProvider,
 };
 use reth_revm::database::StateProviderDatabase;
 use reth_rpc_eth_api::{
     helpers::{SpawnBlocking, TraceExt},
-    EthApiTypes, FromEthApiError, RpcNodeCore, TransactionCompat,
+    EthApiTypes, FromEthApiError, RpcNodeCore,
 };
 use reth_rpc_eth_types::EthApiError;
 use reth_rpc_server_types::ToRpcResult;
-use reth_rpc_types_compat::transaction::from_recovered;
-use reth_taiko_chainspec::TaikoChainSpec;
+use reth_rpc_types_compat::{block::from_block, transaction::from_recovered};
 use reth_taiko_primitives::L1Origin;
-use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner};
-use reth_transaction_pool::{
-    BestTransactionsAttributes, PoolConsensusTx, PoolTransaction, TransactionPool,
-};
-use revm::db::CacheDB;
-use revm_primitives::{BlockEnv, CfgEnvWithHandlerCfg};
+use reth_tasks::pool::BlockingTaskGuard;
+use reth_transaction_pool::{BestTransactionsAttributes, TransactionPool};
+use revm::db::{BundleState, CacheDB};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -46,7 +42,8 @@ use tokio::sync::{AcquireError, OwnedSemaphorePermit};
 use tracing::debug;
 
 /// Taiko rpc interface.
-#[rpc(server, client, namespace = "taiko")]
+#[cfg_attr(not(feature = "client"), rpc(server, namespace = "taiko"))]
+#[cfg_attr(feature = "client", rpc(server, client, namespace = "taiko"))]
 pub trait TaikoApi {
     /// HeadL1Origin returns the latest L2 block's corresponding L1 origin.
     #[method(name = "headL1Origin")]
@@ -64,7 +61,8 @@ pub trait TaikoApi {
 }
 
 /// Taiko rpc interface.
-#[rpc(server, client, namespace = "taikoAuth")]
+#[cfg_attr(not(feature = "client"), rpc(server, namespace = "taikoAuth"))]
+#[cfg_attr(feature = "client", rpc(server, client, namespace = "taikoAuth"))]
 pub trait TaikoAuthApi {
     /// Get the transaction pool content.
     #[method(name = "txPoolContent")]
@@ -209,6 +207,7 @@ impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
         &self.inner.eth_api
     }
 
+    /// Access the underlying `BlockExecutor`.
     pub fn block_executor(&self) -> &BlockExecutor {
         &self.inner.block_executor
     }
@@ -240,12 +239,112 @@ impl<Eth, BlockExecutor> Clone for TaikoAuthApi<Eth, BlockExecutor> {
 impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor>
 where
     Eth: EthApiTypes + TraceExt + 'static,
-    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned> + 'static,
+    <Eth as EthApiTypes>::NetworkTypes: Network<TransactionResponse = Transaction>,
+    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned>
+        + BlockReader<Block = Block>
+        + 'static,
     BlockExecutor: BlockExecutorProvider<Primitives: NodePrimitives<Block = Block>>,
 {
     /// Acquires a permit to execute a tracing call.
     async fn acquire_trace_permit(&self) -> Result<OwnedSemaphorePermit, AcquireError> {
         self.inner.blocking_task_guard.clone().acquire_owned().await
+    }
+
+    fn get_block_info(
+        &self,
+        block_number: u64,
+    ) -> Result<(SealedBlockWithSenders, U256), Eth::Error> {
+        let block = self
+            .provider()
+            .sealed_block_with_senders(block_number.into(), Default::default())
+            .map_err(Eth::Error::from_eth_err)?
+            .ok_or_else(|| EthApiError::HeaderNotFound(block_number.into()))?;
+        let mut total_difficulty = self
+            .provider()
+            .header_td_by_number(block.number())
+            .map_err(Eth::Error::from_eth_err)?;
+        if total_difficulty.is_none() {
+            // if we failed to find td after we successfully loaded the block, try again using
+            // the hash this only matters if the chain is currently transitioning the merge block and there's a reorg: <https://github.com/paradigmxyz/reth/issues/10941>
+            total_difficulty =
+                self.provider().header_td(&block.hash()).map_err(Eth::Error::from_eth_err)?;
+        }
+        Ok((block, total_difficulty.unwrap_or_default()))
+    }
+
+    async fn preflight(&self, block_id: BlockId) -> Result<ProvingPreflight, Eth::Error> {
+        let block_number = self
+            .provider()
+            .block_number_for_id(block_id)
+            .map_err(Eth::Error::from_eth_err)?
+            .ok_or_else(|| EthApiError::HeaderNotFound(block_id))?;
+        if block_number == 0 {
+            return Err(EthApiError::HeaderNotFound(block_id).into());
+        }
+        let parent_block_number = block_number - 1;
+
+        let this = self.clone();
+        self.eth_api()
+            .spawn_with_state_at_block(parent_block_number.into(), move |parent_state| {
+                let mut db =  CacheDB::new(StateProviderDatabase::new(parent_state));
+                let (block, total_difficulty) = this.get_block_info(block_number)?;
+                let block_hash = block.hash();
+                let parent_hash = block.parent_hash();
+                let (parent_block, parent_total_difficulty) = this.get_block_info(parent_block_number)?;
+
+                debug!(target: "taiko::api", transactions = ?&block.body, "before executing transactions");
+                // execute the block
+                let block = block.unseal();
+                let parent_block = parent_block.unseal();
+                let BlockExecutionOutput { state, .. } =
+                    this.block_executor().executor(&mut db).execute((&block, total_difficulty).into()).map_err(|err|EthApiError::Internal(err.into()))?;
+                let rpc_block = from_block(block,total_difficulty,BlockTransactionsKind::Full, Some(block_hash), this.eth_api().tx_resp_builder())?;
+                let rpc_parent_block =  from_block(parent_block, parent_total_difficulty, BlockTransactionsKind::Full, Some(parent_hash), this.eth_api().tx_resp_builder())?;
+
+                let BundleState { state: bundle_state, contracts,.. } = state;
+
+                let state = this.eth_api().state_at_block_id(block_hash.into())?;
+                let parent_state = db.db.into_inner();
+
+                let mut  ancestor_headers = vec![];
+
+                for (touched_block_number, touched_block_hash) in db.block_hashes {
+                    let (touched_block, touched_total_difficulty) =  this.get_block_info(touched_block_number.try_into().unwrap())?;
+                    let rpc_touched_block = from_block(touched_block.unseal(), touched_total_difficulty, BlockTransactionsKind::Full, Some(touched_block_hash), this.eth_api().tx_resp_builder())?;
+                    ancestor_headers.push(rpc_touched_block.header);
+                }
+
+
+                let mut account_proofs = vec![];
+                let mut parent_account_proofs = vec![];
+
+                for (address, account) in bundle_state {
+                    let storage_keys: Vec<B256> = account.storage.into_keys().map(|key| key.into()).collect::<Vec<_>>();
+                    let keys = storage_keys.clone().into_iter().map(|key| key.into()).collect::<Vec<_>>();
+
+                    let parent_proof = parent_state
+                        .proof(Default::default(), address, storage_keys.as_slice())
+                        .map_err(Eth::Error::from_eth_err)?;
+                    parent_account_proofs.push(parent_proof.into_eip1186_response(keys.clone()));
+
+                    let proof = state
+                        .proof(Default::default(), address, storage_keys.as_slice())
+                        .map_err(Eth::Error::from_eth_err)?;
+                    account_proofs.push(proof.into_eip1186_response(keys));
+                }
+
+
+                Ok(ProvingPreflight{
+                    block: rpc_block,
+                    parent_header: rpc_parent_block.header,
+                    account_proofs,
+                    parent_account_proofs,
+                    contracts: contracts.into_iter().map(|(k, v)| (k, v.original_bytes())).collect(),
+                    ancestor_headers,
+                })
+
+            })
+            .await
     }
 
     async fn pool_content(
@@ -381,7 +480,9 @@ impl<Eth, BlockExecutor> TaikoAuthApiServer for TaikoAuthApi<Eth, BlockExecutor>
 where
     Eth: EthApiTypes + TraceExt + 'static,
     <Eth as EthApiTypes>::NetworkTypes: Network<TransactionResponse = Transaction>,
-    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned> + 'static,
+    <Eth as RpcNodeCore>::Provider: TransactionsProvider<Transaction = TransactionSigned>
+        + BlockReader<Block = Block>
+        + 'static,
     BlockExecutor: BlockExecutorProvider<Primitives: NodePrimitives<Block = Block>>,
 {
     /// TxPoolContent retrieves the transaction pool content with the given upper limits.
@@ -417,7 +518,11 @@ where
         max_transactions_lists: u64,
         min_tip: u64,
     ) -> RpcResult<Vec<PreBuiltTxList>> {
-        let _permit = self.acquire_trace_permit().await;
+        let _permit = self
+            .acquire_trace_permit()
+            .await
+            .map_err(RethError::other)
+            .map_err(EthApiError::Internal)?;
         debug!(
             target: "rpc::taiko",
             ?beneficiary,
@@ -463,12 +568,14 @@ where
     }
 
     async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight> {
-        let _permit = self.acquire_trace_permit().await;
-        self.eth_api().spawn_with_state_at_block(block_id, move |this| todo!()).await;
-        // debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
-        // let res = self.taiko_impl_client.proving_pre_flight(block_id).await.to_rpc_result();
-        // debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
-        // res
-        todo!()
+        let _permit = self
+            .acquire_trace_permit()
+            .await
+            .map_err(RethError::other)
+            .map_err(EthApiError::Internal)?;
+        debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
+        let res = self.preflight(block_id).await.map_err(Into::into);
+        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
+        res
     }
 }

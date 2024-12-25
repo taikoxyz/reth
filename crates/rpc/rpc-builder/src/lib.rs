@@ -247,6 +247,7 @@ use reth_rpc_eth_api::{
 };
 use reth_rpc_eth_types::{EthConfig, EthStateCache, EthSubscriptionIdProvider};
 use reth_rpc_layer::{AuthLayer, Claims, CompressionLayer, JwtAuthValidator, JwtSecret};
+use reth_taiko_rpc::{TaikoApi, TaikoAuthApi};
 use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner, TokioTaskExecutor};
 use reth_transaction_pool::{noop::NoopTransactionPool, PoolTransaction, TransactionPool};
 use serde::{Deserialize, Serialize};
@@ -1405,6 +1406,13 @@ where
         let eth_handlers = self.eth_handlers();
         let engine_eth = EngineEthApi::new(eth_handlers.api.clone(), eth_handlers.filter.clone());
 
+        let taiko_auth = TaikoAuthApi::new(
+            self.eth.api.clone(),
+            self.blocking_pool_guard.clone(),
+            self.block_executor.clone(),
+        );
+        module.merge(taiko_auth.into_rpc()).expect("No conflicting methods");
+
         module.merge(engine_eth.into_rpc()).expect("No conflicting methods");
 
         AuthRpcModule { inner: module }
@@ -1481,6 +1489,7 @@ where
                         )
                         .into_rpc()
                         .into(),
+                        RethRpcModule::Taiko => TaikoApi::new(eth_api.clone()).into_rpc().into(),
                         RethRpcModule::Eth => {
                             // merge all eth handlers
                             let mut module = eth_api.clone().into_rpc();

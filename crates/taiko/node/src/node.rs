@@ -10,9 +10,10 @@ use reth_node_builder::{
         PayloadServiceBuilder, PoolBuilder,
     },
     node::{FullNodeTypes, NodeTypes},
-    rpc::{EngineValidatorBuilder, RpcAddOns},
-    AddOnsContext, BuilderContext, FullNodeComponents, Node, NodeAdapter, NodeComponentsBuilder,
-    NodeTypesWithDB, NodeTypesWithEngine, PayloadBuilderConfig, PayloadTypes, TxTy,
+    rpc::{EngineValidatorBuilder, RpcAddOns, RpcHandle},
+    AddOnsContext, BuilderContext, EngineValidator, FullNodeComponents, Node, NodeAdapter,
+    NodeAddOns, NodeComponentsBuilder, NodeTypesWithDB, NodeTypesWithEngine, PayloadBuilderConfig,
+    PayloadTypes, TxTy,
 };
 use reth_payload_builder::{EthBuiltPayload, PayloadBuilderHandle, PayloadBuilderService};
 use reth_primitives::{EthPrimitives, PooledTransactionsElement};
