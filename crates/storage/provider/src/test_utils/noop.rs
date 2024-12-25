@@ -27,16 +27,14 @@ use reth_primitives::{
 };
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::{StageCheckpoint, StageId};
-use reth_storage_api::{
-    HashedPostStateProvider, NodePrimitivesProvider, StateProofProvider, StorageRootProvider,
-};
+use reth_storage_api::{HashedPostStateProvider, L1OriginReader, L1OriginWriter, NodePrimitivesProvider, StateProofProvider, StorageRootProvider};
 use reth_storage_errors::provider::ProviderResult;
 use reth_trie::{
     updates::TrieUpdates, AccountProof, HashedPostState, HashedStorage, MultiProof, TrieInput,
 };
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use tokio::sync::{broadcast, watch};
-
+use reth_taiko_primitives::L1Origin;
 use crate::{
     providers::StaticFileProvider,
     traits::{BlockSource, ReceiptProvider},
@@ -593,5 +591,21 @@ impl ForkChoiceSubscriptions for NoopProvider {
     fn subscribe_finalized_block(&self) -> ForkChoiceNotifications {
         let (_, rx) = watch::channel(None);
         ForkChoiceNotifications(rx)
+    }
+}
+
+impl L1OriginReader for NoopProvider {
+    fn get_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+}
+
+impl L1OriginWriter for NoopProvider {
+    fn save_l1_origin(&self, _block_number: BlockNumber, _l1_origin: L1Origin) -> ProviderResult<()> {
+        todo!()
     }
 }
