@@ -36,6 +36,7 @@ reth-rpc-eth-types.workspace = true
 reth-rpc-server-types.workspace = true
 reth-network-types.workspace = true
 reth-consensus.workspace = true
+reth-beacon-consensus.workspace = true
 
 # ethereum
 alloy-consensus.workspace = true
@@ -49,7 +50,10 @@ alloy-primitives.workspace = true
 alloy-rlp.workspace = true
 alloy-rpc-types-beacon.workspace = true
 alloy-rpc-types.workspace = true
-alloy-rpc-types-eth = { workspace = true, features = ["jsonrpsee-types", "serde"] }
+alloy-rpc-types-eth = { workspace = true, features = [
+    "jsonrpsee-types",
+    "serde",
+] }
 alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-trace.workspace = true
 alloy-rpc-types-mev.workspace = true

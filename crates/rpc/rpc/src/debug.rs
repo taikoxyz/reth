@@ -3,6 +3,7 @@ use alloy_eips::{eip2718::Encodable2718, BlockId, BlockNumberOrTag};
 use alloy_primitives::{Address, Bytes, B256, U256};
 use alloy_rlp::{Decodable, Encodable};
 use alloy_rpc_types_debug::ExecutionWitness;
+use alloy_rpc_types_engine::ForkchoiceState;
 use alloy_rpc_types_eth::{
     state::EvmOverrides, transaction::TransactionRequest, Block as RpcBlock, BlockError, Bundle,
     StateContext, TransactionInfo,
@@ -14,7 +15,9 @@ use alloy_rpc_types_trace::geth::{
 };
 use async_trait::async_trait;
 use jsonrpsee::core::RpcResult;
+use reth_beacon_consensus::BeaconConsensusEngineHandle;
 use reth_chainspec::EthereumHardforks;
+use reth_engine_primitives::{EngineApiMessageVersion, EngineTypes};
 use reth_evm::{
     execute::{BlockExecutorProvider, Executor},
     ConfigureEvmEnv,
@@ -25,6 +28,7 @@ use reth_provider::{
     BlockIdReader, BlockReaderIdExt, ChainSpecProvider, HeaderProvider, ProviderBlock,
     ReceiptProviderIdExt, StateProofProvider, TransactionVariant,
 };
+
 use reth_revm::{database::StateProviderDatabase, witness::ExecutionWitnessRecord};
 use reth_rpc_api::DebugApiServer;
 use reth_rpc_eth_api::{
@@ -41,26 +45,34 @@ use revm::{
 use revm_inspectors::tracing::{
     FourByteInspector, MuxInspector, TracingInspector, TracingInspectorConfig, TransactionContext,
 };
-use std::sync::Arc;
-use tokio::sync::{AcquireError, OwnedSemaphorePermit};
-
+use std::{sync::Arc, time::Duration};
+use tokio::{
+    sync::{AcquireError, OwnedSemaphorePermit},
+    time::sleep,
+};
 /// `debug` API implementation.
 ///
 /// This type provides the functionality for handling `debug` related requests.
-pub struct DebugApi<Eth, BlockExecutor> {
-    inner: Arc<DebugApiInner<Eth, BlockExecutor>>,
+pub struct DebugApi<Eth, BlockExecutor, EngineT: EngineTypes> {
+    inner: Arc<DebugApiInner<Eth, BlockExecutor, EngineT>>,
 }
 
 // === impl DebugApi ===
 
-impl<Eth, BlockExecutor> DebugApi<Eth, BlockExecutor> {
+impl<Eth, BlockExecutor, EngineT: EngineTypes> DebugApi<Eth, BlockExecutor, EngineT> {
     /// Create a new instance of the [`DebugApi`]
     pub fn new(
         eth: Eth,
         blocking_task_guard: BlockingTaskGuard,
         block_executor: BlockExecutor,
+        beacon_consensus: BeaconConsensusEngineHandle<EngineT>,
     ) -> Self {
-        let inner = Arc::new(DebugApiInner { eth_api: eth, blocking_task_guard, block_executor });
+        let inner = Arc::new(DebugApiInner {
+            eth_api: eth,
+            blocking_task_guard,
+            block_executor,
+            beacon_consensus,
+        });
         Self { inner }
     }
 
@@ -70,7 +82,7 @@ impl<Eth, BlockExecutor> DebugApi<Eth, BlockExecutor> {
     }
 }
 
-impl<Eth: RpcNodeCore, BlockExecutor> DebugApi<Eth, BlockExecutor> {
+impl<Eth: RpcNodeCore, BlockExecutor, EngineT: EngineTypes> DebugApi<Eth, BlockExecutor, EngineT> {
     /// Access the underlying provider.
     pub fn provider(&self) -> &Eth::Provider {
         self.inner.eth_api.provider()
@@ -79,7 +91,7 @@ impl<Eth: RpcNodeCore, BlockExecutor> DebugApi<Eth, BlockExecutor> {
 
 // === impl DebugApi ===
 
-impl<Eth, BlockExecutor> DebugApi<Eth, BlockExecutor>
+impl<Eth, BlockExecutor, EngineT: EngineTypes> DebugApi<Eth, BlockExecutor, EngineT>
 where
     Eth: EthApiTypes + TraceExt + 'static,
     BlockExecutor:
@@ -808,7 +820,8 @@ where
 }
 
 #[async_trait]
-impl<Eth, BlockExecutor> DebugApiServer for DebugApi<Eth, BlockExecutor>
+impl<Eth, BlockExecutor, EngineT: EngineTypes> DebugApiServer
+    for DebugApi<Eth, BlockExecutor, EngineT>
 where
     Eth: EthApiTypes + EthTransactions + TraceExt + 'static,
     BlockExecutor:
@@ -1100,7 +1113,29 @@ where
         Ok(())
     }
 
-    async fn debug_set_head(&self, _number: u64) -> RpcResult<()> {
+    async fn debug_set_head(&self, number: u64) -> RpcResult<()> {
+        let block_hash = self
+            .provider()
+            .block_hash_for_id(number.into())
+            .map_err(Eth::Error::from_eth_err)
+            .map_err(Into::into)?
+            .ok_or_else(|| EthApiError::HeaderNotFound(number.into()))?;
+
+        self.inner
+            .beacon_consensus
+            .debug_fork_choice_updated(
+                ForkchoiceState {
+                    head_block_hash: block_hash,
+                    safe_block_hash: block_hash,
+                    finalized_block_hash: block_hash,
+                },
+                None,
+                EngineApiMessageVersion::V2,
+            )
+            .await
+            .map_err(|op| internal_rpc_err(op.to_string()))
+            .map_err(EthApiError::other)?;
+        sleep(Duration::from_secs(1)).await;
         Ok(())
     }
 
@@ -1188,23 +1223,27 @@ where
     }
 }
 
-impl<Eth, BlockExecutor> std::fmt::Debug for DebugApi<Eth, BlockExecutor> {
+impl<Eth, BlockExecutor, EngineT: EngineTypes> std::fmt::Debug
+    for DebugApi<Eth, BlockExecutor, EngineT>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DebugApi").finish_non_exhaustive()
     }
 }
 
-impl<Eth, BlockExecutor> Clone for DebugApi<Eth, BlockExecutor> {
+impl<Eth, BlockExecutor, EngineT: EngineTypes> Clone for DebugApi<Eth, BlockExecutor, EngineT> {
     fn clone(&self) -> Self {
         Self { inner: Arc::clone(&self.inner) }
     }
 }
 
-struct DebugApiInner<Eth, BlockExecutor> {
+struct DebugApiInner<Eth, BlockExecutor, EngineT: EngineTypes> {
     /// The implementation of `eth` API
     eth_api: Eth,
     // restrict the number of concurrent calls to blocking calls
     blocking_task_guard: BlockingTaskGuard,
     /// block executor for debug & trace apis
     block_executor: BlockExecutor,
+
+    beacon_consensus: BeaconConsensusEngineHandle<EngineT>,
 }

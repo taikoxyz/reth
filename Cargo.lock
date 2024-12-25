@@ -8981,6 +8981,7 @@ dependencies = [
  "parking_lot",
  "pin-project",
  "rand 0.8.5",
+ "reth-beacon-consensus",
  "reth-chainspec",
  "reth-consensus",
  "reth-consensus-common",
