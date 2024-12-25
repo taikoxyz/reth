@@ -21,3 +21,4 @@ eyre.workspace = true
 parking_lot.workspace = true
 schnellru.workspace = true
 tokio.workspace = true
+reth-evm.workspace = true

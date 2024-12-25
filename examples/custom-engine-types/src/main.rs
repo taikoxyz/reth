@@ -42,7 +42,7 @@ use reth::{
     providers::{CanonStateSubscriptions, EthStorage, StateProviderFactory},
     rpc::{
         eth::EthApi,
-        types::engine::{ExecutionPayload, ExecutionPayloadSidecar, PayloadError},
+        types::engine::{ExecutionPayloadSidecar, PayloadError},
     },
     tasks::TaskManager,
     transaction_pool::{PoolTransaction, TransactionPool},

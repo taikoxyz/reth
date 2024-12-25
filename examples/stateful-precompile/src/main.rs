@@ -32,6 +32,7 @@ use reth_primitives::{EthPrimitives, TransactionSigned};
 use reth_tracing::{RethTracer, Tracer};
 use schnellru::{ByLength, LruMap};
 use std::{collections::HashMap, convert::Infallible, sync::Arc};
+use reth_evm::EnvExt;
 
 /// Type alias for the LRU cache used within the [`PrecompileCache`].
 type PrecompileLRUCache = LruMap<(Bytes, u64), PrecompileResult>;
@@ -151,8 +152,8 @@ impl ConfigureEvmEnv for MyEvmConfig {
     type Transaction = TransactionSigned;
     type Error = Infallible;
 
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
-        self.inner.fill_tx_env(tx_env, transaction, sender)
+    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address, ext: Option<EnvExt<'_>>) {
+        self.inner.fill_tx_env(tx_env, transaction, sender, ext)
     }
 
     fn fill_tx_env_system_contract_call(

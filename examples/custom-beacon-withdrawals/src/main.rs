@@ -6,8 +6,6 @@
 use alloy_eips::{eip4895::Withdrawal, eip7685::Requests};
 use alloy_sol_macro::sol;
 use alloy_sol_types::SolCall;
-#[cfg(feature = "optimism")]
-use reth::revm::primitives::OptimismFields;
 use reth::{
     api::{ConfigureEvm, ConfigureEvmEnv, NodeTypesWithEngine},
     builder::{components::ExecutorBuilder, BuilderContext, FullNodeTypes},
@@ -160,9 +158,9 @@ where
 
     fn execute_transactions(
         &mut self,
-        input: BlockExecutionInput<'_, BlockWithSenders>,
+        _input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
-        Ok(ExecuteOutput { receipts: vec![], gas_used: 0, target_list: vec![], skipped_list: vec![] })
+        Ok(ExecuteOutput { receipts: vec![], gas_used: 0, skipped_list: vec![] })
     }
 
     fn apply_post_execution_changes(
@@ -269,8 +267,7 @@ fn fill_tx_env_with_system_contract_call(
         blob_hashes: Vec::new(),
         max_fee_per_blob_gas: None,
         authorization_list: None,
-        #[cfg(feature = "optimism")]
-        optimism: OptimismFields::default(),
+        taiko: Default::default(),
     };
 
     // ensure the block gas limit is >= the tx

@@ -36,6 +36,7 @@ use reth_node_ethereum::{
 use reth_primitives::{EthPrimitives, TransactionSigned};
 use reth_tracing::{RethTracer, Tracer};
 use std::{convert::Infallible, sync::Arc};
+use reth_evm::EnvExt;
 
 /// Custom EVM configuration
 #[derive(Debug, Clone)]
@@ -88,8 +89,8 @@ impl ConfigureEvmEnv for MyEvmConfig {
 
     type Error = Infallible;
 
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
-        self.inner.fill_tx_env(tx_env, transaction, sender);
+    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address, ext: Option<EnvExt<'_>>) {
+        self.inner.fill_tx_env(tx_env, transaction, sender, ext);
     }
 
     fn fill_tx_env_system_contract_call(
