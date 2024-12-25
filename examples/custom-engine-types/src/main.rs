@@ -74,6 +74,7 @@ use reth_trie_db::MerklePatriciaTrie;
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, sync::Arc};
 use thiserror::Error;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// A custom payload attributes type.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -194,7 +195,7 @@ impl PayloadValidator for CustomEngineValidator {
 
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlockFor<Self::Block>, PayloadError> {
         self.inner.ensure_well_formed_payload(payload, sidecar)

@@ -2977,6 +2977,7 @@ dependencies = [
  "reth-node-core",
  "reth-node-ethereum",
  "reth-payload-builder",
+ "reth-taiko-engine-types",
  "reth-tracing",
  "reth-trie-db",
  "serde",
@@ -6580,7 +6581,6 @@ dependencies = [
  "serde_json",
  "similar-asserts",
  "tempfile",
- "test-fuzz",
  "tokio",
  "tracing",
 ]
