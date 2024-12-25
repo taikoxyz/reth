@@ -4,6 +4,7 @@ use crate::TaikoEvmConfig;
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use alloy_consensus::{Header, Transaction as _};
 use alloy_eips::eip7685::Requests;
+use alloy_rlp::Encodable;
 use core::fmt::Display;
 use flate2::{write::ZlibEncoder, Compression};
 use reth_chainspec::{EthereumHardfork, EthereumHardforks};
@@ -20,7 +21,7 @@ use reth_evm::{
     ConfigureEvm, EnvExt, TxEnvOverrides,
 };
 use reth_evm_ethereum::dao_fork::{DAO_HARDFORK_BENEFICIARY, DAO_HARDKFORK_ACCOUNTS};
-use reth_execution_types::{BlockExecutionInput, TaskResult};
+use reth_execution_types::BlockExecutionInput;
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt, TransactionSigned};
 use reth_revm::{Database, State};
 use reth_taiko_chainspec::TaikoChainSpec;
@@ -108,79 +109,6 @@ where
 impl<DB, EvmConfig> TaikoExecutionStrategy<DB, EvmConfig>
 where
     DB: Database<Error: Into<ProviderError> + Display>,
-    EvmConfig: ConfigureEvm<Header = alloy_consensus::Header, Transaction = TransactionSigned>,
-{
-    fn build_transaction_list(
-        &mut self,
-        block: &BlockWithSenders,
-        max_bytes_per_tx_list: u64,
-        max_transactions_lists: u64,
-        total_difficulty: U256,
-    ) -> Result<Vec<TaskResult>, BlockExecutionError> {
-        let env = self.evm_env_for_block(&block.header, total_difficulty);
-        let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
-        let mut target_list: Vec<TaskResult> = vec![];
-        // get previous env
-        let previous_env = Box::new(evm.context.env().clone());
-
-        for _ in 0..max_transactions_lists {
-            // evm.context.evm.db.commit(state);
-            // re-set the previous env
-            evm.context.evm.env = previous_env.clone();
-
-            let mut cumulative_gas_used = 0;
-            let mut tx_list: Vec<TransactionSigned> = vec![];
-            let mut buf_len: u64 = 0;
-
-            for i in 0..block.body.transactions.len() {
-                let transaction = &block.body.transactions[i];
-                let sender = block.senders.get(i).unwrap();
-                let block_available_gas = block.header.gas_limit - cumulative_gas_used;
-                if transaction.gas_limit() > block_available_gas {
-                    break;
-                }
-
-                self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender, None);
-
-                // Execute transaction.
-                let ResultAndState { result, state } = match evm.transact() {
-                    Ok(res) => res,
-                    Err(_) => continue,
-                };
-                tx_list.push(transaction.clone());
-
-                let compressed_buf =
-                    encode_and_compress_tx_list(&tx_list).map_err(BlockExecutionError::other)?;
-                if compressed_buf.len() > max_bytes_per_tx_list as usize {
-                    tx_list.pop();
-                    break;
-                }
-
-                buf_len = compressed_buf.len() as u64;
-                // append gas used
-                cumulative_gas_used += result.gas_used();
-
-                // collect executed transaction state
-                evm.db_mut().commit(state);
-            }
-
-            if tx_list.is_empty() {
-                break;
-            }
-            target_list.push(TaskResult {
-                txs: tx_list,
-                estimated_gas_used: cumulative_gas_used,
-                bytes_length: buf_len,
-            });
-        }
-
-        Ok(target_list)
-    }
-}
-
-impl<DB, EvmConfig> TaikoExecutionStrategy<DB, EvmConfig>
-where
-    DB: Database<Error: Into<ProviderError> + Display>,
     EvmConfig: ConfigureEvm<Header = alloy_consensus::Header>,
 {
     /// Configures a new evm configuration and block environment for the given block.
@@ -228,30 +156,7 @@ where
         &mut self,
         input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
-        let BlockExecutionInput {
-            block,
-            total_difficulty,
-            enable_anchor,
-            enable_skip,
-            enable_build,
-            max_bytes_per_tx_list,
-            max_transactions_lists,
-        } = input;
-
-        if enable_build {
-            let target_list = self.build_transaction_list(
-                block,
-                max_bytes_per_tx_list,
-                max_transactions_lists,
-                total_difficulty,
-            )?;
-            return Ok(ExecuteOutput {
-                receipts: vec![],
-                gas_used: 0,
-                target_list,
-                skipped_list: vec![],
-            });
-        }
+        let BlockExecutionInput { block, total_difficulty, enable_anchor, enable_skip } = input;
 
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
@@ -352,12 +257,7 @@ where
                 },
             );
         }
-        Ok(ExecuteOutput {
-            receipts,
-            gas_used: cumulative_gas_used,
-            skipped_list,
-            target_list: vec![],
-        })
+        Ok(ExecuteOutput { receipts, gas_used: cumulative_gas_used, skipped_list })
     }
 
     fn apply_post_execution_changes(
@@ -451,7 +351,8 @@ impl TaikoExecutorProvider {
     }
 }
 
-fn encode_and_compress_tx_list(txs: &Vec<TransactionSigned>) -> io::Result<Vec<u8>> {
+/// Encode and compress a list of transactions.
+pub fn encode_and_compress_tx_list<T: Encodable>(txs: &Vec<T>) -> io::Result<Vec<u8>> {
     let encoded_buf = alloy_rlp::encode(txs);
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(&encoded_buf)?;

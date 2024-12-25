@@ -247,7 +247,7 @@ use reth_rpc_eth_api::{
 };
 use reth_rpc_eth_types::{EthConfig, EthStateCache, EthSubscriptionIdProvider};
 use reth_rpc_layer::{AuthLayer, Claims, CompressionLayer, JwtAuthValidator, JwtSecret};
-use reth_taiko_rpc::{TaikoApi, TaikoAuthApi};
+use reth_taiko_rpc::{TaikoApi, TaikoApiServer, TaikoAuthApi, TaikoAuthApiServer};
 use reth_tasks::{pool::BlockingTaskGuard, TaskSpawner, TokioTaskExecutor};
 use reth_transaction_pool::{noop::NoopTransactionPool, PoolTransaction, TransactionPool};
 use serde::{Deserialize, Serialize};

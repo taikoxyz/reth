@@ -14,26 +14,12 @@ pub struct BlockExecutionInput<'a, Block> {
     pub enable_anchor: bool,
     /// Enable skip invalid transaction.
     pub enable_skip: bool,
-    /// Enable build transaction lists.
-    pub enable_build: bool,
-    /// Max compressed bytes.
-    pub max_bytes_per_tx_list: u64,
-    /// Max length of transactions list.
-    pub max_transactions_lists: u64,
 }
 
 impl<'a, Block> BlockExecutionInput<'a, Block> {
     /// Creates a new input.
     pub const fn new(block: &'a Block, total_difficulty: U256) -> Self {
-        Self {
-            block,
-            total_difficulty,
-            enable_anchor: true,
-            enable_skip: false,
-            enable_build: false,
-            max_bytes_per_tx_list: 0,
-            max_transactions_lists: 0,
-        }
+        Self { block, total_difficulty, enable_anchor: true, enable_skip: false }
     }
 }
 
@@ -41,17 +27,6 @@ impl<'a, Block> From<(&'a Block, U256)> for BlockExecutionInput<'a, Block> {
     fn from((block, total_difficulty): (&'a Block, U256)) -> Self {
         Self::new(block, total_difficulty)
     }
-}
-
-/// Result of the trigger
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TaskResult {
-    /// Transactions
-    pub txs: Vec<TransactionSigned>,
-    /// Estimated gas used
-    pub estimated_gas_used: u64,
-    /// Bytes length
-    pub bytes_length: u64,
 }
 
 /// The output of an ethereum block.
@@ -67,8 +42,6 @@ pub struct BlockExecutionOutput<T> {
     pub requests: Requests,
     /// The total gas used by the block.
     pub gas_used: u64,
-    /// The target list.
-    pub target_list: Vec<TaskResult>,
     /// The skipped transactions when `BlockExecutionInput::enable_skip`.
     pub skipped_list: Vec<usize>,
 }

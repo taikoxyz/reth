@@ -213,9 +213,6 @@ where
         total_difficulty: U256::ZERO,
         enable_anchor: true,
         enable_skip: true,
-        enable_build: false,
-        max_bytes_per_tx_list: 0,
-        max_transactions_lists: 0,
     };
     // execute the block
     let output = executor.executor(&mut db).execute(block_input)?;

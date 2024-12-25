@@ -29,6 +29,7 @@ reth-revm = { workspace = true, features = ["taiko"] }
 
 # taiko
 reth-taiko-primitives.workspace = true
+reth-taiko-evm.workspace = true
 
 # ethereum
 alloy-eips.workspace = true
@@ -46,6 +47,7 @@ async-trait.workspace = true
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 serde = { workspace = true, features = ["derive"] }
 tracing.workspace = true
+futures.workspace = true
 
 [dev-dependencies]
 reth-taiko-chainspec.workspace = true
