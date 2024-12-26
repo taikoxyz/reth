@@ -1241,7 +1241,7 @@ pub struct RpcModuleConfigBuilder {
 
 impl RpcModuleConfigBuilder {
     /// Configures a custom eth namespace config
-    pub const fn eth(mut self, eth: EthConfig) -> Self {
+    pub fn eth(mut self, eth: EthConfig) -> Self {
         self.eth = Some(eth);
         self
     }
@@ -1371,7 +1371,7 @@ where
             pool.clone(),
             network.clone(),
             evm_config,
-            config.eth,
+            config.eth.clone(),
             executor.clone(),
             events.clone(),
             eth_api_builder,
