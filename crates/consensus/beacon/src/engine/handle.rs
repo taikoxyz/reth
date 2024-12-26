@@ -27,6 +27,14 @@ where
     event_sender: EventSender<BeaconConsensusEngineEvent>,
 }
 
+impl<Engine: EngineTypes> BeaconConsensusEngineHandle<Engine> {
+    /// for testing
+    pub fn test() -> Self {
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
+        Self { to_engine: tx, event_sender: Default::default() }
+    }
+}
+
 // === impl BeaconConsensusEngineHandle ===
 
 impl<Engine> BeaconConsensusEngineHandle<Engine>

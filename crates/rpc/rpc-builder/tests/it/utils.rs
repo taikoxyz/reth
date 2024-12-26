@@ -139,8 +139,9 @@ pub fn test_rpc_builder() -> RpcModuleBuilder<
     EthEvmConfig,
     BasicBlockExecutorProvider<EthExecutionStrategyFactory>,
     NoopConsensus,
+    EthEngineTypes,
 > {
-    RpcModuleBuilder::default()
+    RpcModuleBuilder::<_, _, _, _, _, _, _, _, EthEngineTypes>::default()
         .with_provider(NoopProvider::default())
         .with_pool(TestPoolBuilder::default().into())
         .with_network(NoopNetwork::default())
@@ -150,5 +151,6 @@ pub fn test_rpc_builder() -> RpcModuleBuilder<
         .with_block_executor(
             BasicBlockExecutorProvider::new(EthExecutionStrategyFactory::mainnet()),
         )
+        .with_beacon_consensus(BeaconConsensusEngineHandle::<EthEngineTypes>::test())
         .with_consensus(NoopConsensus::default())
 }
