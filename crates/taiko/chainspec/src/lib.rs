@@ -33,7 +33,7 @@ pub(crate) use std::sync::LazyLock;
 
 use reth_taiko_forks::{
     TaikoHardfork, TaikoHardforks, CHAIN_HEKLA_TESTNET, CHAIN_INTERNAL_TESTNET,
-    CHAIN_KATLA_TESTNET, CHAIN_MAINNET,
+    CHAIN_KATLA_TESTNET, CHAIN_MAINNET, CHAIN_PERCONF_DEVNET,
 };
 
 // Taiko Chain Configuration, sets the chain_id to the internal devnet L2A by default.
@@ -114,6 +114,7 @@ pub fn get_taiko_genesis(chain: Chain) -> Genesis {
         }
         CHAIN_KATLA_TESTNET => include_str!("../res/genesis/katla.json"),
         CHAIN_HEKLA_TESTNET => include_str!("../res/genesis/hekla.json"),
+        CHAIN_PERCONF_DEVNET => include_str!("../res/genesis/preconf_devnet.json"),
         _ => panic!("Invalid chain"),
     };
 

@@ -856,4 +856,8 @@ impl L1OriginWriter for MockEthProvider {
     ) -> ProviderResult<()> {
         todo!()
     }
+
+    fn delete_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<()> {
+        todo!()
+    }
 }

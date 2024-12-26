@@ -10,6 +10,17 @@ use core::{
 use alloy_chains::Chain;
 use reth_ethereum_forks::{hardfork, EthereumHardfork, Hardfork};
 
+/// The chain for the Taiko mainnet.
+pub const CHAIN_MAINNET: Chain = Chain::taiko();
+/// The chain for the Taiko internal testnet.
+pub const CHAIN_INTERNAL_TESTNET: Chain = Chain::from_id_unchecked(167001);
+/// The chain for the Taiko katla testnet.
+pub const CHAIN_KATLA_TESTNET: Chain = Chain::from_id_unchecked(167008);
+/// The chain for the Taiko hekla testnet.
+pub const CHAIN_HEKLA_TESTNET: Chain = Chain::taiko_hekla();
+/// The chain for the Taiko preconf devnet.
+pub const CHAIN_PERCONF_DEVNET: Chain = Chain::from_id_unchecked(167010);
+
 hardfork!(
     /// The name of an taiko hardfork.
     ///
@@ -24,15 +35,6 @@ hardfork!(
         Ontake,
     }
 );
-
-/// The chain for the Taiko mainnet.
-pub const CHAIN_MAINNET: Chain = Chain::taiko();
-/// The chain for the Taiko internal testnet.
-pub const CHAIN_INTERNAL_TESTNET: Chain = Chain::from_id_unchecked(167001);
-/// The chain for the Taiko katla testnet.
-pub const CHAIN_KATLA_TESTNET: Chain = Chain::from_id_unchecked(167008);
-/// The chain for the Taiko hekla testnet.
-pub const CHAIN_HEKLA_TESTNET: Chain = Chain::taiko_hekla();
 
 impl TaikoHardfork {
     /// Retrieves the activation block for the specified hardfork on the given chain.

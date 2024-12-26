@@ -1,6 +1,8 @@
 use reth_cli::chainspec::{parse_genesis, ChainSpecParser};
 use reth_taiko_chainspec::{get_taiko_genesis, TaikoChainSpec};
-use reth_taiko_forks::{CHAIN_HEKLA_TESTNET, CHAIN_INTERNAL_TESTNET, CHAIN_MAINNET};
+use reth_taiko_forks::{
+    CHAIN_HEKLA_TESTNET, CHAIN_INTERNAL_TESTNET, CHAIN_MAINNET, CHAIN_PERCONF_DEVNET,
+};
 use std::sync::Arc;
 
 /// Optimism chain specification parser.
@@ -12,7 +14,7 @@ impl ChainSpecParser for TaikoChainSpecParser {
     type ChainSpec = TaikoChainSpec;
 
     const SUPPORTED_CHAINS: &'static [&'static str] =
-        &["hekla", "internal-a", "mainnet", "testnet"];
+        &["hekla", "internal-l2-a", "mainnet", "preconf-devnet"];
 
     fn parse(s: &str) -> eyre::Result<Arc<Self::ChainSpec>> {
         chain_value_parser(s)
@@ -26,8 +28,9 @@ impl ChainSpecParser for TaikoChainSpecParser {
 pub fn chain_value_parser(s: &str) -> eyre::Result<Arc<TaikoChainSpec>, eyre::Error> {
     Ok(Arc::new(match s {
         "hekla" => get_taiko_genesis(CHAIN_HEKLA_TESTNET).into(),
-        "internal-a" => get_taiko_genesis(CHAIN_INTERNAL_TESTNET).into(),
+        "internal-l2-a" => get_taiko_genesis(CHAIN_INTERNAL_TESTNET).into(),
         "mainnet" => get_taiko_genesis(CHAIN_MAINNET).into(),
+        "preconf-devnet" => get_taiko_genesis(CHAIN_PERCONF_DEVNET).into(),
         _ => parse_genesis(s)?.into(),
     }))
 }

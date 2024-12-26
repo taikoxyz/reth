@@ -56,6 +56,7 @@ pub struct L1Origin {
     pub l1_block_height: Option<U256>,
     /// The hash of the l1 block
     pub l1_block_hash: Option<B256>,
+    // preconf fields
     /// The batch id of the l1 block
     #[serde(rename = "batchID")]
     pub batch_id: Option<U256>,
@@ -67,29 +68,9 @@ pub struct L1Origin {
     pub preconfer: Option<Address>,
 }
 
-/// `L1Origin` represents a `L1Origin` of a L2 block.
-#[derive(
-    Debug,
-    Default,
-    Compact,
-    Serialize,
-    Deserialize,
-    Clone,
-    PartialEq,
-    Eq,
-    RlpDecodable,
-    RlpEncodable,
-)]
-#[serde(rename_all = "camelCase")]
-#[rlp(trailing)]
-pub struct L1OriginLegacy {
-    /// The block number of the l2 block
-    #[serde(rename = "blockID")]
-    pub block_id: U256,
-    /// The hash of the l2 block
-    pub l2_block_hash: B256,
-    /// The height of the l1 block
-    pub l1_block_height: Option<U256>,
-    /// The hash of the l1 block
-    pub l1_block_hash: Option<B256>,
+impl L1Origin {
+    /// Returns true if the `L1Origin` is a softblock
+    pub const fn is_softblock(&self) -> bool {
+        self.batch_id.is_some()
+    }
 }
