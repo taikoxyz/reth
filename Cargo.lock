@@ -9506,6 +9506,7 @@ dependencies = [
  "reth-ethereum-consensus",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-provider",
  "revm-primitives",
 ]
 
@@ -9580,6 +9581,7 @@ dependencies = [
 name = "reth-taiko-node"
 version = "1.1.4"
 dependencies = [
+ "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "eyre",
  "reth-basic-payload-builder",
@@ -9599,6 +9601,7 @@ dependencies = [
  "reth-taiko-evm",
  "reth-taiko-payload-builder",
  "reth-taiko-payload-validator",
+ "reth-taiko-primitives",
  "reth-tracing",
  "reth-transaction-pool",
  "reth-trie-db",

@@ -1,6 +1,7 @@
 //! Ethereum Node types config.
 
 use crate::{TaikoEngineTypes, TaikoEngineValidator, TaikoEvmConfig};
+use alloy_primitives::BlockNumber;
 use reth_basic_payload_builder::{BasicPayloadJobGenerator, BasicPayloadJobGeneratorConfig};
 use reth_evm::execute::BasicBlockExecutorProvider;
 use reth_network::{NetworkHandle, PeersInfo};
@@ -16,13 +17,14 @@ use reth_node_builder::{
 };
 use reth_payload_builder::{EthBuiltPayload, PayloadBuilderHandle, PayloadBuilderService};
 use reth_primitives::{EthPrimitives, PooledTransactionsElement};
-use reth_provider::{CanonStateSubscriptions, EthStorage};
+use reth_provider::{CanonStateSubscriptions, EthStorage, L1OriginReader, ProviderResult};
 use reth_rpc::EthApi;
 use reth_taiko_chainspec::TaikoChainSpec;
 use reth_taiko_consensus::TaikoBeaconConsensus;
 use reth_taiko_engine_primitives::TaikoPayloadBuilderAttributes;
 use reth_taiko_engine_types::TaikoPayloadAttributes;
 use reth_taiko_evm::TaikoExecutionStrategyFactory;
+use reth_taiko_primitives::L1Origin;
 use reth_tracing::tracing::{debug, info};
 use reth_transaction_pool::{
     blobstore::DiskFileBlobStore, EthTransactionPool, PoolTransaction, TransactionPool,
@@ -316,7 +318,30 @@ where
     type Consensus = Arc<dyn reth_consensus::FullConsensus>;
 
     async fn build_consensus(self, ctx: &BuilderContext<Node>) -> eyre::Result<Self::Consensus> {
-        Ok(Arc::new(TaikoBeaconConsensus::new(ctx.chain_spec())))
+        Ok(Arc::new(TaikoBeaconConsensus::new(
+            ctx.chain_spec(),
+            ProviderWithDebug(ctx.provider().clone()),
+        )))
+    }
+}
+
+struct ProviderWithDebug<Provider>(Provider);
+
+impl<Provider> std::fmt::Debug for ProviderWithDebug<Provider> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProviderWithDebug").finish()
+    }
+}
+
+impl<Provider> L1OriginReader for ProviderWithDebug<Provider>
+where
+    Provider: L1OriginReader,
+{
+    fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        self.0.get_l1_origin(block_number)
+    }
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        self.0.get_head_l1_origin()
     }
 }
 

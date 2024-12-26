@@ -26,6 +26,7 @@ use reth_primitives::{
     SealedBlock, SealedHeader,
 };
 use reth_primitives_traits::constants::MAXIMUM_GAS_LIMIT;
+use reth_provider::{L1OriginReader, ProviderError};
 use revm_primitives::U256;
 use std::{fmt::Debug, sync::Arc, time::SystemTime};
 
@@ -36,15 +37,16 @@ pub use anchor::*;
 ///
 /// This consensus engine does basic checks as outlined in the execution specs.
 #[derive(Debug)]
-pub struct TaikoBeaconConsensus<ChainSpec> {
+pub struct TaikoBeaconConsensus<ChainSpec, Provider> {
     /// Configuration
     chain_spec: Arc<ChainSpec>,
+    provider: Provider,
 }
 
-impl<ChainSpec> TaikoBeaconConsensus<ChainSpec> {
+impl<ChainSpec, Provider> TaikoBeaconConsensus<ChainSpec, Provider> {
     /// Create a new instance of [`EthBeaconConsensus`]
-    pub const fn new(chain_spec: Arc<ChainSpec>) -> Self {
-        Self { chain_spec }
+    pub const fn new(chain_spec: Arc<ChainSpec>, provider: Provider) -> Self {
+        Self { chain_spec, provider }
     }
 
     /// Checks the gas limit for consistency between parent and self headers.
@@ -66,7 +68,7 @@ impl<ChainSpec> TaikoBeaconConsensus<ChainSpec> {
     }
 }
 
-impl<ChainSpec, N> FullConsensus<N> for TaikoBeaconConsensus<ChainSpec>
+impl<ChainSpec, N, Provider> FullConsensus<N> for TaikoBeaconConsensus<ChainSpec, Provider>
 where
     ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug,
     N: NodePrimitives<
@@ -75,6 +77,7 @@ where
         Block = Block,
         Receipt = Receipt,
     >,
+    Provider: L1OriginReader + Send + Sync + Debug,
 {
     fn validate_block_post_execution(
         &self,
@@ -85,15 +88,22 @@ where
     }
 }
 
-impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> HeaderValidator
-    for TaikoBeaconConsensus<ChainSpec>
+impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug, Provider> HeaderValidator
+    for TaikoBeaconConsensus<ChainSpec, Provider>
+where
+    Provider: L1OriginReader + Send + Sync + Debug,
 {
     fn validate_header(&self, header: &SealedHeader) -> Result<(), ConsensusError> {
         // Check if timestamp is in the future. Clock can drift but this can be consensus issue.
         let present_timestamp =
             SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
-        if header.timestamp > present_timestamp {
+        let is_softblock = match self.provider.get_l1_origin(header.number) {
+            Ok(l1_origin) => l1_origin.is_softblock(),
+            Err(ProviderError::L1OriginNotFound(_)) => false,
+            Err(_) => return Err(ConsensusError::LoadL1Origin),
+        };
+        if !is_softblock && header.timestamp > present_timestamp {
             return Err(ConsensusError::TimestampIsInFuture {
                 timestamp: header.timestamp,
                 present_timestamp,
@@ -188,8 +198,10 @@ impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> HeaderVa
     }
 }
 
-impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug> Consensus
-    for TaikoBeaconConsensus<ChainSpec>
+impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug, Provider> Consensus
+    for TaikoBeaconConsensus<ChainSpec, Provider>
+where
+    Provider: L1OriginReader + Send + Sync + Debug,
 {
     fn validate_block_pre_execution(&self, block: &SealedBlock) -> Result<(), ConsensusError> {
         validate_block_pre_execution(block, &self.chain_spec)
