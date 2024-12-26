@@ -404,7 +404,6 @@ mod tests {
                 }
                 CHAIN_KATLA_TESTNET => include_str!("../res/genesis/katla.json"),
                 CHAIN_HEKLA_TESTNET => include_str!("../res/genesis/hekla.json"),
-                CHAIN_PERCONF_DEVNET => include_str!("../res/genesis/preconf_devnet.json"),
                 _ => panic!("Invalid chain"),
             };
             let _alloc: BTreeMap<Address, TaikoGenesisAccount> =
@@ -417,7 +416,6 @@ mod tests {
             CHAIN_INTERNAL_TESTNET,
             CHAIN_KATLA_TESTNET,
             CHAIN_HEKLA_TESTNET,
-            CHAIN_PERCONF_DEVNET,
         ] {
             load_genesis(chain);
         }
