@@ -387,3 +387,39 @@ impl From<Genesis> for TaikoChainSpec {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_genesis() {
+        let load_genesis = |chain: Chain| {
+            let alloc_str = match chain {
+                CHAIN_MAINNET => {
+                    include_str!("../res/genesis/mainnet.json")
+                }
+                CHAIN_INTERNAL_TESTNET => {
+                    include_str!("../res/genesis/internal_l2a.json")
+                }
+                CHAIN_KATLA_TESTNET => include_str!("../res/genesis/katla.json"),
+                CHAIN_HEKLA_TESTNET => include_str!("../res/genesis/hekla.json"),
+                CHAIN_PERCONF_DEVNET => include_str!("../res/genesis/preconf_devnet.json"),
+                _ => panic!("Invalid chain"),
+            };
+            let _alloc: BTreeMap<Address, TaikoGenesisAccount> =
+                serde_json::from_str(alloc_str).expect("Invalid alloc json");
+            println!("Genesis: {_alloc:?}");
+        };
+
+        for chain in [
+            CHAIN_MAINNET,
+            CHAIN_INTERNAL_TESTNET,
+            CHAIN_KATLA_TESTNET,
+            CHAIN_HEKLA_TESTNET,
+            CHAIN_PERCONF_DEVNET,
+        ] {
+            load_genesis(chain);
+        }
+    }
+}
