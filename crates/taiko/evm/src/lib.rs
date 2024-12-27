@@ -71,15 +71,15 @@ impl ConfigureEvmEnv for TaikoEvmConfig {
         if let Some(EnvExt { is_anchor, block_number, extra_data }) = ext {
             // Set taiko specific data
             tx_env.taiko.is_anchor = is_anchor;
-            // set the treasury address
-            let treasury = self.chain_spec.treasury();
-            tx_env.taiko.treasury = treasury;
 
             if self.chain_spec.is_ontake_active_at_block(block_number) {
                 // set the basefee ratio
                 tx_env.taiko.basefee_ratio = decode_ontake_extra_data(extra_data);
             }
         }
+        // set the treasury address
+        let treasury = self.chain_spec.treasury();
+        tx_env.taiko.treasury = treasury;
     }
 
     fn fill_tx_env_system_contract_call(
