@@ -391,6 +391,31 @@ define taiko_docker_build_push
 		--push
 endef
 
+# Note: This requires a buildx builder with emulation support. For example:
+#
+# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
+# `docker buildx create --use --driver docker-container --name cross-builder`
+.PHONY: taiko-docker-build-latest
+taiko-docker-build-latest: ## Build and push a cross-arch Docker image tagged with the latest git tag and `latest`.
+	$(call taiko_docker_build,$(GIT_TAG),latest)
+
+# Create a cross-arch Docker image with the given tags
+define taiko_docker_build
+	$(MAKE) taiko-build-x86_64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/amd64
+	cp $(CARGO_TARGET_DIR)/x86_64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/amd64/taiko-reth
+
+	$(MAKE) taiko-build-aarch64-unknown-linux-gnu
+	mkdir -p $(BIN_DIR)/arm64
+	cp $(CARGO_TARGET_DIR)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
+
+	docker buildx build --file ./DockerfileTaiko.cross . \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(DOCKER_IMAGE_NAME):$(1) \
+		--tag $(DOCKER_IMAGE_NAME):$(2) \
+		--provenance=false
+endef
+
 ##@ Other
 
 .PHONY: clean
