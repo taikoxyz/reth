@@ -383,7 +383,7 @@ define taiko_docker_build_push
 	mkdir -p $(BIN_DIR)/arm64
 	cp $(CARGO_TARGET_DIR)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
 
-	docker buildx build --file ./DockerfileOp.cross . \
+	docker buildx build --file ./DockerfileTaiko.cross . \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(DOCKER_IMAGE_NAME):$(1) \
 		--tag $(DOCKER_IMAGE_NAME):$(2) \
