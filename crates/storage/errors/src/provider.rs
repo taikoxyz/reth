@@ -142,7 +142,7 @@ pub enum ProviderError {
     L1OriginNotFound(BlockNumber),
 
     /// Head L1 origin error
-    #[display("head L1Origin does not exist")]
+    #[display("not found")]
     HeadL1OriginNotFound,
 }
 
