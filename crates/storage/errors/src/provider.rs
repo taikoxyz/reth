@@ -138,7 +138,7 @@ pub enum ProviderError {
     InvalidStorageOutput,
 
     /// L1 origin error
-    #[display("not L1Origin found for block #{_0}")]
+    #[display("not found")]
     L1OriginNotFound(BlockNumber),
 
     /// Head L1 origin error
