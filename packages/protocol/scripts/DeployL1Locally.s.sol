@@ -62,6 +62,11 @@ contract DeployL1Locally is DeployCapability {
         // addressNotNull(vm.envAddress("L2_SIGNAL_SERVICE"), "L2_SIGNAL_SERVICE");
         // addressNotNull(vm.envAddress("CONTRACT_OWNER"), "CONTRACT_OWNER");
 
+        // Sending 10 ETH to Alice
+        address payable admin = payable(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+        (bool success, ) = admin.call{value: 10 ether}("");
+        require(success, "Failed to send Ether");
+
         require(vm.envBytes32("L2_GENESIS_HASH") != 0, "L2_GENESIS_HASH");
         address contractOwner = MAINNET_CONTRACT_OWNER;
 

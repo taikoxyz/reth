@@ -28,6 +28,7 @@ use std::{
     ops::{Deref, DerefMut},
     time::Instant,
 };
+use reth_execution_types::state_diff_to_block_execution_output;
 
 /// A chain in the blockchain tree that has functionality to execute blocks and append them to
 /// itself.
@@ -254,7 +255,9 @@ impl AppendableChain {
             let state_provider = chain_provider
                 .database_provider_ro()
                 .unwrap();
-            let last_block_number = state_provider.last_block_number()?;
+            //let last_block_number = state_provider.last_block_number()?;
+            let last_block_number = block.number - 1;
+            println!("[{}-{}] Executing against block {} {}", externals.provider_factory.chain_spec().chain.id(), block.number, chain_id, last_block_number);
             let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
 
             //let chain_provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
@@ -265,59 +268,95 @@ impl AppendableChain {
             super_db.add_db(chain_id, StateProviderDatabase::new(state_provider));
         }
 
-        let executor = externals.executor_factory.executor(super_db);
+        let block_number = block.number;
         let block_hash = block.hash();
-        let block = block.unseal();
 
-        let state = executor.execute((&block, U256::MAX).into())?;
-        externals.consensus.validate_block_post_execution(
-            &block,
-            PostExecutionInput::new(&state.receipts, &state.requests),
-        )?;
+        println!("Block extra data: {:?}", block.extra_data);
+        let state_diff = if block.extra_data.len() > 32 {
+            println!("Decoding extra data...");
+            let json_str = String::from_utf8(block.extra_data.to_vec()).unwrap();
+            let state_diff = serde_json::from_str(&json_str).unwrap_or(None);
+            state_diff
+        } else {
+            None
+        };
+
+        println!("Applying block update: {:?}", state_diff);
 
         let chain_id = externals.provider_factory.chain_spec().chain.id();
-        let initial_execution_outcome = ExecutionOutcome::from((state, chain_id, block.number));
 
+        let state = if let Some(state_diff) = &state_diff {
+            println!("Applying state from diff");
 
-        //let initial_execution_outcome = initial_execution_outcome.filter_chain(externals.provider_factory.chain_spec().chain.id());
+            let block = block.unseal();
+            let executor = externals.executor_factory.executor(super_db);
+            let state_execution = executor.execute((&block, U256::MAX).into())?;
+
+            let state_diff = state_diff_to_block_execution_output(chain_id, state_diff);
+
+            println!("ori: {:?}", state_execution);
+            println!("new: {:?}", state_diff);
+
+            let execution_outcome_execution = ExecutionOutcome::from((state_execution.clone(), chain_id, block_number)).filter_chain(chain_id);
+            let execution_outcome_diff = ExecutionOutcome::from((state_diff, chain_id, block_number)).filter_chain(chain_id);
+
+            let hashed_state_execution = execution_outcome_execution.hash_state_slow();
+            let hashed_state_diff = execution_outcome_diff.hash_state_slow();
+            assert_eq!(hashed_state_execution, hashed_state_diff, "state diff incorrect");
+
+            state_execution
+        } else {
+            println!("Applying state from transactions");
+            let block = block.unseal();
+            let executor = externals.executor_factory.executor(super_db);
+            let state = executor.execute((&block, U256::MAX).into())?;
+            state
+            // externals.consensus.validate_block_post_execution(
+            //     &block,
+            //     PostExecutionInput::new(&state.receipts, &state.requests),
+            // )?;
+        };
+
+        let initial_execution_outcome = ExecutionOutcome::from((state, chain_id, block_number));
+        let initial_execution_outcome = initial_execution_outcome.filter_chain(chain_id);
 
         // check state root if the block extends the canonical chain __and__ if state root
         // validation was requested.
         // if block_validation_kind.is_exhaustive() {
-        //     // calculate and check state root
-        //     let start = Instant::now();
-        //     let (state_root, trie_updates) = if block_attachment.is_canonical() {
-        //         // TODO(Cecilie): refactor the bundle state provider for cross-chain bundles
-        //         let mut execution_outcome =
-        //             provider.block_execution_data_provider.execution_outcome().clone();
-        //         execution_outcome.chain_id = chain_id;
-        //         execution_outcome.extend(initial_execution_outcome.clone());
-        //         let hashed_state = execution_outcome.hash_state_slow();
-        //         ParallelStateRoot::new(consistent_view, hashed_state)
-        //             .incremental_root_with_updates()
-        //             .map(|(root, updates)| (root, Some(updates)))
-        //             .map_err(ProviderError::from)?
-        //     } else {
-        //         let hashed_state = HashedPostState::from_bundle_state(
-        //             &initial_execution_outcome.current_state().state,
-        //         );
-        //         let state_root = provider.state_root(hashed_state)?;
-        //         (state_root, None)
-        //     };
-        //     if block.state_root != state_root {
-        //         return Err(ConsensusError::BodyStateRootDiff(
-        //             GotExpected { got: state_root, expected: block.state_root }.into(),
-        //         )
-        //         .into())
-        //     }
+            // calculate and check state root
+            // let start = Instant::now();
+            // let (state_root, trie_updates) = if block_attachment.is_canonical() {
+            //     // TODO(Cecilie): refactor the bundle state provider for cross-chain bundles
+            //     let mut execution_outcome =
+            //         provider.block_execution_data_provider.execution_outcome().clone();
+            //     execution_outcome.chain_id = chain_id;
+            //     execution_outcome.extend(initial_execution_outcome.clone());
+            //     let hashed_state = execution_outcome.hash_state_slow();
+            //     ParallelStateRoot::new(consistent_view, hashed_state)
+            //         .incremental_root_with_updates()
+            //         .map(|(root, updates)| (root, Some(updates)))
+            //         .map_err(ProviderError::from)?
+            // } else {
+            //     let hashed_state = HashedPostState::from_bundle_state(
+            //         &initial_execution_outcome.current_state().state,
+            //     );
+            //     let state_root = provider.state_root(hashed_state)?;
+            //     (state_root, None)
+            // };
+            // if block.state_root != state_root {
+            //     return Err(ConsensusError::BodyStateRootDiff(
+            //         GotExpected { got: state_root, expected: block.state_root }.into(),
+            //     )
+            //     .into())
+            // }
 
-        //     tracing::debug!(
-        //         target: "blockchain_tree::chain",
-        //         number = block.number,
-        //         hash = %block_hash,
-        //         elapsed = ?start.elapsed(),
-        //         "Validated state root"
-        //     );
+            // tracing::debug!(
+            //     target: "blockchain_tree::chain",
+            //     number = block.number,
+            //     hash = %block_hash,
+            //     elapsed = ?start.elapsed(),
+            //     "Validated state root"
+            // );
 
         //     Ok((initial_execution_outcome, trie_updates))
         // } else {

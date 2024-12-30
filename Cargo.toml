@@ -563,12 +563,18 @@ proptest-derive = "0.5"
 serial_test = "3"
 similar-asserts = "1.5.0"
 tempfile = "3.8"
-test-fuzz = "5" 
+test-fuzz = "5"
 
 [patch.crates-io]
 revm = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
 revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
 revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
 revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
+
+#revm = { path = "../../revm-gwyneth/revm/crates/revm" }
+#revm-primitives = { path = "../../revm-gwyneth/revm/crates/primitives" }
+#revm-interpreter = { path = "../../revm-gwyneth/revm/crates/interpreter" }
+#revm-precompile = { path = "../../revm-gwyneth/revm/crates/precompile" }
+
 revm-inspectors = { git = "https://github.com/taikoxyz/revm-inspectors.git", branch = "main-rbuilder" }
-# local patches trial-errors: revm-inspectors = { path = "../../revm-inspectors/revm-inspectors"}
+#revm-inspectors = { path = "../../revm-inspector-gwyneth/revm-inspectors"}

@@ -31,6 +31,9 @@ alloy-genesis.workspace = true
 alloy-eips = { workspace = true, features = ["serde"] }
 alloy-consensus.workspace = true
 
+# revm
+revm.workspace = true
+
 # optimism
 op-alloy-rpc-types = { workspace = true, optional = true }
 

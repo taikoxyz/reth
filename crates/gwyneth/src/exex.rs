@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use alloy_rlp::Decodable;
 use alloy_sol_types::{sol, SolEventInterface};
@@ -71,6 +71,7 @@ pub struct Rollup<Node: reth_node_api::FullNodeComponents> {
     ctx: ExExContext<Node>,
     nodes: Vec<GwynethFullNode>,
     engine_apis: Vec<EngineApiContext<GwynethEngineTypes>>,
+    num_l2_blocks: u64,
 }
 
 impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
@@ -84,7 +85,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
             };
             engine_apis.push(engine_api);
         }
-        Ok(Self { ctx, nodes, /* payload_event_stream, */ engine_apis })
+        Ok(Self { ctx, nodes, /* payload_event_stream, */ engine_apis, num_l2_blocks: 0 })
     }
 
     pub async fn start(mut self) -> eyre::Result<()> {
@@ -106,6 +107,18 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
 
     pub async fn commit(&mut self, chain: &Chain, node_idx: usize) -> eyre::Result<()> {
         let events = decode_chain_into_rollup_events(chain);
+
+        // Add all other L2 dbs for now as well until dependencies are broken
+        // let mut last_block_number = HashMap::new();
+        // for node in self.nodes.iter() {
+        //     let chain_id = node.config.chain.chain().id();
+        //     let state_provider = node
+        //                     .provider
+        //                     .database_provider_ro()
+        //                     .unwrap();
+        //     last_block_number.insert(chain_id, state_provider.last_block_number()?);
+        // }
+
         for (block, _, event) in events {
             if let RollupContractEvents::BlockProposed(BlockProposed {
                 blockId: block_number,
@@ -120,19 +133,21 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let all_transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
                 let node_chain_id = BASE_CHAIN_ID + (node_idx as u64);
 
-                let filtered_transactions: Vec<TransactionSigned> = all_transactions
-                    .into_iter()
-                    .filter(|tx| tx.chain_id() == Some(node_chain_id))
-                    .collect();
+                // let filtered_transactions: Vec<TransactionSigned> = all_transactions
+                //     .into_iter()
+                //     .filter(|tx| tx.chain_id() == Some(node_chain_id))
+                //     .collect();
 
-                if filtered_transactions.len() == 0 {
-                    println!("no transactions for chain: {}", node_chain_id);
-                    continue;
-                }
+                // if filtered_transactions.len() == 0 {
+                //     println!("no transactions for chain: {}", node_chain_id);
+                //     continue;
+                // }
+
+                let filtered_transactions: Vec<TransactionSigned> = all_transactions;
 
                 let attrs = GwynethPayloadAttributes {
                     inner: EthPayloadAttributes {
-                        timestamp: block.timestamp,
+                        timestamp: block.timestamp + node_idx as u64,
                         prev_randao: B256::ZERO,
                         suggested_fee_recipient: Address::ZERO,
                         withdrawals: Some(vec![]),
@@ -164,7 +179,11 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                             .provider
                             .database_provider_ro()
                             .unwrap();
-                        let last_block_number = state_provider.last_block_number()?;
+                        //let last_block_number = state_provider.last_block_number()?;
+                        //let last_block_number = *last_block_number.get(&chain_id).unwrap();
+                        //println!("last block number: {} -> {}", chain_id, last_block_number);
+                        let last_block_number = self.num_l2_blocks / self.nodes.len() as u64;
+                        println!("exex executing against {}", last_block_number);
                         let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
 
                         builder_attrs.providers.insert(chain_id, Arc::new(state_provider));
@@ -174,6 +193,8 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let payload_id = builder_attrs.inner.payload_id();
                 let parrent_beacon_block_root =
                     builder_attrs.inner.parent_beacon_block_root.unwrap();
+
+                println!("payload_id: {} {}", node_idx, payload_id);
 
                 // trigger new payload building draining the pool
                 self.nodes[node_idx].payload_builder.new_payload(builder_attrs).await.unwrap();
@@ -196,12 +217,14 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                             continue;
                         }
                     } else {
-                        println!("Gwyneth: No block?");
+                        println!("Gwyneth: No block for {}?", node_chain_id);
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                         continue;
                     }
                     break;
                 }
+
+                //tokio::time::sleep(std::time::Duration::from_millis(10000)).await;
 
                 // trigger resolve payload via engine api
                 self.engine_apis[node_idx].get_payload_v3_value(payload_id).await?;
@@ -218,6 +241,10 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
 
                 // trigger forkchoice update via engine api to commit the block to the blockchain
                 self.engine_apis[node_idx].update_forkchoice(block_hash, block_hash).await?;
+
+                println!("Done with block {}: {}", node_chain_id, payload.block().number);
+
+                self.num_l2_blocks += 1;
             }
         }
 

@@ -40,6 +40,23 @@ library TaikoData {
         // bytes32 blobId OR blobHash; ? as per in current taiko-mono's preconfirmation branch ?
         bool blobUsed;
         bytes txList;
+        bytes stateDiffs;
+        StateDiff l1StateDiff;
+    }
+
+    /// @dev Struct representing the state delta that has to be applied to L1
+    struct StateDiff {
+        StateDiffAccount[] accounts;
+    }
+
+    struct StateDiffAccount {
+        address addr;
+        StateDiffStorageSlot[] slots;
+    }
+
+    struct StateDiffStorageSlot {
+        bytes32 key;
+        bytes32 value;
     }
 
     /// @dev Struct representing transition to be proven.

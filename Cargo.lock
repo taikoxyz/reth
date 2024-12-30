@@ -4554,7 +4554,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -6544,6 +6544,8 @@ dependencies = [
  "reth-trie",
  "reth-trie-db",
  "reth-trie-parallel",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]
@@ -8217,6 +8219,7 @@ dependencies = [
  "reth-primitives-traits",
  "reth-static-file-types",
  "reth-trie-common",
+ "revm",
  "revm-primitives",
  "secp256k1",
  "serde",
@@ -9032,7 +9035,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#a7dfafe54b4f6b8f858e7fdb4e7cf4ac373310d7"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -9064,7 +9067,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#a7dfafe54b4f6b8f858e7fdb4e7cf4ac373310d7"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -9073,7 +9076,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#a7dfafe54b4f6b8f858e7fdb4e7cf4ac373310d7"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
 dependencies = [
  "aurora-engine-modexp",
  "blst",
@@ -9092,7 +9095,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#a7dfafe54b4f6b8f858e7fdb4e7cf4ac373310d7"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",
@@ -11208,7 +11211,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

@@ -14,17 +14,17 @@ check_contract_deployment() {
     local deployed=false
 
     echo -e "${YELLOW}Waiting for contract deployment confirmation...${NC}"
-    
+
     for i in $(seq 1 $retries); do
         # Using curl to check if the contract code exists at the address
         result=$(curl -s -X POST -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"$contract_addr\", \"latest\"],\"id\":1}" $rpc_url)
-        
+
         # Check if the result contains more than just "0x" (empty contract)
         if [[ $result == *"0x60806040"* ]]; then
             deployed=true
             break
         fi
-        
+
         echo -e "${YELLOW}Attempt $i/$retries: Contract not yet deployed, waiting...${NC}"
         sleep 2
     done
@@ -37,6 +37,36 @@ check_contract_deployment() {
         return 1
     fi
 }
+
+
+echo -e "${GREEN}Deploying to L1...${NC}"
+# Capture the forge script output
+L1_OUTPUT=$(forge script --rpc-url http://127.0.0.1:32002 scripts/DeployXERC20.s.sol -vvvv --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --legacy)
+
+# Extract the contract address - improved pattern matching
+CONTRACT_ADDRESS=$(echo "$L1_OUTPUT" | grep -o '0x[a-fA-F0-9]\{40\}' | head -n 1)
+
+if [ -z "$CONTRACT_ADDRESS" ]; then
+    echo -e "${RED}Failed to extract contract address from deployment output${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Extracted contract address: $CONTRACT_ADDRESS${NC}"
+
+if [ $? -eq 0 ]; then
+    # Check if contract is deployed on L1
+    if check_contract_deployment "http://127.0.0.1:32002" "$CONTRACT_ADDRESS"; then
+        echo -e "${GREEN}Verifying L2A contract...${NC}"
+        forge verify-contract "$CONTRACT_ADDRESS" "contracts/examples/xERC20.sol:xERC20" --watch --verifier-url "http://localhost:64001/api" --verifier blockscout --chain-id 160010 --libraries contracts/examples/EVM.sol:EVM:0x5FbDB2315678afecb367f032d93F642f64180aa3
+    else
+        echo -e "${RED}L1 deployment verification failed. Stopping.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${RED}L1 deployment failed. Stopping.${NC}"
+    exit 1
+fi
+
 
 echo -e "${GREEN}Deploying to L2A...${NC}"
 # Capture the forge script output
@@ -65,6 +95,7 @@ else
     echo -e "${RED}L2A deployment failed. Stopping.${NC}"
     exit 1
 fi
+
 
 echo -e "${GREEN}Deploying to L2B...${NC}"
 forge script --rpc-url http://127.0.0.1:32006 scripts/DeployXERC20.s.sol -vvvv --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --legacy

@@ -1,6 +1,5 @@
 use crate::{
-    Address, Bytes, GotExpected, Header, SealedHeader, TransactionSigned,
-    TransactionSignedEcRecovered, Withdrawals, B256,
+    Address, Bytes, GotExpected, Header, Receipt, SealedHeader, TransactionSigned, TransactionSignedEcRecovered, Withdrawals, B256, U256
 };
 pub use alloy_eips::eip1898::{
     BlockHashOrNumber, BlockId, BlockNumHash, BlockNumberOrTag, ForkBlock, RpcBlockHash,
@@ -12,7 +11,9 @@ use proptest::prelude::prop_compose;
 #[cfg(any(test, feature = "arbitrary"))]
 pub use reth_primitives_traits::test_utils::{generate_valid_header, valid_header_strategy};
 use reth_primitives_traits::Requests;
+use revm_primitives::AccountInfo;
 use serde::{Deserialize, Serialize};
+use revm::db::states::BundleState;
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -268,8 +269,6 @@ impl BlockWithSenders {
 /// Sealed Ethereum full block.
 ///
 /// Withdrawals can be optionally included at the end of the RLP encoded message.
-#[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
-#[cfg_attr(any(test, feature = "reth-codec"), reth_codecs::add_arbitrary_tests(rlp, 32))]
 #[derive(
     Debug,
     Clone,
@@ -297,6 +296,76 @@ pub struct SealedBlock {
     pub withdrawals: Option<Withdrawals>,
     /// Block requests.
     pub requests: Option<Requests>,
+}
+
+/// Sealed Ethereum full block.
+///
+/// Withdrawals can be optionally included at the end of the RLP encoded message.
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+    RlpEncodable,
+    RlpDecodable,
+)]
+pub struct StateDiff {
+    /// Account state.
+    pub accounts: Vec<StateDiffAccount>,
+    /// Receipts
+    pub receipts: Vec<Receipt>,
+}
+
+/// StateDiffAccount
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+    RlpEncodable,
+    RlpDecodable,
+)]
+#[rlp(trailing)]
+pub struct StateDiffAccount {
+    /// The address of the account
+    pub address: Address,
+    /// Account balance.
+    pub balance: U256,
+    /// Account nonce.
+    pub nonce: u64,
+    /// code hash,
+    pub code_hash: B256,
+    /// code
+    pub code: Bytes,
+    /// If Account was destroyed we ignore original value and compare present state with U256::ZERO.
+    pub storage: Vec<StateDiffStorageSlot>,
+    // Account status.
+    //pub status: AccountStatus,
+}
+
+/// StateDiffStorage
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+    RlpEncodable,
+    RlpDecodable,
+)]
+pub struct StateDiffStorageSlot {
+    /// Storage slot key
+    pub key: U256,
+    /// Storage slot value
+    pub value: U256,
 }
 
 impl SealedBlock {

@@ -1225,100 +1225,63 @@ where
     ) -> Result<(), CanonicalError> {
         // Brecht reorg state trie calculation
         let (blocks, state, chain_trie_updates) = chain.into_inner();
-        //let hashed_state = state.hash_state_slow();
-        //let prefix_sets = hashed_state.construct_prefix_sets().freeze();
-        //let hashed_state_sorted = hashed_state.into_sorted();
+        let hashed_state = state.hash_state_slow();
+        let prefix_sets = hashed_state.construct_prefix_sets().freeze();
+        let hashed_state_sorted = hashed_state.into_sorted();
 
-        let providers = NODES.lock().unwrap();
-
-        for (&chain_id, provider) in providers.iter() {
-            let state = state.filter_chain(chain_id);
-            if state.bundle.is_empty() {
-                continue;
+        // Compute state root or retrieve cached trie updates before opening write transaction.
+        let block_hash_numbers =
+            blocks.iter().map(|(number, b)| (number, b.hash())).collect::<Vec<_>>();
+        let trie_updates = match chain_trie_updates {
+            Some(updates) => {
+                debug!(target: "blockchain_tree", blocks = ?block_hash_numbers, "Using cached trie updates");
+                self.metrics.trie_updates_insert_cached.increment(1);
+                updates
             }
-
-            println!("applying state to: {}", chain_id);
-
-            let hashed_state = state.hash_state_slow();
-            let prefix_sets = hashed_state.construct_prefix_sets().freeze();
-            let hashed_state_sorted = hashed_state.into_sorted();
-
-            // Compute state root or retrieve cached trie updates before opening write transaction.
-            //let block_hash_numbers =
-            //    blocks.iter().map(|(number, b)| (number, b.hash())).collect::<Vec<_>>();
-            let trie_updates = match chain_trie_updates.clone() {
-                Some(updates) => {
-                //debug!(target: "blockchain_tree", blocks = ?block_hash_numbers, "Using cached trie updates");
-                    self.metrics.trie_updates_insert_cached.increment(1);
-                    updates
+            None => {
+                debug!(target: "blockchain_tree", blocks = ?block_hash_numbers, "Recomputing state root for insert");
+                let provider = self
+                    .externals
+                    .provider_factory
+                    .provider()?
+                    // State root calculation can take a while, and we're sure no write transaction
+                    // will be open in parallel. See https://github.com/paradigmxyz/reth/issues/6168.
+                    .disable_long_read_transaction_safety();
+                let (state_root, trie_updates) = StateRoot::from_tx(provider.tx_ref())
+                    .with_hashed_cursor_factory(HashedPostStateCursorFactory::new(
+                        DatabaseHashedCursorFactory::new(provider.tx_ref()),
+                        &hashed_state_sorted,
+                    ))
+                    .with_prefix_sets(prefix_sets)
+                    .root_with_updates()
+                    .map_err(Into::<BlockValidationError>::into)?;
+                let tip = blocks.tip();
+                if state_root != tip.state_root {
+                    return Err(ProviderError::StateRootMismatch(Box::new(RootMismatch {
+                        root: GotExpected { got: state_root, expected: tip.state_root },
+                        block_number: tip.number,
+                        block_hash: tip.hash(),
+                    }))
+                    .into())
                 }
-                None => {
-                    //debug!(target: "blockchain_tree", blocks = ?block_hash_numbers, "Recomputing state root for insert");
-                    let provider = self
-                        .externals
-                        .provider_factory
-                        .provider()?
-                        // State root calculation can take a while, and we're sure no write transaction
-                        // will be open in parallel. See https://github.com/paradigmxyz/reth/issues/6168.
-                        .disable_long_read_transaction_safety();
+                self.metrics.trie_updates_insert_recomputed.increment(1);
+                trie_updates
+            }
+        };
+        recorder.record_relative(MakeCanonicalAction::RetrieveStateTrieUpdates);
 
-                    let (state_root, trie_updates) = StateRoot::from_tx(provider.tx_ref())
-                        .with_hashed_cursor_factory(HashedPostStateCursorFactory::new(
-                            DatabaseHashedCursorFactory::new(provider.tx_ref()),
-                            &hashed_state_sorted.clone(),
-                        ))
-                        .with_prefix_sets(prefix_sets)
-                        .root_with_updates()
-                        .map_err(Into::<BlockValidationError>::into)?;
-                    // let tip = blocks.tip();
-                    // if state_root != tip.state_root {
-                    //     return Err(ProviderError::StateRootMismatch(Box::new(RootMismatch {
-                    //         root: GotExpected { got: state_root, expected: tip.state_root },
-                    //         block_number: tip.number,
-                    //         block_hash: tip.hash(),
-                    //     }))
-                    //     .into())
-                    // }
-                    self.metrics.trie_updates_insert_recomputed.increment(1);
-                    trie_updates
-                }
-            };
-            recorder.record_relative(MakeCanonicalAction::RetrieveStateTrieUpdates);
+        let provider_rw = self.externals.provider_factory.provider_rw()?;
+        provider_rw
+            .append_blocks_with_state(
+                blocks.into_blocks().collect(),
+                state,
+                hashed_state_sorted,
+                trie_updates,
+            )
+            .map_err(|e| CanonicalError::CanonicalCommit(e.to_string()))?;
 
-            println!("bbb: commit_canonical_to_database");
-            //let provider_rw = self.externals.provider_factory.provider_rw()?;
-            let provider_rw = provider.database.provider_rw()?;
-            provider_rw
-                .append_blocks_with_state(
-                    blocks.clone().into_blocks().collect(),
-                    state,
-                    hashed_state_sorted,
-                    trie_updates,
-                )
-                .map_err(|e| CanonicalError::CanonicalCommit(e.to_string()))?;
-
-            provider_rw.commit()?;
-            recorder.record_relative(MakeCanonicalAction::CommitCanonicalChainToDatabase);
-        }
-
-        Ok(())
-    }
-
-    /// Unwind tables and put it inside state
-    pub fn unwind(&mut self, unwind_to: BlockNumber) -> Result<(), CanonicalError> {
-        // nothing to be done if unwind_to is higher then the tip
-        if self.block_indices().canonical_tip().number <= unwind_to {
-            return Ok(())
-        }
-        // revert `N` blocks from current canonical chain and put them inside BlockchainTree
-        let old_canon_chain = self.revert_canonical_from_database(unwind_to)?;
-
-        // check if there is block in chain
-        if let Some(old_canon_chain) = old_canon_chain {
-            self.state.block_indices.unwind_canonical_chain(unwind_to);
-            // insert old canonical chain to BlockchainTree.
-            self.insert_unwound_chain(AppendableChain::new(old_canon_chain));
-        }
+        provider_rw.commit()?;
+        recorder.record_relative(MakeCanonicalAction::CommitCanonicalChainToDatabase);
 
         Ok(())
     }

@@ -2,8 +2,9 @@
 pragma solidity ^0.8.19;
 
 import "./EVM.sol";
+import "../gwyneth/GwynethContract.sol";
 
-contract xERC20 {
+contract xERC20 is GwynethContract {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
