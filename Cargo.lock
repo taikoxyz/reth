@@ -9578,6 +9578,7 @@ dependencies = [
 name = "reth-taiko-node"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
  "alloy-rpc-types-engine",
  "eyre",
  "reth-basic-payload-builder",
@@ -9636,10 +9637,13 @@ dependencies = [
 name = "reth-taiko-payload-validator"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "reth-chainspec",
  "reth-payload-validator",
  "reth-primitives",
+ "reth-rpc-types-compat",
  "reth-taiko-engine-types",
 ]
 

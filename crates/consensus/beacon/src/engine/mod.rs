@@ -935,6 +935,28 @@ where
         Ok(())
     }
 
+    /// Sets the head of the canon chain without any additional checks.
+    fn taiko_reorg(&self, max_block: BlockNumber) -> RethResult<()> {
+        let max_header = self.blockchain.sealed_header(max_block)
+        .inspect_err(|error| {
+            error!(target: "consensus::engine", %error, "Error getting canonical header for continuous sync");
+        })?
+        .ok_or_else(|| ProviderError::HeaderNotFound(max_block.into()))?;
+        let max_hash = max_header.hash();
+        self.update_canon_chain(
+            max_header,
+            &ForkchoiceState {
+                head_block_hash: max_hash,
+                finalized_block_hash: max_hash,
+                safe_block_hash: max_hash,
+            },
+        )?;
+        self.blockchain.update_block_hashes_and_clear_buffered()?;
+        self.blockchain.connect_buffered_blocks_to_canonical_hashes()?;
+        // We are on an optimistic syncing process, better to wait for the next FCU to handle
+        Ok(())
+    }
+
     /// Updates the state of the canon chain tracker based on the given head.
     ///
     /// This expects the given head to be the new canonical head.
@@ -1202,7 +1224,7 @@ where
         //    client software MUST respond with -38003: `Invalid payload attributes` and MUST NOT
         //    begin a payload build process. In such an event, the forkchoiceState update MUST NOT
         //    be rolled back.
-        if attrs.timestamp() <= head.timestamp {
+        if attrs.timestamp() < head.timestamp {
             return OnForkChoiceUpdated::invalid_payload_attributes()
         }
 
@@ -1496,6 +1518,10 @@ where
                 return Ok(())
             }
         };
+
+        trace!(target: "consensus::engine", ?sync_target_state, "Check sync target state");
+        // ignore the finalized block hash if we are in taiko mode
+        return self.taiko_reorg(ctrl.block_number().unwrap_or_default());
 
         if sync_target_state.finalized_block_hash.is_zero() {
             self.set_canonical_head(ctrl.block_number().unwrap_or_default())?;

@@ -2,10 +2,12 @@
 
 use std::sync::Arc;
 
+use alloy_consensus::{BlockHeader, Header};
 use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 use reth_node_builder::{
     EngineApiMessageVersion, EngineObjectValidationError, EngineTypes, EngineValidator,
-    PayloadOrAttributes, PayloadTypes, PayloadValidator,
+    InvalidPayloadAttributesError, PayloadAttributes, PayloadOrAttributes, PayloadTypes,
+    PayloadValidator,
 };
 use reth_payload_builder::EthBuiltPayload;
 use reth_payload_primitives::validate_version_specific_fields;
@@ -104,5 +106,16 @@ where
         attributes: &TaikoPayloadAttributes,
     ) -> Result<(), EngineObjectValidationError> {
         validate_version_specific_fields(self.chain_spec(), version, attributes.into())
+    }
+
+    fn validate_payload_attributes_against_header(
+        &self,
+        attr: &TaikoPayloadAttributes,
+        header: &Header,
+    ) -> Result<(), InvalidPayloadAttributesError> {
+        if attr.timestamp() < header.timestamp() {
+            return Err(InvalidPayloadAttributesError::InvalidTimestamp);
+        }
+        Ok(())
     }
 }
