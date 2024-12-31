@@ -15,7 +15,6 @@ workspace = true
 # reth
 reth-chainspec.workspace = true
 reth-primitives = { workspace = true, features = ["taiko"] }
-reth-payload-validator.workspace = true
 reth-rpc-types-compat.workspace = true
 
 # ethereum

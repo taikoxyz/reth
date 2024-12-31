@@ -192,7 +192,10 @@ where
             if self.externals.provider_factory.provider()?.block_number(block.hash)?.is_some() {
                 return Ok(Some(BlockStatus::Valid(BlockAttachment::Canonical)));
             }
-            return Ok(None);
+            return Err(BlockchainTreeError::PendingBlockIsFinalized {
+                last_finalized: last_finalized_block,
+            }
+            .into());
         }
 
         // is block inside chain

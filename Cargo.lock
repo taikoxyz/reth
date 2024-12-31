@@ -9641,7 +9641,6 @@ dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "reth-chainspec",
- "reth-payload-validator",
  "reth-primitives",
  "reth-rpc-types-compat",
  "reth-taiko-engine-types",

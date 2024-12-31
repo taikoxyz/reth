@@ -13,7 +13,6 @@ use alloy_primitives::B256;
 use alloy_rpc_types_engine::{ExecutionPayloadSidecar, MaybeCancunPayloadFields, PayloadError};
 use reth_chainspec::EthereumHardforks;
 
-use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{Block, BlockExt, Header, SealedBlock};
 use reth_rpc_types_compat::engine::payload::try_into_block;
 use reth_taiko_engine_types::TaikoExecutionPayload;
