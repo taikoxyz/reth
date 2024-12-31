@@ -50,7 +50,6 @@ use tokio::{
     sync::{AcquireError, OwnedSemaphorePermit},
     time::sleep,
 };
-use tracing::info;
 /// `debug` API implementation.
 ///
 /// This type provides the functionality for handling `debug` related requests.
@@ -1122,10 +1121,10 @@ where
             .map_err(Into::into)?
             .ok_or_else(|| EthApiError::HeaderNotFound(number.into()))?;
 
-        let res = self
+        let _ = self
             .inner
             .beacon_consensus
-            .debug_fork_choice_updated(
+            .fork_choice_updated(
                 ForkchoiceState {
                     head_block_hash: block_hash,
                     safe_block_hash: block_hash,
@@ -1137,8 +1136,18 @@ where
             .await
             .map_err(|op| internal_rpc_err(op.to_string()))
             .map_err(EthApiError::other)?;
-        info!(target: "rpc::eth", "Debug set head: {res:?}");
-        sleep(Duration::from_secs(1)).await;
+        loop {
+            let block = self
+                .eth_api()
+                .block_with_senders(BlockNumberOrTag::Finalized.into())
+                .await
+                .map_err(|op| internal_rpc_err(op.to_string()))
+                .map_err(EthApiError::other)?;
+            if block.is_some_and(|block| block.hash() == block_hash) {
+                break;
+            }
+            sleep(Duration::from_secs(1)).await;
+        }
         Ok(())
     }
 

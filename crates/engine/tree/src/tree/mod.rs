@@ -1243,7 +1243,6 @@ where
                                 payload_attrs,
                                 tx,
                                 version,
-                                debug: _debug,
                             } => {
                                 let mut output =
                                     self.on_forkchoice_updated(state, payload_attrs, version);
