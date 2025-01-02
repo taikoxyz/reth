@@ -18,7 +18,7 @@ use reth_node_builder::{components::Components, FullNode, Node, NodeAdapter};
 use reth_node_ethereum::{node::EthereumAddOns, EthExecutorProvider};
 use reth_payload_builder::EthBuiltPayload;
 use reth_primitives::{
-    address, Address, SealedBlock, SealedBlockWithSenders, StateDiff, TransactionSigned, B256, U256
+    address, Address, ChainDA, GwynethDA, SealedBlock, SealedBlockWithSenders, StateDiff, TransactionSigned, B256, U256
 };
 use reth_provider::{
     providers::BlockchainProvider, BlockNumReader, CanonStateSubscriptions, DatabaseProviderFactory,
@@ -133,16 +133,16 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
                 println!("transactions: {:?}", transactions);
 
-                let state_diffs: HashMap<u64, StateDiff> = bincode::deserialize(&meta.stateDiffs.to_vec()).unwrap_or_else(|err| {
-                    panic!("State diff can't be decoded: {}", err);
+                let da: GwynethDA = bincode::deserialize(&meta.stateDiffs.to_vec()).unwrap_or_else(|err| {
+                    panic!("DA can't be decoded: {}", err);
                 });
-                println!("state_diffs: {:?}", state_diffs);
+                println!("da: {:?}", da);
 
                 let all_transactions: Vec<TransactionSigned> = decode_transactions(&meta.txList);
                 let node_chain_id = BASE_CHAIN_ID + (node_idx as u64);
 
-                let state_diff = state_diffs.get(&node_chain_id);
-                println!("state_diff: {:?}", state_diff);
+                let chain_da = da.chain_das.get(&node_chain_id).unwrap();
+                println!("chain_da: {:?}", chain_da);
 
                 // let filtered_transactions: Vec<TransactionSigned> = all_transactions
                 //     .into_iter()
@@ -159,13 +159,13 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let attrs = GwynethPayloadAttributes {
                     inner: EthPayloadAttributes {
                         timestamp: block.timestamp/* + node_idx as u64*/,
-                        prev_randao: B256::ZERO,
+                        prev_randao: block.mix_hash,
                         suggested_fee_recipient: meta.coinbase,
                         withdrawals: Some(vec![]),
                         parent_beacon_block_root: block.parent_beacon_block_root,
                     },
                     transactions: Some(filtered_transactions.clone()),
-                    state_diff: state_diff.map(|s| s.clone()),
+                    chain_da: chain_da.clone(),
                     gas_limit: None,
                 };
 
@@ -251,7 +251,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     )
                     .await?;
 
-                assert_eq!(block_hash, meta.blockHash, "unexpected block hash");
+                assert_eq!(block_hash, chain_da.block_hash, "unexpected block hash");
 
                 // trigger forkchoice update via engine api to commit the block to the blockchain
                 self.engine_apis[node_idx].update_forkchoice(block_hash, block_hash).await?;

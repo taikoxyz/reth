@@ -14,6 +14,7 @@ use reth_primitives_traits::Requests;
 use revm_primitives::AccountInfo;
 use serde::{Deserialize, Serialize};
 use revm::db::states::BundleState;
+use std::collections::HashMap;
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -298,9 +299,46 @@ pub struct SealedBlock {
     pub requests: Option<Requests>,
 }
 
-/// Sealed Ethereum full block.
-///
-/// Withdrawals can be optionally included at the end of the RLP encoded message.
+/// GwynethDA
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct GwynethDA {
+    /// The DA per chain
+    pub chain_das: HashMap<u64, ChainDA>,
+    /// The transactions of the block for all chains
+    pub transactions: Option<Bytes>,
+    /// Extra data
+    pub extra_data: Bytes,
+}
+/// ChainDA
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct ChainDA {
+    /// Block hash (for debugging purposes really)
+    pub block_hash: B256,
+    /// Extra data
+    pub extra_data: Bytes,
+    /// State diff
+    pub state_diff: Option<StateDiff>,
+    /// Transactions
+    pub transactions: Option<Bytes>,
+}
+
+/// StateDiff
 #[derive(
     Debug,
     Clone,
@@ -317,6 +355,10 @@ pub struct StateDiff {
     pub accounts: Vec<StateDiffAccount>,
     /// Receipts
     pub receipts: Vec<Receipt>,
+    /// Transactions root
+    pub transactions_root: B256,
+    /// Gas used
+    pub gas_used: u64,
 }
 
 /// StateDiffAccount

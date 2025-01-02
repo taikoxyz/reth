@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use reth_primitives::{
-    StateDiff, StateDiffAccount, StateDiffStorageSlot,
-    constants::{eip4844::MAX_DATA_GAS_PER_BLOCK, BEACON_NONCE}, eip4844::calculate_excess_blob_gas, proofs::{self, calculate_requests_root}, Block, BlockNumber, ChainId, EthereumHardforks, Header, Receipt, Receipts, Requests, TransactionSigned, EMPTY_OMMER_ROOT_HASH, U256
+    constants::{eip4844::MAX_DATA_GAS_PER_BLOCK, BEACON_NONCE}, eip4844::calculate_excess_blob_gas, proofs::{self, calculate_requests_root}, Block, BlockNumber, ChainId, EthereumHardforks, Header, Receipt, Receipts, Requests, StateDiff, StateDiffAccount, StateDiffStorageSlot, TransactionSigned, B256, EMPTY_OMMER_ROOT_HASH, U256
 };
 //use reth_provider::{StateProvider, StateProviderFactory};
 //use reth_revm::database::{StateProviderDatabase, SyncStateProviderDatabase};
@@ -34,6 +33,8 @@ pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>) -> Sta
     let mut state_diff = StateDiff {
         accounts: Vec::new(),
         receipts: receipts.clone(),
+        gas_used: 0,
+        transactions_root: B256::ZERO,
     };
     for (address, bundle_account) in bundle_state.state.iter() {
         let storage = bundle_account.storage.iter().map(|(&key, value)| StateDiffStorageSlot {

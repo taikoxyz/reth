@@ -27,8 +27,7 @@ use reth_payload_builder::{
     EthBuiltPayload,
 };
 use reth_primitives::{
-    StateDiff, StateDiffAccount, StateDiffStorageSlot,
-    constants::{eip4844::MAX_DATA_GAS_PER_BLOCK, BEACON_NONCE}, eip4844::calculate_excess_blob_gas, proofs::{self, calculate_requests_root}, Block, BlockNumber, ChainId, EthereumHardforks, Header, Receipt, Receipts, Requests, TransactionSigned, EMPTY_OMMER_ROOT_HASH, U256
+    constants::{eip4844::MAX_DATA_GAS_PER_BLOCK, BEACON_NONCE}, eip4844::calculate_excess_blob_gas, hex, proofs::{self, calculate_requests_root}, Block, BlockNumber, ChainId, EthereumHardforks, Header, Receipt, Receipts, Requests, StateDiff, StateDiffAccount, StateDiffStorageSlot, TransactionSigned, Withdrawals, B256, EMPTY_OMMER_ROOT_HASH, U256
 };
 use reth_provider::{StateProvider, StateProviderFactory};
 use reth_revm::database::{StateProviderDatabase, SyncStateProviderDatabase};
@@ -153,8 +152,6 @@ where
         PayloadBuilderError::Internal(err.into())
     })?;
 
-    println!("Build 6");
-
     let mut receipts = Vec::new();
     for tx in &attributes.transactions {
         // // ensure we still have capacity for this transaction
@@ -257,7 +254,7 @@ where
         executed_txs.push(tx.into_signed());
     }
 
-    println!("{} - Build 7: {:?}", chain_spec.chain().id(), executed_txs);
+    //println!("{} - Build: {:?}", chain_spec.chain().id(), executed_txs);
 
     // check if we have a better block
     // if !is_better_payload(best_payload.as_ref(), total_fees) {
@@ -268,34 +265,6 @@ where
     //    })
     //}
 
-    // calculate the requests and the requests root
-    let (requests, requests_root) = if chain_spec
-        .is_prague_active_at_timestamp(attributes.inner.timestamp)
-    {
-        let deposit_requests = parse_deposits_from_receipts(&chain_spec, receipts.iter().flatten())
-            .map_err(|err| PayloadBuilderError::Internal(RethError::Execution(err.into())))?;
-        let withdrawal_requests = post_block_withdrawal_requests_contract_call(
-            &evm_config,
-            &mut sync_db,
-            &initialized_cfg,
-            &initialized_block_env,
-        )
-        .map_err(|err| PayloadBuilderError::Internal(err.into()))?;
-
-        let requests = [deposit_requests, withdrawal_requests].concat();
-        let requests_root = calculate_requests_root(&requests);
-        (Some(requests.into()), Some(requests_root))
-    } else {
-        (None, None)
-    };
-
-    let WithdrawalsOutcome { withdrawals_root, withdrawals } = commit_withdrawals(
-        &mut sync_db,
-        &chain_spec,
-        attributes.inner.timestamp,
-        attributes.inner.withdrawals,
-    )?;
-
     // merge all transitions into bundle state, this would apply the withdrawal balance changes
     // and 4788 contract call
     sync_db.merge_transitions(BundleRetention::PlainState);
@@ -305,12 +274,9 @@ where
         sync_db.take_bundle(),
         vec![receipts].into(),
         block_number,
-        vec![requests.clone().unwrap_or_default()],
+        vec![Requests::default()],
     )
     .filter_current_chain();
-
-    println!("coinbase: {:?}", initialized_block_env.coinbase);
-    println!("basefee: {:?}", base_fee);
 
     let state_diff = execution_outcome_to_state_diff(&execution_outcome);
 
@@ -329,31 +295,6 @@ where
     // create the block header
     let transactions_root = proofs::calculate_transaction_root(&executed_txs);
 
-    // initialize empty blob sidecars at first. If cancun is active then this will
-    let mut blob_sidecars = Vec::new();
-    let mut excess_blob_gas = None;
-    let mut blob_gas_used = None;
-
-    // only determine cancun fields when active
-    if chain_spec.is_cancun_active_at_timestamp(attributes.inner.timestamp) {
-        // grab the blob sidecars from the executed txs
-        blob_sidecars = pool.get_all_blobs_exact(
-            executed_txs.iter().filter(|tx| tx.is_eip4844()).map(|tx| tx.hash).collect(),
-        )?;
-
-        excess_blob_gas = if chain_spec.is_cancun_active_at_timestamp(parent_block.timestamp) {
-            let parent_excess_blob_gas = parent_block.excess_blob_gas.unwrap_or_default();
-            let parent_blob_gas_used = parent_block.blob_gas_used.unwrap_or_default();
-            Some(calculate_excess_blob_gas(parent_excess_blob_gas, parent_blob_gas_used))
-        } else {
-            // for the first post-fork block, both parent.blob_gas_used and
-            // parent.excess_blob_gas are evaluated as 0
-            Some(calculate_excess_blob_gas(0, 0))
-        };
-
-        blob_gas_used = Some(sum_blob_gas_used);
-    }
-
     let json_str = serde_json::to_string(&state_diff).unwrap();
     let serialized_bytes = json_str.into_bytes();
     let extra_data = Bytes::from(serialized_bytes);
@@ -365,7 +306,7 @@ where
         state_root,
         transactions_root,
         receipts_root,
-        withdrawals_root,
+        withdrawals_root: Some(B256::from(hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))),
         logs_bloom,
         timestamp: attributes.inner.timestamp,
         mix_hash: attributes.inner.prev_randao,
@@ -377,15 +318,15 @@ where
         gas_used: cumulative_gas_used,
         extra_data,
         parent_beacon_block_root: attributes.inner.parent_beacon_block_root,
-        blob_gas_used,
-        excess_blob_gas,
-        requests_root,
+        blob_gas_used: Some(0),
+        excess_blob_gas: Some(0),
+        requests_root: Some(calculate_requests_root(&Vec::new())),
     };
 
     println!("header: {:?}", header);
 
     // seal the block
-    let block = Block { header, body: executed_txs, ommers: vec![], withdrawals, requests };
+    let block = Block { header, body: executed_txs, ommers: vec![], withdrawals: Some(Withdrawals::default()), requests: Some(Requests::default()) };
 
     let sealed_block = block.seal_slow();
     //sealed_block.state_diff = Some(execution_outcome_to_state_diff(&execution_outcome));
@@ -394,18 +335,13 @@ where
 
     println!("execution outcome: {:?}", execution_outcome);
 
-    assert_eq!(state_diff, attributes.state_diff.unwrap());
+    assert_eq!(state_diff, attributes.chain_da.state_diff.unwrap());
 
     debug!(target: "payload_builder", ?sealed_block, "sealed built block");
 
     total_fees = U256::from(1u64);
 
-    let mut payload = EthBuiltPayload::new(attributes.inner.id, sealed_block, total_fees);
-
-    // extend the payload with the blob sidecars from the executed txs
-    payload.extend_sidecars(blob_sidecars);
-
-    println!("Build 18");
+    let payload = EthBuiltPayload::new(attributes.inner.id, sealed_block, total_fees);
 
     Ok(BuildOutcome::Better { payload, cached_reads: /*sync_cached_reads.into())*/ CachedReads::default() })
 }
