@@ -153,9 +153,9 @@ contract TaikoL1 is EssentialContract, TaikoEvents, TaikoErrors {
 
 
         // Apply L1 state updates
-        for (uint i = 0; i < _block.l1StateDiff.accounts.length; i++) {
-            GwynethContract(_block.l1StateDiff.accounts[i].addr).applyStateDelta(_block.l1StateDiff.accounts[i].slots);
-        }
+        // for (uint i = 0; i < _block.l1StateDiff.accounts.length; i++) {
+        //     GwynethContract(_block.l1StateDiff.accounts[i].addr).applyStateDelta(_block.l1StateDiff.accounts[i].slots);
+        // }
 
         emit BlockProposed({ blockId: _block.l2BlockNumber, meta: _block });
     }

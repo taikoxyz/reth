@@ -309,6 +309,9 @@ where
     )
     .filter_current_chain();
 
+    println!("coinbase: {:?}", initialized_block_env.coinbase);
+    println!("basefee: {:?}", base_fee);
+
     let state_diff = execution_outcome_to_state_diff(&execution_outcome);
 
     let receipts_root =
@@ -379,15 +382,19 @@ where
         requests_root,
     };
 
-    println!("Build 15");
+    println!("header: {:?}", header);
 
     // seal the block
     let block = Block { header, body: executed_txs, ommers: vec![], withdrawals, requests };
 
-    let mut sealed_block = block.seal_slow();
+    let sealed_block = block.seal_slow();
     //sealed_block.state_diff = Some(execution_outcome_to_state_diff(&execution_outcome));
 
+    println!("block hash: {:?}", sealed_block.hash());
+
     println!("execution outcome: {:?}", execution_outcome);
+
+    assert_eq!(state_diff, attributes.state_diff.unwrap());
 
     debug!(target: "payload_builder", ?sealed_block, "sealed built block");
 

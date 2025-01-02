@@ -78,4 +78,4 @@ if __name__ == "__main__":
     print("Alice balance:")
     simulate_blockchain_call(example_contract_address, example_abi, "balanceOf", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
     print("Bob balance:")
-    simulate_blockchain_call(example_contract_address, example_abi, "balanceOf", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
+    simulate_blockchain_call(example_contract_address, example_abi, "balanceOf", "0xE25583099BA105D9ec0A67f5Ae86D90e50036425")

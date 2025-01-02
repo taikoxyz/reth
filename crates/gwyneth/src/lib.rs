@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use builder::default_gwyneth_payload_builder;
 use reth_evm_ethereum::EthEvmConfig;
-use reth_primitives::ChainId;
+use reth_primitives::{ChainId, StateDiff};
 use reth_tasks::TaskManager;
 use thiserror::Error;
 
@@ -67,6 +67,9 @@ pub struct GwynethPayloadAttributes {
     /// Transactions is a field for rollups: the transactions list is forced into the block
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transactions: Option<Vec<TransactionSigned>>,
+    /// Transactions is a field for rollups: the transactions list is forced into the block
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_diff: Option<StateDiff>,
     /// If set, this sets the exact gas limit the block produced with.
     #[serde(skip_serializing_if = "Option::is_none", with = "alloy_serde::quantity::opt")]
     pub gas_limit: Option<u64>,
@@ -110,6 +113,8 @@ pub struct GwynethPayloadBuilderAttributes<SyncProvider> {
     /// Decoded transactions and the original EIP-2718 encoded bytes as received in the payload
     /// attributes.
     pub transactions: Vec<WithEncoded<TransactionSigned>>,
+    /// state diff
+    pub state_diff: Option<StateDiff>,
     /// The gas limit for the generated payload
     pub gas_limit: Option<u64>,
 
@@ -136,6 +141,7 @@ impl<SyncProvider: Debug + Sync + Send> PayloadBuilderAttributes
         Ok(Self {
             inner: EthPayloadBuilderAttributes::new(parent, attributes.inner),
             transactions,
+            state_diff: attributes.state_diff,
             gas_limit: attributes.gas_limit,
             providers: HashMap::default(),
         })

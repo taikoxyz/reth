@@ -3457,6 +3457,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "alloy-sol-types",
+ "bincode",
  "eyre",
  "futures",
  "futures-util",
