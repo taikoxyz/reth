@@ -32,6 +32,7 @@ EF_TESTS_DIR := ./testing/ef-tests/ethereum-tests
 
 # The docker image name
 DOCKER_IMAGE_NAME ?= ghcr.io/paradigmxyz/reth
+TAIKO_DOCKER_IMAGE_NAME ?= us-docker.pkg.dev/evmchain/images/taiko-reth
 
 # Features in reth/op-reth binary crate other than "ethereum" and "optimism"
 BIN_OTHER_FEATURES := asm-keccak jemalloc jemalloc-prof min-error-logs min-warn-logs min-info-logs min-debug-logs min-trace-logs
@@ -385,16 +386,13 @@ define taiko_docker_build_push
 
 	docker buildx build --file ./DockerfileTaiko.cross . \
 		--platform linux/amd64,linux/arm64 \
-		--tag $(DOCKER_IMAGE_NAME):$(1) \
-		--tag $(DOCKER_IMAGE_NAME):$(2) \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(1) \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(2) \
 		--provenance=false \
 		--push
 endef
 
-# Note: This requires a buildx builder with emulation support. For example:
-#
-# `docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64`
-# `docker buildx create --use --driver docker-container --name cross-builder`
+# Note: Build docker image for testing
 .PHONY: taiko-docker-build-latest
 taiko-docker-build-latest: ## Build and push a cross-arch Docker image tagged with the latest git tag and `latest`.
 	$(call taiko_docker_build,$(GIT_TAG),latest)
@@ -405,14 +403,14 @@ define taiko_docker_build
 	mkdir -p $(BIN_DIR)/amd64
 	cp $(CARGO_TARGET_DIR)/x86_64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/amd64/taiko-reth
 
-	$(MAKE) taiko-build-aarch64-unknown-linux-gnu
-	mkdir -p $(BIN_DIR)/arm64
-	cp $(CARGO_TARGET_DIR)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
+	# $(MAKE) taiko-build-aarch64-unknown-linux-gnu
+	# mkdir -p $(BIN_DIR)/arm64
+	# cp $(CARGO_TARGET_DIR)/aarch64-unknown-linux-gnu/$(PROFILE)/taiko-reth $(BIN_DIR)/arm64/taiko-reth
 
 	docker buildx build --file ./DockerfileTaiko.cross . \
 		--platform linux/amd64,linux/arm64 \
-		--tag $(DOCKER_IMAGE_NAME):$(1) \
-		--tag $(DOCKER_IMAGE_NAME):$(2) \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(1) \
+		--tag $(TAIKO_DOCKER_IMAGE_NAME):$(2) \
 		--provenance=false
 endef
 

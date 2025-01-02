@@ -13,15 +13,13 @@ use reth_evm::{
     ConfigureEvmEnv,
 };
 use reth_node_api::NodePrimitives;
-use reth_primitives::{InvalidTransactionError, SealedBlockWithSenders};
+use reth_primitives::SealedBlockWithSenders;
 use reth_provider::{
     BlockExecutionOutput, BlockIdReader, BlockNumReader, BlockReader, HeaderProvider,
     L1OriginReader, ProviderBlock, ProviderHeader, StateProofProvider, StateProviderFactory,
 };
 use reth_revm::database::StateProviderDatabase;
-use reth_rpc_eth_api::{
-    helpers::TraceExt, EthApiTypes, FromEthApiError as _, FromEvmError as _, RpcNodeCore,
-};
+use reth_rpc_eth_api::{helpers::TraceExt, EthApiTypes, FromEthApiError as _, RpcNodeCore};
 use reth_rpc_eth_types::EthApiError;
 use reth_rpc_server_types::ToRpcResult;
 use reth_rpc_types_compat::{block::from_block, transaction::from_recovered};
@@ -29,12 +27,12 @@ use reth_taiko_evm::encode_and_compress_tx_list;
 use reth_taiko_primitives::L1Origin;
 use reth_tasks::pool::BlockingTaskGuard;
 use reth_transaction_pool::{
-    error::InvalidPoolTransactionError, pool::BestTransactionsWithPrioritizedSenders,
-    BestTransactions, BestTransactionsAttributes, TransactionPool,
+    pool::BestTransactionsWithPrioritizedSenders, BestTransactions, BestTransactionsAttributes,
+    TransactionPool,
 };
 use revm::{
     db::{BundleState, CacheDB, State},
-    primitives::{EVMError, Env, InvalidTransaction, ResultAndState},
+    primitives::{Env, ResultAndState},
     DatabaseCommit,
 };
 use serde::{Deserialize, Serialize};
@@ -393,7 +391,8 @@ where
                             base_fee, None,
                         ))
                         .filter_transactions(|tx| {
-                            tx.effective_tip_per_gas(base_fee).is_some_and(|tip| tip >= min_tip as u128)
+                            tx.effective_tip_per_gas(base_fee)
+                                .is_some_and(|tip| tip >= min_tip as u128)
                         });
                     let mut best_txs = BestTransactionsWithPrioritizedSenders::new(
                         local_accounts.clone().unwrap_or_default().into_iter().collect(),
@@ -421,7 +420,7 @@ where
 
                         let ResultAndState { result, state } = match evm.transact() {
                             Ok(res) => res,
-                            Err(_) => continue
+                            Err(_) => continue,
                         };
                         tx_list.push(tx.clone());
                         // commit changes
@@ -433,7 +432,7 @@ where
                                     break;
                                 }
                                 buf_len = compressed_buf.len() as u64;
-                            },
+                            }
                             Err(_) => {
                                 tx_list.pop();
                                 continue

@@ -320,7 +320,7 @@ impl From<Genesis> for TaikoChainSpec {
             CHAIN_INTERNAL_TESTNET => Some(INTERNAL_DEVNET_ONTAKE_BLOCK),
             CHAIN_HEKLA_TESTNET => Some(HEKLA_ONTAKE_BLOCK),
             CHAIN_MAINNET => Some(MAINNET_ONTAKE_BLOCK),
-            _ => None,
+            _ => unreachable!(),
         };
 
         // Block-based hardforks
@@ -411,12 +411,9 @@ mod tests {
             println!("Genesis: {_alloc:?}");
         };
 
-        for chain in [
-            CHAIN_MAINNET,
-            CHAIN_INTERNAL_TESTNET,
-            CHAIN_KATLA_TESTNET,
-            CHAIN_HEKLA_TESTNET,
-        ] {
+        for chain in
+            [CHAIN_MAINNET, CHAIN_INTERNAL_TESTNET, CHAIN_KATLA_TESTNET, CHAIN_HEKLA_TESTNET]
+        {
             load_genesis(chain);
         }
     }
