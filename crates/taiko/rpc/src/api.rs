@@ -359,7 +359,7 @@ where
         &self,
         _beneficiary: Address,
         base_fee: u64,
-        _block_max_gas_limit: u64,
+        block_max_gas_limit: u64,
         max_bytes_per_tx_list: u64,
         local_accounts: Option<Vec<Address>>,
         max_transactions_lists: u64,
@@ -373,21 +373,6 @@ where
         // replay all transactions of the block
         self.eth_api()
             .spawn_tracing(move |this| {
-                let best_txs = this
-                    .pool()
-                    .best_transactions_with_attributes(BestTransactionsAttributes::new(
-                        base_fee, None,
-                    ))
-                    .filter_transactions(|tx| {
-                        tx.effective_tip_per_gas(base_fee).is_some_and(|tip| tip >= min_tip as u128)
-                    });
-                let mut best_txs = BestTransactionsWithPrioritizedSenders::new(
-                    local_accounts.unwrap_or_default().into_iter().collect(),
-                    u64::MAX,
-                    best_txs,
-                );
-                best_txs.skip_blobs();
-
                 let mut db = State::builder()
                     .with_database(StateProviderDatabase::new(
                         this.provider().latest().map_err(Eth::Error::from_eth_err)?,
@@ -402,7 +387,27 @@ where
                     let mut tx_list = vec![];
                     let mut buf_len: u64 = 0;
 
+                    let best_txs = this
+                        .pool()
+                        .best_transactions_with_attributes(BestTransactionsAttributes::new(
+                            base_fee, None,
+                        ))
+                        .filter_transactions(|tx| {
+                            tx.effective_tip_per_gas(base_fee).is_some_and(|tip| tip >= min_tip as u128)
+                        });
+                    let mut best_txs = BestTransactionsWithPrioritizedSenders::new(
+                        local_accounts.clone().unwrap_or_default().into_iter().collect(),
+                        u64::MAX,
+                        best_txs,
+                    );
+                    best_txs.skip_blobs();
+
                     while let Some(pool_tx) = best_txs.next() {
+                        // ensure we still have capacity for this transaction
+                        if cumulative_gas_used + pool_tx.gas_limit() > block_max_gas_limit {
+                            continue
+                        }
+
                         let tx = pool_tx.to_consensus();
 
                         // Configure the environment for the block.
@@ -416,43 +421,25 @@ where
 
                         let ResultAndState { result, state } = match evm.transact() {
                             Ok(res) => res,
-                            Err(err) => {
-                                match err {
-                                    EVMError::Transaction(err) => {
-                                        if matches!(err, InvalidTransaction::NonceTooLow { .. }) {
-                                            // if the nonce is too low, we can skip this transaction
-                                        } else {
-                                            // if the transaction is invalid, we can skip it and all
-                                            // of its
-                                            // descendants
-                                            best_txs.mark_invalid(
-                                                &pool_tx,
-                                                InvalidPoolTransactionError::Consensus(
-                                                    InvalidTransactionError::TxTypeNotSupported,
-                                                ),
-                                            );
-                                        }
-                                        continue
-                                    }
-                                    err => {
-                                        // this is an error that we should treat as fatal for this
-                                        // attempt
-                                        return Err(Eth::Error::from_evm_err(err))
-                                    }
-                                }
-                            }
+                            Err(_) => continue
                         };
                         tx_list.push(tx.clone());
                         // commit changes
 
-                        let compressed_buf = encode_and_compress_tx_list(&tx_list)
-                            .map_err(|err| EthApiError::EvmCustom(err.to_string()))?;
-                        if compressed_buf.len() > max_bytes_per_tx_list as usize {
-                            tx_list.pop();
-                            break;
-                        }
+                        match encode_and_compress_tx_list(&tx_list) {
+                            Ok(compressed_buf) => {
+                                if compressed_buf.len() > max_bytes_per_tx_list as usize {
+                                    tx_list.pop();
+                                    break;
+                                }
+                                buf_len = compressed_buf.len() as u64;
+                            },
+                            Err(_) => {
+                                tx_list.pop();
+                                continue
+                            }
+                        };
 
-                        buf_len = compressed_buf.len() as u64;
                         // append gas used
                         cumulative_gas_used += result.gas_used();
                         drop(evm);
