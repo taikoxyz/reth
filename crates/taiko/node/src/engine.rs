@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use alloy_consensus::{BlockHeader, Header};
+use alloy_primitives::B256;
 use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 use reth_node_builder::{
     validate_parent_beacon_block_root_presence, EngineApiMessageVersion,
@@ -145,7 +146,7 @@ fn validate_withdrawals_presence<T: EthereumHardforks>(
             }
         }
         EngineApiMessageVersion::V2 | EngineApiMessageVersion::V3 | EngineApiMessageVersion::V4 => {
-            if is_shanghai_active && !hash_withdrawals && withdrawals_hash.is_none() {
+            if is_shanghai_active && !has_withdrawals && withdrawals_hash.is_none() {
                 return Err(message_validation_kind
                     .to_error(VersionSpecificValidationError::NoWithdrawalsPostShanghai))
             }
