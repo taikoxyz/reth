@@ -179,7 +179,7 @@ where
         &self,
         payload: TaikoExecutionPayloadInputV2,
     ) -> EngineApiResult<PayloadStatus> {
-        let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash } = payload;
+        let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash, .. } = payload;
         let payload = convert_payload_input_v2_to_payload(execution_payload);
         let payload = TaikoExecutionPayload::from((payload, tx_hash, withdrawals_hash));
         let payload_or_attrs =

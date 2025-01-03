@@ -1,12 +1,13 @@
 //! Payload related types
 
 use alloy_eips::eip4895::Withdrawal;
-use alloy_primitives::{Address, Bytes, B256, U256};
+use alloy_primitives::{Address, Bytes, PrimitiveSignature as Signature, B256, U256};
 use alloy_rlp::{RlpDecodable, RlpEncodable};
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadV1, ExecutionPayloadV2, PayloadAttributes,
+    ExecutionPayload, ExecutionPayloadInputV2, ExecutionPayloadV2, PayloadAttributes,
 };
 use reth_taiko_primitives::L1Origin;
+use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
 
@@ -138,18 +139,6 @@ impl From<ExecutionPayload> for TaikoExecutionPayload {
 /// This is the input to `engine_newPayloadV2`, which may or may not have a withdrawals field.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ExecutionPayloadInputV2 {
-    /// The V1 execution payload
-    #[serde(flatten)]
-    pub execution_payload: ExecutionPayloadV1,
-    /// The payload withdrawals
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub withdrawals: Option<Vec<Withdrawal>>,
-}
-
-/// This is the input to `engine_newPayloadV2`, which may or may not have a withdrawals field.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct TaikoExecutionPayloadInputV2 {
     /// The V1 execution payload
     #[serde(flatten)]
@@ -158,4 +147,28 @@ pub struct TaikoExecutionPayloadInputV2 {
     pub tx_hash: B256,
     /// Allow passing `WithdrawalsHash` directly instead of withdrawals
     pub withdrawals_hash: B256,
+    /// Blob gas used
+    #[serde(with = "alloy_serde::quantity::opt")]
+    pub blob_gas_used: Option<u64>,
+    /// Excess blob gas
+    #[serde(with = "alloy_serde::quantity::opt")]
+    pub excess_blob_gas: Option<u64>,
+    /// Deposits
+    pub deposits: Option<Vec<TxDeposit>>,
+}
+
+/// TxDeposit
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TxDeposit {
+    /// Public key
+    pub public_key: PublicKey,
+    /// Withdrawal credentials
+    pub withdrawal_credentials: B256,
+    /// Amount
+    pub amount: u64,
+    /// Signature
+    pub signature: Signature,
+    /// Index
+    pub index: u64,
 }

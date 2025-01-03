@@ -181,7 +181,11 @@ fn create_taiko_block(
             state_root: payload.payload_inner.as_v1().state_root,
             transactions_root: payload.tx_hash,
             receipts_root: payload.payload_inner.as_v1().receipts_root,
-            withdrawals_root: Some(payload.withdrawals_hash),
+            withdrawals_root: if payload.withdrawals_hash.is_zero() {
+                None
+            } else {
+                Some(payload.withdrawals_hash)
+            },
             logs_bloom: payload.payload_inner.as_v1().logs_bloom,
             number: payload.payload_inner.block_number(),
             gas_limit: payload.payload_inner.as_v1().gas_limit,
