@@ -9558,7 +9558,6 @@ dependencies = [
  "reth-network",
  "reth-node-builder",
  "reth-payload-builder",
- "reth-payload-primitives",
  "reth-primitives",
  "reth-provider",
  "reth-rpc",

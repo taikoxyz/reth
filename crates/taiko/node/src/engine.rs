@@ -110,11 +110,7 @@ where
         attributes: &TaikoPayloadAttributes,
     ) -> Result<(), EngineObjectValidationError> {
         debug!(target: "taiko::engine", version=?version, attributes=?attributes);
-        let res = reth_payload_primitives::validate_version_specific_fields(
-            self.chain_spec(),
-            version,
-            attributes.into(),
-        );
+        let res = validate_version_specific_fields(self.chain_spec(), version, attributes.into());
         debug!(target: "taiko::engine", version=?version, ?res);
         res
     }
@@ -137,6 +133,7 @@ fn validate_withdrawals_presence<T: EthereumHardforks>(
     message_validation_kind: MessageValidationKind,
     timestamp: u64,
     has_withdrawals: bool,
+    withdrawals_hash: Option<B256>,
 ) -> Result<(), EngineObjectValidationError> {
     let is_shanghai_active = chain_spec.is_shanghai_active_at_timestamp(timestamp);
 
@@ -148,6 +145,10 @@ fn validate_withdrawals_presence<T: EthereumHardforks>(
             }
         }
         EngineApiMessageVersion::V2 | EngineApiMessageVersion::V3 | EngineApiMessageVersion::V4 => {
+            if is_shanghai_active && !hash_withdrawals && withdrawals_hash.is_none() {
+                return Err(message_validation_kind
+                    .to_error(VersionSpecificValidationError::NoWithdrawalsPostShanghai))
+            }
             if !is_shanghai_active && has_withdrawals {
                 return Err(message_validation_kind
                     .to_error(VersionSpecificValidationError::HasWithdrawalsPreShanghai))
@@ -167,12 +168,26 @@ where
     Type: PayloadAttributes,
     T: EthereumHardforks,
 {
+    let withdrawals_hash = match payload_or_attrs {
+        PayloadOrAttributes::ExecutionPayload {
+            payload: TaikoExecutionPayload { withdrawals_hash, .. },
+            ..
+        } => {
+            if withdrawals_hash.is_zero() {
+                None
+            } else {
+                Some(*withdrawals_hash)
+            }
+        }
+        _ => None,
+    };
     validate_withdrawals_presence(
         chain_spec,
         version,
         payload_or_attrs.message_validation_kind(),
         payload_or_attrs.timestamp(),
         payload_or_attrs.withdrawals().is_some(),
+        withdrawals_hash,
     )?;
     validate_parent_beacon_block_root_presence(
         chain_spec,
