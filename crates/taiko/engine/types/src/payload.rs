@@ -153,8 +153,12 @@ pub struct TaikoExecutionPayloadInputV2 {
     /// Excess blob gas
     #[serde(with = "alloy_serde::quantity::opt")]
     pub excess_blob_gas: Option<u64>,
-    /// Deposits
-    pub deposits: Option<Vec<TxDeposit>>,
+    /// Deposit requests
+    pub deposit_requests: Option<Vec<TxDeposit>>,
+
+    /// Is taiko block
+    #[serde(rename = "TaikoBlock")]
+    pub taiko_block: bool,
 }
 
 /// TxDeposit
