@@ -355,6 +355,8 @@ pub struct StateDiff {
     pub accounts: Vec<StateDiffAccount>,
     /// Receipts
     pub receipts: Vec<Receipt>,
+    /// State root
+    pub state_root: B256,
     /// Transactions root
     pub transactions_root: B256,
     /// Gas used
