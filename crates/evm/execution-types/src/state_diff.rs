@@ -19,21 +19,22 @@ use revm::db::states::StorageSlot;
 use crate::{BlockExecutionOutput, ExecutionOutcome};
 
 
-pub fn execution_outcome_to_state_diff(execution_outcome: &ExecutionOutcome) -> StateDiff {
+pub fn execution_outcome_to_state_diff(execution_outcome: &ExecutionOutcome, state_root: B256) -> StateDiff {
     assert_eq!(execution_outcome.receipts().len(), 1);
     let receipts = execution_outcome.receipts()[0].iter().map(|r| r.clone().unwrap()).collect();
-    to_state_diff(&execution_outcome.bundle, &receipts)
+    to_state_diff(&execution_outcome.bundle, &receipts, state_root)
 }
 
-pub fn block_execution_output_to_state_diff(block_execution_output: &BlockExecutionOutput<Receipt>) -> StateDiff {
-    to_state_diff(&block_execution_output.state, &block_execution_output.receipts)
+pub fn block_execution_output_to_state_diff(block_execution_output: &BlockExecutionOutput<Receipt>, state_root: B256) -> StateDiff {
+    to_state_diff(&block_execution_output.state, &block_execution_output.receipts, state_root)
 }
 
-pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>) -> StateDiff {
+pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>, state_root: B256) -> StateDiff {
     let mut state_diff = StateDiff {
         accounts: Vec::new(),
         receipts: receipts.clone(),
         gas_used: 0,
+        state_root,
         transactions_root: B256::ZERO,
     };
     for (address, bundle_account) in bundle_state.state.iter() {
