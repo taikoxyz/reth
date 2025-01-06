@@ -278,8 +278,6 @@ where
     )
     .filter_current_chain();
 
-    let state_diff = execution_outcome_to_state_diff(&execution_outcome);
-
     let receipts_root =
         execution_outcome.receipts_root_slow(block_number).expect("Number is in range");
     let logs_bloom = execution_outcome.block_logs_bloom(block_number).expect("Number is in range");
@@ -292,6 +290,7 @@ where
         )?
     };
 
+    let state_diff = execution_outcome_to_state_diff(&execution_outcome, state_root);
     // create the block header
     let transactions_root = proofs::calculate_transaction_root(&executed_txs);
 
