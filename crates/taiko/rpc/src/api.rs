@@ -200,9 +200,7 @@ where
             .map_err(RethError::other)
             .map_err(EthApiError::Internal)?;
         debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
-        let res = self.inner.preflight(block_id).await.map_err(Into::into);
-        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
-        res
+        self.inner.preflight(block_id).await.map_err(Into::into)
     }
 }
 
@@ -289,8 +287,7 @@ where
             ?min_tip,
             "Read tx pool context"
         );
-        let res = self
-            .inner
+        self.inner
             .pool_content(
                 beneficiary,
                 base_fee,
@@ -301,9 +298,7 @@ where
                 min_tip,
             )
             .await
-            .map_err(Into::into);
-        debug!(target: "rpc::taiko", ?res, "Read tx pool context");
-        res
+            .map_err(Into::into)
     }
 }
 

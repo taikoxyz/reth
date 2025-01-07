@@ -99,10 +99,7 @@ where
         version: EngineApiMessageVersion,
         payload_or_attrs: PayloadOrAttributes<'_, TaikoPayloadAttributes>,
     ) -> Result<(), EngineObjectValidationError> {
-        debug!(target: "taiko::engine", version=?version, payload_or_attrs=?payload_or_attrs);
-        let res = validate_version_specific_fields(self.chain_spec(), version, payload_or_attrs);
-        debug!(target: "taiko::engine", version=?version, ?res);
-        res
+        validate_version_specific_fields(self.chain_spec(), version, payload_or_attrs)
     }
 
     fn ensure_well_formed_attributes(
@@ -110,10 +107,7 @@ where
         version: EngineApiMessageVersion,
         attributes: &TaikoPayloadAttributes,
     ) -> Result<(), EngineObjectValidationError> {
-        debug!(target: "taiko::engine", version=?version, attributes=?attributes);
-        let res = validate_version_specific_fields(self.chain_spec(), version, attributes.into());
-        debug!(target: "taiko::engine", version=?version, ?res);
-        res
+        validate_version_specific_fields(self.chain_spec(), version, attributes.into())
     }
 
     fn validate_payload_attributes_against_header(
