@@ -261,6 +261,13 @@ where
 
     let sealed_block = Arc::new(block.block.seal_slow());
 
+    if attributes.l1_origin.batch_id.is_none() &&
+        (attributes.l1_origin.l1_block_hash.is_none() ||
+            attributes.l1_origin.l1_block_height.is_none())
+    {
+        return Err(PayloadBuilderError::other(TaikoPayloadBuilderError::MissingL1Origin));
+    }
+
     // L1Origin **MUST NOT** be nil, it's a required field in PayloadAttributesV1.
     let l1_origin = L1Origin {
         // Set the block hash before inserting the L1Origin into database.

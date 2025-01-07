@@ -8929,6 +8929,7 @@ dependencies = [
  "alloy-genesis",
  "alloy-network",
  "alloy-primitives 0.8.14",
+ "alloy-provider",
  "alloy-rlp",
  "alloy-rpc-types",
  "alloy-rpc-types-admin",
@@ -8954,6 +8955,7 @@ dependencies = [
  "parking_lot",
  "pin-project",
  "rand 0.8.5",
+ "reqwest",
  "reth-beacon-consensus",
  "reth-chainspec",
  "reth-consensus",
@@ -9474,6 +9476,7 @@ dependencies = [
  "reth-ethereum-consensus",
  "reth-primitives",
  "reth-primitives-traits",
+ "reth-provider",
  "revm-primitives",
 ]
 
@@ -9569,6 +9572,7 @@ dependencies = [
  "reth-taiko-evm",
  "reth-taiko-payload-builder",
  "reth-taiko-payload-validator",
+ "reth-taiko-primitives",
  "reth-tracing",
  "reth-transaction-pool",
  "reth-trie-db",

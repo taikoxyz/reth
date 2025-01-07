@@ -32,6 +32,7 @@ reth-taiko-engine-types.workspace = true
 reth-taiko-payload-builder.workspace = true
 reth-taiko-chainspec.workspace = true
 reth-taiko-payload-validator.workspace = true
+reth-taiko-primitives.workspace = true
 
 alloy-rpc-types-engine.workspace = true
 alloy-consensus.workspace = true

@@ -1,11 +1,18 @@
 //! Contains RPC handler implementations specific to transactions
 
+use std::future::Future;
+
+use alloy_primitives::Bytes;
+use alloy_provider::Provider;
 use reth_provider::{BlockReader, BlockReaderIdExt, ProviderTx, TransactionsProvider};
 use reth_rpc_eth_api::{
     helpers::{EthSigner, EthTransactions, LoadTransaction, SpawnBlocking},
-    FullEthApiTypes, RpcNodeCoreExt,
+    EthApiTypes, FromEthApiError, FullEthApiTypes, RpcNodeCore, RpcNodeCoreExt,
 };
-use reth_transaction_pool::TransactionPool;
+use reth_rpc_eth_types::{utils::recover_raw_transaction, EthApiError};
+use reth_rpc_server_types::result::internal_rpc_err;
+use reth_transaction_pool::{PoolTransaction, TransactionOrigin, TransactionPool};
+use revm_primitives::B256;
 
 use crate::EthApi;
 
@@ -14,10 +21,46 @@ impl<Provider, Pool, Network, EvmConfig> EthTransactions
 where
     Self: LoadTransaction<Provider: BlockReaderIdExt>,
     Provider: BlockReader<Transaction = ProviderTx<Self::Provider>>,
+    <Self as RpcNodeCore>::Pool: TransactionPool,
 {
     #[inline]
     fn signers(&self) -> &parking_lot::RwLock<Vec<Box<dyn EthSigner<ProviderTx<Self::Provider>>>>> {
         self.inner.signers()
+    }
+
+    #[inline]
+    #[allow(clippy::manual_async_fn)]
+    fn send_raw_transaction(
+        &self,
+        tx: Bytes,
+    ) -> impl Future<Output = Result<B256, Self::Error>> + Send {
+        async move {
+            if let Some(client) = self.preconf_forwarding_server() {
+                return client
+                    .send_raw_transaction(&tx)
+                    .await
+                    .map_err(|err| internal_rpc_err(err.to_string()))
+                    .map_err(EthApiError::other)
+                    .map_err(Into::into)?
+                    .watch()
+                    .await
+                    .map_err(|err| internal_rpc_err(err.to_string()))
+                    .map_err(EthApiError::other)
+                    .map_err(Into::into);
+            }
+            let recovered = recover_raw_transaction(&tx)?;
+            let pool_transaction =
+                <Self::Pool as TransactionPool>::Transaction::from_pooled(recovered);
+
+            // submit the transaction to the pool with a `Local` origin
+            let hash = self
+                .pool()
+                .add_transaction(TransactionOrigin::Local, pool_transaction)
+                .await
+                .map_err(<Self as EthApiTypes>::Error::from_eth_err)?;
+
+            Ok(hash)
+        }
     }
 }
 
@@ -74,6 +117,7 @@ mod tests {
             fee_history_cache,
             evm_config,
             DEFAULT_PROOF_PERMITS,
+            None,
         );
 
         // https://etherscan.io/tx/0xa694b71e6c128a2ed8e2e0f6770bddbe52e3bb8f10e8472f9a79ab81497a8b5d

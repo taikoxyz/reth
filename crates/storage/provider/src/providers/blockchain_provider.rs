@@ -826,6 +826,13 @@ impl<N: ProviderNodeTypes> L1OriginWriter for BlockchainProvider2<N> {
         provider_rw.commit()?;
         Ok(())
     }
+
+    fn delete_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<()> {
+        let provider_rw = self.database_provider_rw()?;
+        provider_rw.delete_l1_origin(block_number)?;
+        provider_rw.commit()?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

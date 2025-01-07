@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_STALE_FILTER_TTL: Duration = Duration::from_secs(5 * 60);
 
 /// Additional config values for the eth namespace.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EthConfig {
     /// Settings for the caching layer
     pub cache: EthStateCacheConfig,
@@ -42,6 +42,8 @@ pub struct EthConfig {
     pub fee_history_cache: FeeHistoryCacheConfig,
     /// The maximum number of getproof calls that can be executed concurrently.
     pub proof_permits: usize,
+    /// The preconf server url for forwarding
+    pub preconf_forwarding_server: Option<String>,
 }
 
 impl EthConfig {
@@ -68,6 +70,7 @@ impl Default for EthConfig {
             stale_filter_ttl: DEFAULT_STALE_FILTER_TTL,
             fee_history_cache: FeeHistoryCacheConfig::default(),
             proof_permits: DEFAULT_PROOF_PERMITS,
+            preconf_forwarding_server: None,
         }
     }
 }
@@ -124,6 +127,12 @@ impl EthConfig {
     /// Configures the number of getproof requests
     pub const fn proof_permits(mut self, permits: usize) -> Self {
         self.proof_permits = permits;
+        self
+    }
+
+    /// Configures the preconf forwarding server
+    pub fn preconf_forwarding_server(mut self, server: Option<String>) -> Self {
+        self.preconf_forwarding_server = server;
         self
     }
 }

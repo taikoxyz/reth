@@ -7,7 +7,9 @@ use alloy_consensus::BlockHeader;
 use alloy_eips::BlockNumberOrTag;
 use alloy_network::Ethereum;
 use alloy_primitives::U256;
+use alloy_provider::{ProviderBuilder, ReqwestProvider};
 use derive_more::Deref;
+use reqwest::Url;
 use reth_primitives::NodePrimitives;
 use reth_provider::{
     BlockReader, BlockReaderIdExt, CanonStateSubscriptions, ChainSpecProvider, L1OriginReader,
@@ -76,6 +78,7 @@ where
         fee_history_cache: FeeHistoryCache,
         evm_config: EvmConfig,
         proof_permits: usize,
+        preconf_forwarding_server: Option<String>,
     ) -> Self {
         let inner = EthApiInner::new(
             provider,
@@ -91,6 +94,7 @@ where
             evm_config,
             TokioTaskExecutor::default(),
             proof_permits,
+            preconf_forwarding_server,
         );
 
         Self { inner: Arc::new(inner), tx_resp_builder: EthTxBuilder }
@@ -134,6 +138,7 @@ where
             ctx.evm_config.clone(),
             ctx.executor.clone(),
             ctx.config.proof_permits,
+            ctx.config.preconf_forwarding_server.clone(),
         );
 
         Self { inner: Arc::new(inner), tx_resp_builder: EthTxBuilder }
@@ -270,6 +275,9 @@ pub struct EthApiInner<Provider: BlockReader, Pool, Network, EvmConfig> {
 
     /// Guard for getproof calls
     blocking_task_guard: BlockingTaskGuard,
+
+    /// The preconfigured forwarding server
+    preconf_forwarding_server: Option<ReqwestProvider>,
 }
 
 impl<Provider, Pool, Network, EvmConfig> EthApiInner<Provider, Pool, Network, EvmConfig>
@@ -292,6 +300,7 @@ where
         evm_config: EvmConfig,
         task_spawner: impl TaskSpawner + 'static,
         proof_permits: usize,
+        preconf_forwarding_server: Option<String>,
     ) -> Self {
         let signers = parking_lot::RwLock::new(Default::default());
         // get the block number of the latest block
@@ -321,6 +330,8 @@ where
             fee_history_cache,
             evm_config,
             blocking_task_guard: BlockingTaskGuard::new(proof_permits),
+            preconf_forwarding_server: preconf_forwarding_server
+                .map(|url| ProviderBuilder::default().on_http(Url::parse(&url).unwrap())),
         }
     }
 }
@@ -428,6 +439,12 @@ where
     pub const fn blocking_task_guard(&self) -> &BlockingTaskGuard {
         &self.blocking_task_guard
     }
+
+    /// Returns reference to [`BlockingTaskGuard`].
+    #[inline]
+    pub const fn preconf_forwarding_server(&self) -> Option<&ReqwestProvider> {
+        self.preconf_forwarding_server.as_ref()
+    }
 }
 
 #[cfg(test)]
@@ -491,6 +508,7 @@ mod tests {
             fee_history_cache,
             evm_config,
             DEFAULT_PROOF_PERMITS,
+            None,
         )
     }
 

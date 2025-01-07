@@ -615,4 +615,8 @@ impl L1OriginWriter for NoopProvider {
     ) -> ProviderResult<()> {
         todo!()
     }
+
+    fn delete_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<()> {
+        todo!()
+    }
 }

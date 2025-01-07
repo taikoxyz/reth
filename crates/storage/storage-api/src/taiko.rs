@@ -16,6 +16,9 @@ pub trait L1OriginReader: Send + Sync {
 pub trait L1OriginWriter: Send + Sync {
     /// Save the L1 origin for the given block hash.
     fn save_l1_origin(&self, block_number: BlockNumber, l1_origin: L1Origin) -> ProviderResult<()>;
+
+    /// Delete the L1 origin for the given block hash.
+    fn delete_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<()>;
 }
 
 /// The trait for providing taiko database operations.

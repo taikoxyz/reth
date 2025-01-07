@@ -466,6 +466,10 @@ pub enum ConsensusError {
     /// Error when the first transaction in the block is not an anchor transaction.
     #[display("missing anchor transaction")]
     AnchorTxMissing,
+
+    /// Error when fetching L1 origin.
+    #[display("failed to load L1 origin")]
+    LoadL1Origin,
 }
 
 impl ConsensusError {

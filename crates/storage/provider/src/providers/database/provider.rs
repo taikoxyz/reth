@@ -3224,4 +3224,9 @@ impl<TX: DbTxMut + DbTx + 'static, N: NodeTypes> L1OriginWriter for DatabaseProv
         self.tx_ref().put::<tables::HeadL1Origin>(HeadL1OriginKey, block_number)?;
         Ok(())
     }
+
+    fn delete_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<()> {
+        self.tx_ref().delete::<tables::L1Origins>(block_number, None)?;
+        Ok(())
+    }
 }

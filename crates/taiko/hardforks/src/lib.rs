@@ -14,6 +14,7 @@ extern crate alloc;
 pub mod hardfork;
 pub use hardfork::{
     TaikoHardfork, CHAIN_HEKLA_TESTNET, CHAIN_INTERNAL_TESTNET, CHAIN_KATLA_TESTNET, CHAIN_MAINNET,
+    CHAIN_PERCONF_DEVNET,
 };
 use reth_ethereum_forks::EthereumHardforks;
 

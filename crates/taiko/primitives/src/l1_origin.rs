@@ -1,5 +1,5 @@
 //! The `L1Origin` module provides the `L1Origin` struct and the `HeadL1Origin` table.
-use alloy_primitives::{B256, U256};
+use alloy_primitives::{Address, B256, U256};
 use alloy_rlp::{RlpDecodable, RlpEncodable};
 use reth_codecs::Compact;
 use reth_db_api::{
@@ -45,6 +45,7 @@ impl Decode for HeadL1OriginKey {
     RlpEncodable,
 )]
 #[serde(rename_all = "camelCase")]
+#[rlp(trailing)]
 pub struct L1Origin {
     /// The block number of the l2 block
     #[serde(rename = "blockID")]
@@ -52,7 +53,24 @@ pub struct L1Origin {
     /// The hash of the l2 block
     pub l2_block_hash: B256,
     /// The height of the l1 block
-    pub l1_block_height: U256,
+    pub l1_block_height: Option<U256>,
     /// The hash of the l1 block
-    pub l1_block_hash: B256,
+    pub l1_block_hash: Option<B256>,
+    // preconf fields
+    /// The batch id of the l1 block
+    #[serde(rename = "batchID")]
+    pub batch_id: Option<U256>,
+    /// The end of block of the l1 block
+    pub end_of_block: Option<bool>,
+    /// The end of preconf of the l1 block
+    pub end_of_preconf: Option<bool>,
+    /// The preconfer of the l1 block
+    pub preconfer: Option<Address>,
+}
+
+impl L1Origin {
+    /// Returns true if the `L1Origin` is a softblock
+    pub const fn is_softblock(&self) -> bool {
+        self.batch_id.is_some()
+    }
 }
