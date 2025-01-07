@@ -1865,7 +1865,13 @@ where
                         )
                         .into_rpc()
                         .into(),
-                        RethRpcModule::Taiko => TaikoApi::new(eth_api.clone()).into_rpc().into(),
+                        RethRpcModule::Taiko => TaikoApi::new(
+                            self.eth.api.clone(),
+                            self.blocking_pool_guard.clone(),
+                            self.block_executor.clone(),
+                        )
+                        .into_rpc()
+                        .into(),
                         RethRpcModule::Eth => {
                             // merge all eth handlers
                             let mut module = eth_api.clone().into_rpc();

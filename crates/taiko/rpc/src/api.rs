@@ -19,7 +19,7 @@ use reth_provider::{
     L1OriginReader, ProviderBlock, ProviderHeader, StateProofProvider, StateProviderFactory,
 };
 use reth_revm::database::StateProviderDatabase;
-use reth_rpc_eth_api::{helpers::TraceExt, EthApiTypes, FromEthApiError as _, RpcNodeCore};
+use reth_rpc_eth_api::{helpers::TraceExt, EthApiTypes, FromEthApiError as _};
 use reth_rpc_eth_types::EthApiError;
 use reth_rpc_server_types::ToRpcResult;
 use reth_rpc_types_compat::{block::from_block, transaction::from_recovered};
@@ -43,7 +43,7 @@ use tracing::debug;
 /// Taiko rpc interface.
 #[cfg_attr(not(feature = "client"), rpc(server, namespace = "taiko"))]
 #[cfg_attr(feature = "client", rpc(server, client, namespace = "taiko"))]
-pub trait TaikoApi {
+pub trait TaikoApi<T, H> {
     /// HeadL1Origin returns the latest L2 block's corresponding L1 origin.
     #[method(name = "headL1Origin")]
     async fn head_l1_origin(&self) -> RpcResult<L1Origin>;
@@ -57,6 +57,10 @@ pub trait TaikoApi {
     async fn get_sync_mode(&self) -> RpcResult<String> {
         Ok("full".to_string())
     }
+
+    /// ProvingPreflight returns the pre-flight data for the proving process.
+    #[method(name = "provingPreflight")]
+    async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight<T, H>>;
 }
 
 /// Taiko rpc interface.
@@ -87,10 +91,6 @@ pub trait TaikoAuthApi<T, H> {
         max_transactions_lists: u64,
         min_tip: u64,
     ) -> RpcResult<Vec<PreBuiltTxList<T>>>;
-
-    /// GetSyncMode returns the node sync mode.
-    #[method(name = "provingPreflight")]
-    async fn proving_preflight(&self, block_id: BlockId) -> RpcResult<ProvingPreflight<T, H>>;
 }
 
 /// `PreFlight` is the pre-flight data for the proving process.
@@ -126,38 +126,42 @@ pub struct PreBuiltTxList<T> {
 
 /// Taiko API
 #[derive(Debug)]
-pub struct TaikoApi<Eth> {
-    inner: Arc<TaikoApiInner<Eth>>,
+pub struct TaikoApi<Eth, BlockExecutor> {
+    inner: Arc<TaikoApiInner<Eth, BlockExecutor>>,
 }
 
-#[derive(Debug)]
-struct TaikoApiInner<Eth> {
-    /// The implementation of `eth` API
-    eth_api: Eth,
-}
-
-impl<Eth> TaikoApi<Eth> {
+impl<Eth, BlockExecutor> TaikoApi<Eth, BlockExecutor> {
     /// Create a new instance of the [`DebugApi`]
-    pub fn new(eth: Eth) -> Self {
-        let inner = Arc::new(TaikoApiInner { eth_api: eth });
+    pub fn new(
+        eth: Eth,
+        blocking_task_guard: BlockingTaskGuard,
+        block_executor: BlockExecutor,
+    ) -> Self {
+        let inner = TaikoApiInner::new(eth, blocking_task_guard, block_executor);
         Self { inner }
     }
+}
 
-    /// Access the underlying `Eth` API.
-    pub fn eth_api(&self) -> &Eth {
-        &self.inner.eth_api
+impl<Eth, BlockExecutor> Clone for TaikoApi<Eth, BlockExecutor> {
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
     }
 }
 
 #[async_trait]
-impl<Eth> TaikoApiServer for TaikoApi<Eth>
+impl<Eth, BlockExecutor>
+    TaikoApiServer<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>
+    for TaikoApi<Eth, BlockExecutor>
 where
     Eth: EthApiTypes + TraceExt + 'static,
+    BlockExecutor:
+        BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
 {
     /// HeadL1Origin returns the latest L2 block's corresponding L1 origin.
     async fn head_l1_origin(&self) -> RpcResult<L1Origin> {
         let res = self
-            .eth_api()
+            .inner
+            .eth_api
             .spawn_blocking_io(move |this| {
                 this.provider().get_head_l1_origin().map_err(Eth::Error::from_eth_err)
             })
@@ -172,7 +176,8 @@ where
         let block_number =
             block_id.as_u64().ok_or_else(|| RethError::msg("invalid block id")).to_rpc_result()?;
         let res = self
-            .eth_api()
+            .inner
+            .eth_api
             .spawn_blocking_io(move |this| {
                 this.provider().get_l1_origin(block_number).map_err(Eth::Error::from_eth_err)
             })
@@ -181,12 +186,30 @@ where
         debug!(target: "rpc::taiko", ?block_number, ?res, "Read l1 origin by id");
         res
     }
+
+    async fn proving_preflight(
+        &self,
+        block_id: BlockId,
+    ) -> RpcResult<
+        ProvingPreflight<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>,
+    > {
+        let _permit = self
+            .inner
+            .acquire_trace_permit()
+            .await
+            .map_err(RethError::other)
+            .map_err(EthApiError::Internal)?;
+        debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
+        let res = self.inner.preflight(block_id).await.map_err(Into::into);
+        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
+        res
+    }
 }
 
 /// Taiko API.
 #[derive(Debug)]
 pub struct TaikoAuthApi<Eth, BlockExecutor> {
-    inner: Arc<TaikoAuthApiInner<Eth, BlockExecutor>>,
+    inner: Arc<TaikoApiInner<Eth, BlockExecutor>>,
 }
 
 impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
@@ -196,31 +219,96 @@ impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
         blocking_task_guard: BlockingTaskGuard,
         block_executor: BlockExecutor,
     ) -> Self {
-        let inner =
-            Arc::new(TaikoAuthApiInner { eth_api: eth, blocking_task_guard, block_executor });
+        let inner = TaikoApiInner::new(eth, blocking_task_guard, block_executor);
         Self { inner }
-    }
-
-    /// Access the underlying `Eth` API.
-    pub fn eth_api(&self) -> &Eth {
-        &self.inner.eth_api
-    }
-
-    /// Access the underlying `BlockExecutor`.
-    pub fn block_executor(&self) -> &BlockExecutor {
-        &self.inner.block_executor
     }
 }
 
-impl<Eth: RpcNodeCore, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor> {
-    /// Access the underlying provider.
-    pub fn provider(&self) -> &Eth::Provider {
-        self.inner.eth_api.provider()
+impl<Eth, BlockExecutor> Clone for TaikoAuthApi<Eth, BlockExecutor> {
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
+}
+
+#[async_trait]
+impl<Eth, BlockExecutor>
+    TaikoAuthApiServer<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>
+    for TaikoAuthApi<Eth, BlockExecutor>
+where
+    Eth: EthApiTypes + TraceExt + 'static,
+    BlockExecutor:
+        BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
+{
+    /// TxPoolContent retrieves the transaction pool content with the given upper limits.
+    async fn tx_pool_content(
+        &self,
+        beneficiary: Address,
+        base_fee: u64,
+        block_max_gas_limit: u64,
+        max_bytes_per_tx_list: u64,
+        local_accounts: Option<Vec<Address>>,
+        max_transactions_lists: u64,
+    ) -> RpcResult<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>> {
+        self.tx_pool_content_with_min_tip(
+            beneficiary,
+            base_fee,
+            block_max_gas_limit,
+            max_bytes_per_tx_list,
+            local_accounts,
+            max_transactions_lists,
+            0,
+        )
+        .await
+    }
+
+    /// TxPoolContent retrieves the transaction pool content with the given upper limits.
+    async fn tx_pool_content_with_min_tip(
+        &self,
+        beneficiary: Address,
+        base_fee: u64,
+        block_max_gas_limit: u64,
+        max_bytes_per_tx_list: u64,
+        local_accounts: Option<Vec<Address>>,
+        max_transactions_lists: u64,
+        min_tip: u64,
+    ) -> RpcResult<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>> {
+        let _permit = self
+            .inner
+            .acquire_trace_permit()
+            .await
+            .map_err(RethError::other)
+            .map_err(EthApiError::Internal)?;
+        debug!(
+            target: "rpc::taiko",
+            ?beneficiary,
+            ?base_fee,
+            ?block_max_gas_limit,
+            ?max_bytes_per_tx_list,
+            ?local_accounts,
+            ?max_transactions_lists,
+            ?min_tip,
+            "Read tx pool context"
+        );
+        let res = self
+            .inner
+            .pool_content(
+                beneficiary,
+                base_fee,
+                block_max_gas_limit,
+                max_bytes_per_tx_list,
+                local_accounts,
+                max_transactions_lists,
+                min_tip,
+            )
+            .await
+            .map_err(Into::into);
+        debug!(target: "rpc::taiko", ?res, "Read tx pool context");
+        res
     }
 }
 
 #[derive(Debug)]
-struct TaikoAuthApiInner<Eth, BlockExecutor> {
+struct TaikoApiInner<Eth, BlockExecutor> {
     /// The implementation of `eth` API
     eth_api: Eth,
     // restrict the number of concurrent calls to blocking calls
@@ -229,28 +317,37 @@ struct TaikoAuthApiInner<Eth, BlockExecutor> {
     block_executor: BlockExecutor,
 }
 
-impl<Eth, BlockExecutor> Clone for TaikoAuthApi<Eth, BlockExecutor> {
-    fn clone(&self) -> Self {
-        Self { inner: Arc::clone(&self.inner) }
+impl<Eth, BlockExecutor> TaikoApiInner<Eth, BlockExecutor> {
+    /// Create a new instance of the [`DebugApi`]
+    fn new(
+        eth: Eth,
+        blocking_task_guard: BlockingTaskGuard,
+        block_executor: BlockExecutor,
+    ) -> Arc<Self> {
+        Arc::new(TaikoApiInner { eth_api: eth, blocking_task_guard, block_executor })
     }
 }
 
 type TransactionCompatTx<P> = <P as Network>::TransactionResponse;
 
-impl<Eth, BlockExecutor> TaikoAuthApi<Eth, BlockExecutor>
+impl<Eth, BlockExecutor> TaikoApiInner<Eth, BlockExecutor>
 where
     Eth: EthApiTypes + TraceExt + 'static,
     BlockExecutor:
         BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
 {
+    fn provider(&self) -> &Eth::Provider {
+        self.eth_api.provider()
+    }
+
     /// Acquires a permit to execute a tracing call.
     async fn acquire_trace_permit(&self) -> Result<OwnedSemaphorePermit, AcquireError> {
-        self.inner.blocking_task_guard.clone().acquire_owned().await
+        self.blocking_task_guard.clone().acquire_owned().await
     }
 
     #[allow(clippy::type_complexity)]
     fn get_block_info(
-        &self,
+        self: &Arc<Self>,
         block_number: u64,
     ) -> Result<(SealedBlockWithSenders<ProviderBlock<Eth::Provider>>, U256), Eth::Error> {
         let block = self
@@ -272,7 +369,7 @@ where
     }
 
     async fn preflight(
-        &self,
+        self: &Arc<Self>,
         block_id: BlockId,
     ) -> Result<
         ProvingPreflight<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>,
@@ -289,7 +386,7 @@ where
         let parent_block_number = block_number - 1;
 
         let this = self.clone();
-        self.eth_api()
+        self.eth_api
             .spawn_with_state_at_block(parent_block_number.into(), move |parent_state| {
                 let mut db =  CacheDB::new(StateProviderDatabase::new(parent_state));
                 let (block, total_difficulty) = this.get_block_info(block_number)?;
@@ -302,20 +399,20 @@ where
                 let block = block.unseal();
                 let parent_block = parent_block.unseal();
                 let BlockExecutionOutput { state, .. } =
-                    this.block_executor().executor(&mut db).execute((&block, total_difficulty).into()).map_err(|err|EthApiError::Internal(err.into()))?;
-                let rpc_block = from_block(block,total_difficulty,BlockTransactionsKind::Full, Some(block_hash), this.eth_api().tx_resp_builder())?;
-                let rpc_parent_block =  from_block(parent_block, parent_total_difficulty, BlockTransactionsKind::Full, Some(parent_hash), this.eth_api().tx_resp_builder())?;
+                    this.block_executor.executor(&mut db).execute((&block, total_difficulty).into()).map_err(|err|EthApiError::Internal(err.into()))?;
+                let rpc_block = from_block(block,total_difficulty,BlockTransactionsKind::Full, Some(block_hash), this.eth_api.tx_resp_builder())?;
+                let rpc_parent_block =  from_block(parent_block, parent_total_difficulty, BlockTransactionsKind::Full, Some(parent_hash), this.eth_api.tx_resp_builder())?;
 
                 let BundleState { state: bundle_state, contracts,.. } = state;
 
-                let state = this.eth_api().state_at_block_id(block_hash.into())?;
+                let state = this.eth_api.state_at_block_id(block_hash.into())?;
                 let parent_state = db.db.into_inner();
 
                 let mut  ancestor_headers = vec![];
 
                 for (touched_block_number, touched_block_hash) in db.block_hashes {
                     let (touched_block, touched_total_difficulty) =  this.get_block_info(touched_block_number.try_into().unwrap())?;
-                    let rpc_touched_block = from_block(touched_block.unseal(), touched_total_difficulty, BlockTransactionsKind::Full, Some(touched_block_hash), this.eth_api().tx_resp_builder())?;
+                    let rpc_touched_block = from_block(touched_block.unseal(), touched_total_difficulty, BlockTransactionsKind::Full, Some(touched_block_hash), this.eth_api.tx_resp_builder())?;
                     ancestor_headers.push(rpc_touched_block.header);
                 }
 
@@ -365,11 +462,11 @@ where
     ) -> Result<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>, Eth::Error> {
         let last_num = self.provider().last_block_number().map_err(Eth::Error::from_eth_err)?;
         let ((cfg, block_env, _), _block) = futures::try_join!(
-            self.eth_api().evm_env_at(last_num.into()),
-            self.eth_api().block_with_senders(last_num.into()),
+            self.eth_api.evm_env_at(last_num.into()),
+            self.eth_api.block_with_senders(last_num.into()),
         )?;
         // replay all transactions of the block
-        self.eth_api()
+        self.eth_api
             .spawn_tracing(move |this| {
                 let mut db = State::builder()
                     .with_database(StateProviderDatabase::new(
@@ -461,97 +558,5 @@ where
                 Ok(target_list)
             })
             .await
-    }
-}
-
-#[async_trait]
-impl<Eth, BlockExecutor>
-    TaikoAuthApiServer<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>
-    for TaikoAuthApi<Eth, BlockExecutor>
-where
-    Eth: EthApiTypes + TraceExt + 'static,
-    BlockExecutor:
-        BlockExecutorProvider<Primitives: NodePrimitives<Block = ProviderBlock<Eth::Provider>>>,
-{
-    /// TxPoolContent retrieves the transaction pool content with the given upper limits.
-    async fn tx_pool_content(
-        &self,
-        beneficiary: Address,
-        base_fee: u64,
-        block_max_gas_limit: u64,
-        max_bytes_per_tx_list: u64,
-        local_accounts: Option<Vec<Address>>,
-        max_transactions_lists: u64,
-    ) -> RpcResult<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>> {
-        self.tx_pool_content_with_min_tip(
-            beneficiary,
-            base_fee,
-            block_max_gas_limit,
-            max_bytes_per_tx_list,
-            local_accounts,
-            max_transactions_lists,
-            0,
-        )
-        .await
-    }
-
-    /// TxPoolContent retrieves the transaction pool content with the given upper limits.
-    async fn tx_pool_content_with_min_tip(
-        &self,
-        beneficiary: Address,
-        base_fee: u64,
-        block_max_gas_limit: u64,
-        max_bytes_per_tx_list: u64,
-        local_accounts: Option<Vec<Address>>,
-        max_transactions_lists: u64,
-        min_tip: u64,
-    ) -> RpcResult<Vec<PreBuiltTxList<TransactionCompatTx<Eth::NetworkTypes>>>> {
-        let _permit = self
-            .acquire_trace_permit()
-            .await
-            .map_err(RethError::other)
-            .map_err(EthApiError::Internal)?;
-        debug!(
-            target: "rpc::taiko",
-            ?beneficiary,
-            ?base_fee,
-            ?block_max_gas_limit,
-            ?max_bytes_per_tx_list,
-            ?local_accounts,
-            ?max_transactions_lists,
-            ?min_tip,
-            "Read tx pool context"
-        );
-        let res = self
-            .pool_content(
-                beneficiary,
-                base_fee,
-                block_max_gas_limit,
-                max_bytes_per_tx_list,
-                local_accounts,
-                max_transactions_lists,
-                min_tip,
-            )
-            .await
-            .map_err(Into::into);
-        debug!(target: "rpc::taiko", ?res, "Read tx pool context");
-        res
-    }
-
-    async fn proving_preflight(
-        &self,
-        block_id: BlockId,
-    ) -> RpcResult<
-        ProvingPreflight<TransactionCompatTx<Eth::NetworkTypes>, ProviderHeader<Eth::Provider>>,
-    > {
-        let _permit = self
-            .acquire_trace_permit()
-            .await
-            .map_err(RethError::other)
-            .map_err(EthApiError::Internal)?;
-        debug!(target: "rpc::taiko", ?block_id, "Read proving preflight");
-        let res = self.preflight(block_id).await.map_err(Into::into);
-        debug!(target: "rpc::taiko", ?res, "Read proving pre flight");
-        res
     }
 }
