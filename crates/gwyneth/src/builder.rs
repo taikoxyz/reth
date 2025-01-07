@@ -290,7 +290,7 @@ where
         )?
     };
 
-    let state_diff = execution_outcome_to_state_diff(&execution_outcome, state_root);
+    let state_diff = execution_outcome_to_state_diff(&execution_outcome, state_root, cumulative_gas_used);
     // create the block header
     let transactions_root = proofs::calculate_transaction_root(&executed_txs);
 
