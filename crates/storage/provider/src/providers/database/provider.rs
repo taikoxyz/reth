@@ -3204,29 +3204,40 @@ use reth_taiko_primitives::{HeadL1OriginKey, L1Origin};
 
 impl<TX: DbTx + 'static, N: NodeTypes> L1OriginReader for DatabaseProvider<TX, N> {
     fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin> {
-        self.tx_ref()
-            .get::<tables::L1Origins>(block_number)?
-            .ok_or(ProviderError::L1OriginNotFound(block_number))
+        match self.tx.get::<tables::L1OriginsV2>(block_number)? {
+            Some(l1_origin) => Ok(l1_origin),
+            None => self
+                .tx
+                .get::<tables::L1Origins>(block_number)?
+                .map(Into::into)
+                .ok_or(ProviderError::L1OriginNotFound(block_number)),
+        }
     }
 
     fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
         let block_number = self
-            .tx_ref()
+            .tx
             .get::<tables::HeadL1Origin>(HeadL1OriginKey)?
             .ok_or(ProviderError::HeadL1OriginNotFound)?;
         self.get_l1_origin(block_number)
     }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        self.tx
+            .get::<tables::HeadL1Origin>(HeadL1OriginKey)?
+            .ok_or(ProviderError::HeadL1OriginNotFound)
+    }
 }
 
-impl<TX: DbTxMut + DbTx + 'static, N: NodeTypes> L1OriginWriter for DatabaseProvider<TX, N> {
+impl<TX: DbTxMut + 'static, N: NodeTypes> L1OriginWriter for DatabaseProvider<TX, N> {
     fn save_l1_origin(&self, block_number: BlockNumber, l1_origin: L1Origin) -> ProviderResult<()> {
-        self.tx_ref().put::<tables::L1Origins>(block_number, l1_origin)?;
-        self.tx_ref().put::<tables::HeadL1Origin>(HeadL1OriginKey, block_number)?;
+        self.tx.put::<tables::L1OriginsV2>(block_number, l1_origin)?;
+        self.tx.put::<tables::HeadL1Origin>(HeadL1OriginKey, block_number)?;
         Ok(())
     }
 
     fn delete_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<()> {
-        self.tx_ref().delete::<tables::L1Origins>(block_number, None)?;
+        self.tx.delete::<tables::L1OriginsV2>(block_number, None)?;
         Ok(())
     }
 }

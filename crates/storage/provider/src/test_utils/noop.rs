@@ -605,6 +605,10 @@ impl L1OriginReader for NoopProvider {
     fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
         todo!()
     }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        todo!()
+    }
 }
 
 impl L1OriginWriter for NoopProvider {

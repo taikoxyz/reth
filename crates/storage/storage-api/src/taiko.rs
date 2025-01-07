@@ -9,6 +9,9 @@ pub trait L1OriginReader: Send + Sync {
     fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin>;
     /// Get the head L1 origin.
     fn get_head_l1_origin(&self) -> ProviderResult<L1Origin>;
+
+    /// Get the head L1 origin block number
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber>;
 }
 
 /// The trait for updating L1 origin related data.

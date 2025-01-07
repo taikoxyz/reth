@@ -20,7 +20,6 @@ use reth_taiko_engine_primitives::{
 };
 use reth_taiko_engine_types::{TaikoExecutionPayload, TaikoPayloadAttributes};
 use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
-use reth_tracing::tracing::debug;
 
 /// The types used in the default mainnet ethereum beacon consensus engine.
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]

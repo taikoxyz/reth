@@ -55,7 +55,7 @@ pub trait TaikoApi<T, H> {
     /// GetSyncMode returns the node sync mode.
     #[method(name = "getSyncMode")]
     async fn get_sync_mode(&self) -> RpcResult<String> {
-        Ok("full".to_string())
+        Ok("snap".to_string())
     }
 
     /// ProvingPreflight returns the pre-flight data for the proving process.
@@ -381,43 +381,68 @@ where
         let parent_block_number = block_number - 1;
 
         let this = self.clone();
+        // let state = this.state_at_block_id(at)?;
+        //     f(StateProviderTraitObjWrapper(&state))
         self.eth_api
             .spawn_with_state_at_block(parent_block_number.into(), move |parent_state| {
-                let mut db =  CacheDB::new(StateProviderDatabase::new(parent_state));
+                let mut db = CacheDB::new(StateProviderDatabase::new(parent_state));
                 let (block, total_difficulty) = this.get_block_info(block_number)?;
                 let block_hash = block.hash();
                 let parent_hash = block.parent_hash();
-                let (parent_block, parent_total_difficulty) = this.get_block_info(parent_block_number)?;
+                let (parent_block, parent_total_difficulty) =
+                    this.get_block_info(parent_block_number)?;
 
-                debug!(target: "taiko::api", transactions = ?&block.body, "before executing transactions");
                 // execute the block
                 let block = block.unseal();
                 let parent_block = parent_block.unseal();
-                let BlockExecutionOutput { state, .. } =
-                    this.block_executor.executor(&mut db).execute((&block, total_difficulty).into()).map_err(|err|EthApiError::Internal(err.into()))?;
-                let rpc_block = from_block(block,total_difficulty,BlockTransactionsKind::Full, Some(block_hash), this.eth_api.tx_resp_builder())?;
-                let rpc_parent_block =  from_block(parent_block, parent_total_difficulty, BlockTransactionsKind::Full, Some(parent_hash), this.eth_api.tx_resp_builder())?;
+                let BlockExecutionOutput { state, .. } = this
+                    .block_executor
+                    .executor(&mut db)
+                    .execute((&block, total_difficulty).into())
+                    .map_err(|err| EthApiError::Internal(err.into()))?;
+                let rpc_block = from_block(
+                    block,
+                    total_difficulty,
+                    BlockTransactionsKind::Full,
+                    Some(block_hash),
+                    this.eth_api.tx_resp_builder(),
+                )?;
+                let rpc_parent_block = from_block(
+                    parent_block,
+                    parent_total_difficulty,
+                    BlockTransactionsKind::Full,
+                    Some(parent_hash),
+                    this.eth_api.tx_resp_builder(),
+                )?;
 
-                let BundleState { state: bundle_state, contracts,.. } = state;
+                let BundleState { state: bundle_state, contracts, .. } = state;
 
                 let state = this.eth_api.state_at_block_id(block_hash.into())?;
                 let parent_state = db.db.into_inner();
 
-                let mut  ancestor_headers = vec![];
+                let mut ancestor_headers = vec![];
 
                 for (touched_block_number, touched_block_hash) in db.block_hashes {
-                    let (touched_block, touched_total_difficulty) =  this.get_block_info(touched_block_number.try_into().unwrap())?;
-                    let rpc_touched_block = from_block(touched_block.unseal(), touched_total_difficulty, BlockTransactionsKind::Full, Some(touched_block_hash), this.eth_api.tx_resp_builder())?;
+                    let (touched_block, touched_total_difficulty) =
+                        this.get_block_info(touched_block_number.try_into().unwrap())?;
+                    let rpc_touched_block = from_block(
+                        touched_block.unseal(),
+                        touched_total_difficulty,
+                        BlockTransactionsKind::Full,
+                        Some(touched_block_hash),
+                        this.eth_api.tx_resp_builder(),
+                    )?;
                     ancestor_headers.push(rpc_touched_block.header);
                 }
-
 
                 let mut account_proofs = vec![];
                 let mut parent_account_proofs = vec![];
 
                 for (address, account) in bundle_state {
-                    let storage_keys: Vec<B256> = account.storage.into_keys().map(|key| key.into()).collect::<Vec<_>>();
-                    let keys = storage_keys.clone().into_iter().map(|key| key.into()).collect::<Vec<_>>();
+                    let storage_keys: Vec<B256> =
+                        account.storage.into_keys().map(|key| key.into()).collect::<Vec<_>>();
+                    let keys =
+                        storage_keys.clone().into_iter().map(|key| key.into()).collect::<Vec<_>>();
 
                     let parent_proof = parent_state
                         .proof(Default::default(), address, storage_keys.as_slice())
@@ -430,16 +455,17 @@ where
                     account_proofs.push(proof.into_eip1186_response(keys));
                 }
 
-
-                Ok(ProvingPreflight{
+                Ok(ProvingPreflight {
                     block: rpc_block,
                     parent_header: rpc_parent_block.header,
                     account_proofs,
                     parent_account_proofs,
-                    contracts: contracts.into_iter().map(|(k, v)| (k, v.original_bytes())).collect(),
+                    contracts: contracts
+                        .into_iter()
+                        .map(|(k, v)| (k, v.original_bytes()))
+                        .collect(),
                     ancestor_headers,
                 })
-
             })
             .await
     }
@@ -462,7 +488,7 @@ where
         )?;
         // replay all transactions of the block
         self.eth_api
-            .spawn_tracing(move |this| {
+            .spawn_blocking_io(move |this| {
                 let mut db = State::builder()
                     .with_database(StateProviderDatabase::new(
                         this.provider().latest().map_err(Eth::Error::from_eth_err)?,

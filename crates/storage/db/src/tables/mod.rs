@@ -35,7 +35,7 @@ use reth_primitives::{Receipt, StorageEntry, TransactionSigned};
 use reth_primitives_traits::{Account, Bytecode};
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::StageCheckpoint;
-use reth_taiko_primitives::{HeadL1OriginKey, L1Origin};
+use reth_taiko_primitives::{HeadL1OriginKey, L1Origin, L1OriginLegacy};
 use reth_trie_common::{BranchNodeCompact, StorageTrieEntry, StoredNibbles, StoredNibblesSubKey};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -533,13 +533,19 @@ tables! {
     }
 
     /// Stores the l1 origin of the block
-    table L1Origins{
+    table L1Origins {
+        type Key = BlockNumber;
+        type Value = L1OriginLegacy;
+    }
+
+    /// Stores the l1 origin of the block
+    table L1OriginsV2 {
         type Key = BlockNumber;
         type Value = L1Origin;
     }
 
     /// Stores the latest l1 origin
-    table HeadL1Origin{
+    table HeadL1Origin {
         type Key = HeadL1OriginKey;
         type Value = BlockNumber;
     }

@@ -817,6 +817,10 @@ impl<N: ProviderNodeTypes> L1OriginReader for BlockchainProvider2<N> {
     fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
         self.database.provider()?.get_head_l1_origin()
     }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        self.database.provider()?.get_head_l1_origin_number()
+    }
 }
 
 impl<N: ProviderNodeTypes> L1OriginWriter for BlockchainProvider2<N> {

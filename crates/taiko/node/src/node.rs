@@ -340,8 +340,13 @@ where
     fn get_l1_origin(&self, block_number: BlockNumber) -> ProviderResult<L1Origin> {
         self.0.get_l1_origin(block_number)
     }
+
     fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
         self.0.get_head_l1_origin()
+    }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        self.0.get_head_l1_origin_number()
     }
 }
 

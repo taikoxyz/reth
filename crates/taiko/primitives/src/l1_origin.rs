@@ -7,6 +7,7 @@ use reth_db_api::{
     DatabaseError,
 };
 use serde::{Deserialize, Serialize};
+reth_db_api::impl_compression_for_compact!(L1OriginLegacy);
 reth_db_api::impl_compression_for_compact!(L1Origin);
 
 /// The key for the latest l1 origin
@@ -66,6 +67,47 @@ pub struct L1Origin {
     pub end_of_preconf: Option<bool>,
     /// The preconfer of the l1 block
     pub preconfer: Option<Address>,
+}
+
+impl From<L1OriginLegacy> for L1Origin {
+    fn from(legacy: L1OriginLegacy) -> Self {
+        Self {
+            block_id: legacy.block_id,
+            l2_block_hash: legacy.l2_block_hash,
+            l1_block_height: Some(legacy.l1_block_height),
+            l1_block_hash: Some(legacy.l1_block_hash),
+            batch_id: None,
+            end_of_block: None,
+            end_of_preconf: None,
+            preconfer: None,
+        }
+    }
+}
+
+/// `L1OriginLegacy` represents a `L1OriginLegacy` of a L2 block.
+#[derive(
+    Debug,
+    Default,
+    Compact,
+    Serialize,
+    Deserialize,
+    Clone,
+    PartialEq,
+    Eq,
+    RlpDecodable,
+    RlpEncodable,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct L1OriginLegacy {
+    /// The block number of the l2 block
+    #[serde(rename = "blockID")]
+    pub block_id: U256,
+    /// The hash of the l2 block
+    pub l2_block_hash: B256,
+    /// The height of the l1 block
+    pub l1_block_height: U256,
+    /// The hash of the l1 block
+    pub l1_block_hash: B256,
 }
 
 impl L1Origin {

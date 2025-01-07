@@ -13,7 +13,7 @@ use reqwest::Url;
 use reth_primitives::NodePrimitives;
 use reth_provider::{
     BlockReader, BlockReaderIdExt, CanonStateSubscriptions, ChainSpecProvider, L1OriginReader,
-    ProviderBlock, ProviderReceipt,
+    L1OriginWriter, ProviderBlock, ProviderReceipt,
 };
 use reth_rpc_eth_api::{
     helpers::{EthSigner, SpawnBlocking},
@@ -196,7 +196,7 @@ where
 impl<Provider, Pool, Network, EvmConfig> RpcNodeCoreExt
     for EthApi<Provider, Pool, Network, EvmConfig>
 where
-    Provider: BlockReader + L1OriginReader + Send + Sync + Clone + Unpin,
+    Provider: BlockReader + L1OriginReader + L1OriginWriter + Send + Sync + Clone + Unpin,
     Pool: Send + Sync + Clone + Unpin,
     Network: Send + Sync + Clone,
     EvmConfig: Send + Sync + Clone + Unpin,
