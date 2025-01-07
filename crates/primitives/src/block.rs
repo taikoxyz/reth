@@ -347,8 +347,6 @@ pub struct ChainDA {
     Default,
     Serialize,
     Deserialize,
-    RlpEncodable,
-    RlpDecodable,
 )]
 pub struct StateDiff {
     /// Account state.
@@ -361,6 +359,8 @@ pub struct StateDiff {
     pub transactions_root: B256,
     /// Gas used
     pub gas_used: u64,
+    /// full bundle state
+    pub bundle: BundleState,
 }
 
 /// StateDiffAccount
@@ -372,10 +372,7 @@ pub struct StateDiff {
     Default,
     Serialize,
     Deserialize,
-    RlpEncodable,
-    RlpDecodable,
 )]
-#[rlp(trailing)]
 pub struct StateDiffAccount {
     /// The address of the account
     pub address: Address,
@@ -402,8 +399,6 @@ pub struct StateDiffAccount {
     Default,
     Serialize,
     Deserialize,
-    RlpEncodable,
-    RlpDecodable,
 )]
 pub struct StateDiffStorageSlot {
     /// Storage slot key

@@ -19,23 +19,24 @@ use revm::db::states::StorageSlot;
 use crate::{BlockExecutionOutput, ExecutionOutcome};
 
 
-pub fn execution_outcome_to_state_diff(execution_outcome: &ExecutionOutcome, state_root: B256) -> StateDiff {
+pub fn execution_outcome_to_state_diff(execution_outcome: &ExecutionOutcome, state_root: B256, gas_used: u64) -> StateDiff {
     assert_eq!(execution_outcome.receipts().len(), 1);
     let receipts = execution_outcome.receipts()[0].iter().map(|r| r.clone().unwrap()).collect();
-    to_state_diff(&execution_outcome.bundle, &receipts, state_root)
+    to_state_diff(&execution_outcome.bundle, &receipts, state_root, gas_used)
 }
 
 pub fn block_execution_output_to_state_diff(block_execution_output: &BlockExecutionOutput<Receipt>, state_root: B256) -> StateDiff {
-    to_state_diff(&block_execution_output.state, &block_execution_output.receipts, state_root)
+    to_state_diff(&block_execution_output.state, &block_execution_output.receipts, state_root, block_execution_output.gas_used)
 }
 
-pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>, state_root: B256) -> StateDiff {
+pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>, state_root: B256, gas_used: u64) -> StateDiff {
     let mut state_diff = StateDiff {
         accounts: Vec::new(),
         receipts: receipts.clone(),
-        gas_used: 0,
+        gas_used,
         state_root,
         transactions_root: B256::ZERO,
+        bundle: bundle_state.clone(),
     };
     for (address, bundle_account) in bundle_state.state.iter() {
         let storage = bundle_account.storage.iter().map(|(&key, value)| StateDiffStorageSlot {
@@ -61,10 +62,9 @@ pub fn state_diff_to_block_execution_output(chain_id: u64, state_diff: &StateDif
         state: BundleState::default(),
         receipts: state_diff.receipts.clone(),
         requests: Vec::new(),
-        gas_used: 0,
+        gas_used: state_diff.gas_used,
     };
     for account in state_diff.accounts.iter() {
-
         let mut new_account = BundleAccount {
             info: Some(AccountInfo {
                 balance: account.balance,

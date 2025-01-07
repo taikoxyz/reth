@@ -32,7 +32,8 @@ alloy-eips = { workspace = true, features = ["serde"] }
 alloy-consensus.workspace = true
 
 # revm
-revm.workspace = true
+revm = { workspace = true, features = ["serde"] }
+#revm.workspace = true
 
 # optimism
 op-alloy-rpc-types = { workspace = true, optional = true }
@@ -121,4 +122,3 @@ harness = false
 name = "validate_blob_tx"
 required-features = ["arbitrary", "c-kzg"]
 harness = false
-
