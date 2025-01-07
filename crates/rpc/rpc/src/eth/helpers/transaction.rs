@@ -35,7 +35,6 @@ where
         tx: Bytes,
     ) -> impl Future<Output = Result<B256, Self::Error>> + Send {
         async move {
-            // TODO: forwarding tx
             if let Some(client) = self.preconf_forwarding_server() {
                 return client
                     .send_raw_transaction(&tx)
