@@ -1072,7 +1072,7 @@ where
 
             // For OpStack the proposers are allowed to reorg their own chain at will, so we need to
             // always trigger a new payload job if requested.
-            if self.engine_kind.is_opstack() {
+            if self.engine_kind.is_opstack() || self.engine_kind.is_taiko() {
                 if let Some(attr) = attrs {
                     debug!(target: "engine::tree", head = canonical_header.number(), "handling payload attributes for canonical head");
                     let updated =
@@ -1243,7 +1243,6 @@ where
                                 payload_attrs,
                                 tx,
                                 version,
-                                debug: _debug,
                             } => {
                                 let mut output =
                                     self.on_forkchoice_updated(state, payload_attrs, version);

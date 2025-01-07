@@ -49,9 +49,19 @@ pub struct BlockExecutionOutput<T> {
 impl<T> BlockExecutionOutput<T> {
     /// Remote the skipped transactions from the block.
     pub fn apply_skip(&self, block: &mut BlockWithSenders) {
-        for i in &self.skipped_list {
-            block.senders.remove(*i);
-            block.body.transactions.remove(*i);
-        }
+        retain_with_index(&mut block.senders, |i, _| !self.skipped_list.contains(&i));
+        retain_with_index(&mut block.body.transactions, |i, _| !self.skipped_list.contains(&i));
     }
+}
+
+fn retain_with_index<T, F>(slice: &mut Vec<T>, mut f: F)
+where
+    F: FnMut(usize, &T) -> bool,
+{
+    let mut i = 0;
+    slice.retain(|x| {
+        let retain = f(i, x);
+        i += 1;
+        retain
+    });
 }

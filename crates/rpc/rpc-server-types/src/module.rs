@@ -323,6 +323,7 @@ impl FromStr for RethRpcModule {
             "ots" => Self::Ots,
             "flashbots" => Self::Flashbots,
             "miner" => Self::Miner,
+            "taiko" => Self::Taiko,
             _ => return Err(ParseError::VariantNotFound),
         })
     }

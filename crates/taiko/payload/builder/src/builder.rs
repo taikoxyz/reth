@@ -65,7 +65,14 @@ where
             suggested_fee_recipient: config.attributes.suggested_fee_recipient(),
             prev_randao: config.attributes.prev_randao(),
         };
-        self.evm_config.next_cfg_and_block_env(parent, next_attributes)
+        let (cfg_with_handler_cfg, mut block_env) =
+            self.evm_config.next_cfg_and_block_env(parent, next_attributes)?;
+        block_env.basefee = config.attributes.base_fee_per_gas;
+        block_env.gas_limit = U256::from(config.attributes.block_metadata.gas_limit);
+        block_env.prevrandao = Some(config.attributes.block_metadata.mix_hash);
+        block_env.coinbase = config.attributes.block_metadata.beneficiary;
+
+        Ok((cfg_with_handler_cfg, block_env))
     }
 }
 

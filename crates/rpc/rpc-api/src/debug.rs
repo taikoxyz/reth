@@ -292,7 +292,7 @@ pub trait DebugApi {
     /// Sets the current head of the local chain by block number. Note, this is a destructive action
     /// and may severely damage your chain. Use with extreme caution.
     #[method(name = "setHead")]
-    async fn debug_set_head(&self, number: u64) -> RpcResult<()>;
+    async fn debug_set_head(&self, number: BlockNumberOrTag) -> RpcResult<()>;
 
     /// Sets the rate of mutex profiling.
     #[method(name = "setMutexProfileFraction")]

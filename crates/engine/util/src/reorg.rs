@@ -215,7 +215,6 @@ where
                             payload_attrs: None,
                             tx: reorg_fcu_tx,
                             version: EngineApiMessageVersion::default(),
-                            debug: false,
                         },
                     ]);
                     *this.state = EngineReorgState::Reorg { queue };
@@ -227,7 +226,6 @@ where
                         payload_attrs,
                         tx,
                         version,
-                        debug: false,
                     }),
                     _,
                 ) => {
@@ -241,7 +239,6 @@ where
                         payload_attrs,
                         tx,
                         version,
-                        debug: false,
                     })
                 }
                 (item, _) => item,

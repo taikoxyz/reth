@@ -321,7 +321,7 @@ impl From<Genesis> for TaikoChainSpec {
             CHAIN_INTERNAL_TESTNET => Some(INTERNAL_DEVNET_ONTAKE_BLOCK),
             CHAIN_HEKLA_TESTNET => Some(HEKLA_ONTAKE_BLOCK),
             CHAIN_MAINNET => Some(MAINNET_ONTAKE_BLOCK),
-            _ => None,
+            _ => unreachable!(),
         };
 
         // Block-based hardforks
@@ -385,6 +385,37 @@ impl From<Genesis> for TaikoChainSpec {
                 paris_block_and_final_difficulty,
                 ..Default::default()
             },
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_genesis() {
+        let load_genesis = |chain: Chain| {
+            let alloc_str = match chain {
+                CHAIN_MAINNET => {
+                    include_str!("../res/genesis/mainnet.json")
+                }
+                CHAIN_INTERNAL_TESTNET => {
+                    include_str!("../res/genesis/internal_l2a.json")
+                }
+                CHAIN_KATLA_TESTNET => include_str!("../res/genesis/katla.json"),
+                CHAIN_HEKLA_TESTNET => include_str!("../res/genesis/hekla.json"),
+                _ => panic!("Invalid chain"),
+            };
+            let _alloc: BTreeMap<Address, TaikoGenesisAccount> =
+                serde_json::from_str(alloc_str).expect("Invalid alloc json");
+            println!("Genesis: {_alloc:?}");
+        };
+
+        for chain in
+            [CHAIN_MAINNET, CHAIN_INTERNAL_TESTNET, CHAIN_KATLA_TESTNET, CHAIN_HEKLA_TESTNET]
+        {
+            load_genesis(chain);
         }
     }
 }

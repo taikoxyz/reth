@@ -21,8 +21,8 @@ use reth_engine_primitives::{EngineTypes, EngineValidator};
 use reth_evm::provider::EvmEnvProvider;
 use reth_payload_builder::PayloadStore;
 use reth_payload_primitives::{
-    validate_payload_timestamp, EngineApiMessageVersion, PayloadBuilderAttributes,
-    PayloadOrAttributes,
+    validate_payload_id, validate_payload_timestamp, EngineApiMessageVersion,
+    PayloadBuilderAttributes, PayloadOrAttributes,
 };
 use reth_primitives::EthereumHardfork;
 use reth_rpc_api::EngineApiServer;
@@ -179,7 +179,7 @@ where
         &self,
         payload: TaikoExecutionPayloadInputV2,
     ) -> EngineApiResult<PayloadStatus> {
-        let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash } = payload;
+        let TaikoExecutionPayloadInputV2 { execution_payload, tx_hash, withdrawals_hash, .. } = payload;
         let payload = convert_payload_input_v2_to_payload(execution_payload);
         let payload = TaikoExecutionPayload::from((payload, tx_hash, withdrawals_hash));
         let payload_or_attrs =
@@ -375,6 +375,7 @@ where
         &self,
         payload_id: PayloadId,
     ) -> EngineApiResult<EngineT::ExecutionPayloadEnvelopeV1> {
+        validate_payload_id(payload_id, Some(EngineApiMessageVersion::V1))?;
         self.inner
             .payload_store
             .resolve(payload_id)
@@ -399,6 +400,10 @@ where
         &self,
         payload_id: PayloadId,
     ) -> EngineApiResult<EngineT::ExecutionPayloadEnvelopeV2> {
+        validate_payload_id(
+            payload_id,
+            [EngineApiMessageVersion::V1, EngineApiMessageVersion::V2],
+        )?;
         // First we fetch the payload attributes to check the timestamp
         let attributes = self.get_payload_attributes(payload_id).await?;
 
@@ -434,6 +439,7 @@ where
         &self,
         payload_id: PayloadId,
     ) -> EngineApiResult<EngineT::ExecutionPayloadEnvelopeV3> {
+        validate_payload_id(payload_id, Some(EngineApiMessageVersion::V3))?;
         // First we fetch the payload attributes to check the timestamp
         let attributes = self.get_payload_attributes(payload_id).await?;
 

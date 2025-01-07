@@ -16,8 +16,7 @@ use reth_consensus::{
 };
 use reth_consensus_common::validation::{
     validate_4844_header_standalone, validate_against_parent_4844,
-    validate_against_parent_hash_number, validate_block_pre_execution,
-    validate_body_against_header, validate_header_base_fee, validate_header_extradata,
+    validate_against_parent_hash_number, validate_header_base_fee, validate_header_extradata,
     validate_header_gas,
 };
 use reth_ethereum_consensus::validate_block_post_execution;
@@ -203,16 +202,16 @@ impl<ChainSpec: Send + Sync + EthChainSpec + EthereumHardforks + Debug, Provider
 where
     Provider: L1OriginReader + Send + Sync + Debug,
 {
-    fn validate_block_pre_execution(&self, block: &SealedBlock) -> Result<(), ConsensusError> {
-        validate_block_pre_execution(block, &self.chain_spec)
+    fn validate_block_pre_execution(&self, _block: &SealedBlock) -> Result<(), ConsensusError> {
+        Ok(())
     }
 
     fn validate_body_against_header(
         &self,
-        body: &BlockBody,
-        header: &SealedHeader,
+        _body: &BlockBody,
+        _header: &SealedHeader,
     ) -> Result<(), ConsensusError> {
-        validate_body_against_header(body, header.header())
+        Ok(())
     }
 }
 

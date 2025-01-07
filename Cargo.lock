@@ -122,8 +122,7 @@ dependencies = [
 [[package]]
 name = "alloy-consensus"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a101d4d016f47f13890a74290fdd17b05dd175191d9337bc600791fb96e4dea8"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",
@@ -142,8 +141,7 @@ dependencies = [
 [[package]]
 name = "alloy-consensus-any"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa60357dda9a3d0f738f18844bd6d0f4a5924cc5cf00bfad2ff1369897966123"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -223,8 +221,7 @@ dependencies = [
 [[package]]
 name = "alloy-eips"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b6755b093afef5925f25079dd5a7c8d096398b804ba60cb5275397b06b31689"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
@@ -244,8 +241,7 @@ dependencies = [
 [[package]]
 name = "alloy-genesis"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aeec8e6eab6e52b7c9f918748c9b811e87dbef7312a2e3a2ca1729a92966a6af"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-serde 0.7.3",
@@ -268,8 +264,7 @@ dependencies = [
 [[package]]
 name = "alloy-json-rpc"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fa077efe0b834bcd89ff4ba547f48fb081e4fdc3673dd7da1b295a2cf2bb7b7"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-sol-types",
@@ -282,8 +277,7 @@ dependencies = [
 [[package]]
 name = "alloy-network"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "209a1882a08e21aca4aac6e2a674dc6fcf614058ef8cb02947d63782b1899552"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-consensus-any",
@@ -307,8 +301,7 @@ dependencies = [
 [[package]]
 name = "alloy-network-primitives"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c20219d1ad261da7a6331c16367214ee7ded41d001fabbbd656fbf71898b2773"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -320,8 +313,7 @@ dependencies = [
 [[package]]
 name = "alloy-node-bindings"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bffcf33dd319f21cd6f066d81cbdef0326d4bdaaf7cfe91110bc090707858e9f"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-genesis",
  "alloy-primitives 0.8.14",
@@ -391,8 +383,7 @@ dependencies = [
 [[package]]
 name = "alloy-provider"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eefa6f4c798ad01f9b4202d02cea75f5ec11fa180502f4701e2b47965a8c0bb"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -432,8 +423,7 @@ dependencies = [
 [[package]]
 name = "alloy-pubsub"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aac9a7210e0812b1d814118f426f57eb7fc260a419224dd1c76d169879c06907"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-json-rpc",
  "alloy-primitives 0.8.14",
@@ -473,8 +463,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-client"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed30bf1041e84cabc5900f52978ca345dd9969f2194a945e6fdec25b0620705c"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-json-rpc",
  "alloy-primitives 0.8.14",
@@ -498,8 +487,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ab686b0fa475d2a4f5916c5f07797734a691ec58e44f0f55d4746ea39cbcefb"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
@@ -511,8 +499,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-admin"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f0874a976ccdf83a178ad93b64bec5b8c91a47428d714d544ca70258acfa07b"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-genesis",
  "alloy-primitives 0.8.14",
@@ -523,8 +510,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-anvil"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d33bc190844626c08e21897736dbd7956ab323c09e6f141b118d1c8b7aff689e"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-eth",
@@ -535,8 +521,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-any"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "200661999b6e235d9840be5d60a6e8ae2f0af9eb2a256dd378786744660e36ec"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus-any",
  "alloy-rpc-types-eth",
@@ -546,8 +531,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-beacon"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc37861dc8cbf5da35d346139fbe6e03ee7823cc21138a2c4a590d3b0b4b24be"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",
@@ -561,8 +545,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-debug"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0294b553785eb3fa7fff2e8aec45e82817258e7e6c9365c034a90cb6baeebc9"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "serde",
@@ -571,8 +554,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-engine"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d297268357e3eae834ddd6888b15f764cbc0f4b3be9265f5f6ec239013f3d68"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -592,8 +574,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-eth"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0600b8b5e2dc0cab12cbf91b5a885c35871789fb7b3a57b434bd4fced5b7a8b"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-consensus-any",
@@ -614,8 +595,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-mev"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "093d618d5a42808e7ae26062f415a1e816fc27d3d32662c6ed52d0871b154894"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",
@@ -628,8 +608,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-trace"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e073ab0e67429c60be281e181731132fd07d82e091c10c29ace6935101034bb"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-eth",
@@ -642,8 +621,7 @@ dependencies = [
 [[package]]
 name = "alloy-rpc-types-txpool"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7435f6bfb93912f16d64bb61f4278fa698469e054784f477337ef87ec0b2527b"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-eth",
@@ -665,8 +643,7 @@ dependencies = [
 [[package]]
 name = "alloy-serde"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9afa753a97002a33b2ccb707d9f15f31c81b8c1b786c95b73cc62bb1d1fd0c3f"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "arbitrary",
@@ -677,8 +654,7 @@ dependencies = [
 [[package]]
 name = "alloy-signer"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b2cbff01a673936c2efd7e00d4c0e9a4dbbd6d600e2ce298078d33efbb19cd7"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-primitives 0.8.14",
  "async-trait",
@@ -691,8 +667,7 @@ dependencies = [
 [[package]]
 name = "alloy-signer-local"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd6d988cb6cd7d2f428a74476515b1a6e901e08c796767f9f93311ab74005c8b"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -779,8 +754,7 @@ dependencies = [
 [[package]]
 name = "alloy-transport"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d69d36982b9e46075ae6b792b0f84208c6c2c15ad49f6c500304616ef67b70e0"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-json-rpc",
  "base64 0.22.1",
@@ -799,8 +773,7 @@ dependencies = [
 [[package]]
 name = "alloy-transport-http"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e02ffd5d93ffc51d72786e607c97de3b60736ca3e636ead0ec1f7dce68ea3fd"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-json-rpc",
  "alloy-transport",
@@ -814,8 +787,7 @@ dependencies = [
 [[package]]
 name = "alloy-transport-ipc"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b6f8b87cb84bae6d81ae6604b37741c8116f84f9784a0ecc6038c302e679d23"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-json-rpc",
  "alloy-pubsub",
@@ -833,8 +805,7 @@ dependencies = [
 [[package]]
 name = "alloy-transport-ws"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c085c4e1e7680b723ffc558f61a22c061ed3f70eb3436f93f3936779c59cec1"
+source = "git+https://github.com/taikoxyz/alloy?branch=v0.7.3-taiko#e6f7ef1cc4a306d4798cde053d3eb99ee1821897"
 dependencies = [
  "alloy-pubsub",
  "alloy-transport",
@@ -9288,7 +9259,6 @@ dependencies = [
  "jsonrpsee-types",
  "reth-primitives",
  "reth-primitives-traits",
- "reth-taiko-engine-types",
  "serde",
  "serde_json",
 ]
@@ -9538,6 +9508,7 @@ dependencies = [
  "alloy-rpc-types-engine",
  "alloy-serde 0.1.4",
  "reth-taiko-primitives",
+ "secp256k1",
  "serde",
  "serde_json",
  "serde_with",
@@ -9581,6 +9552,7 @@ dependencies = [
 name = "reth-taiko-node"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "eyre",
@@ -9590,7 +9562,6 @@ dependencies = [
  "reth-network",
  "reth-node-builder",
  "reth-payload-builder",
- "reth-payload-primitives",
  "reth-primitives",
  "reth-provider",
  "reth-rpc",
@@ -9641,10 +9612,12 @@ dependencies = [
 name = "reth-taiko-payload-validator"
 version = "1.1.4"
 dependencies = [
+ "alloy-consensus",
+ "alloy-primitives 0.8.14",
  "alloy-rpc-types-engine",
  "reth-chainspec",
- "reth-payload-validator",
  "reth-primitives",
+ "reth-rpc-types-compat",
  "reth-taiko-engine-types",
 ]
 

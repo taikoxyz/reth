@@ -1113,7 +1113,7 @@ where
         Ok(())
     }
 
-    async fn debug_set_head(&self, number: u64) -> RpcResult<()> {
+    async fn debug_set_head(&self, number: BlockNumberOrTag) -> RpcResult<()> {
         let block_hash = self
             .provider()
             .block_hash_for_id(number.into())
@@ -1121,9 +1121,10 @@ where
             .map_err(Into::into)?
             .ok_or_else(|| EthApiError::HeaderNotFound(number.into()))?;
 
-        self.inner
+        let _ = self
+            .inner
             .beacon_consensus
-            .debug_fork_choice_updated(
+            .fork_choice_updated(
                 ForkchoiceState {
                     head_block_hash: block_hash,
                     safe_block_hash: block_hash,
@@ -1135,7 +1136,18 @@ where
             .await
             .map_err(|op| internal_rpc_err(op.to_string()))
             .map_err(EthApiError::other)?;
-        sleep(Duration::from_secs(1)).await;
+        loop {
+            let block = self
+                .eth_api()
+                .block_with_senders(BlockNumberOrTag::Finalized.into())
+                .await
+                .map_err(|op| internal_rpc_err(op.to_string()))
+                .map_err(EthApiError::other)?;
+            if block.is_some_and(|block| block.hash() == block_hash) {
+                break;
+            }
+            sleep(Duration::from_secs(1)).await;
+        }
         Ok(())
     }
 

@@ -26,6 +26,10 @@ where
             execution_payload: convert_block_to_payload_input_v2(block),
             tx_hash: Default::default(),
             withdrawals_hash: Default::default(),
+            blob_gas_used: Default::default(),
+            excess_blob_gas: Default::default(),
+            deposit_requests: Default::default(),
+            taiko_block: Default::default(),
         },
     )
     .await;
