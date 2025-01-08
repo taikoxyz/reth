@@ -23,7 +23,7 @@ use alloc::{sync::Arc, vec::Vec};
 use alloy_consensus::Header;
 use alloy_primitives::{Address, Bytes, TxKind, U256};
 use reth_chainspec::{ChainSpec, Head};
-use reth_evm::{ConfigureEvm, ConfigureEvmEnv, NextBlockEnvAttributes};
+use reth_evm::{ConfigureEvm, ConfigureEvmEnv, EnvExt, NextBlockEnvAttributes};
 use reth_primitives::{transaction::FillTxEnv, TransactionSigned};
 use revm_primitives::{
     AnalysisKind, BlobExcessGasAndPrice, BlockEnv, CfgEnv, CfgEnvWithHandlerCfg, Env, SpecId, TxEnv,
@@ -65,7 +65,13 @@ impl ConfigureEvmEnv for EthEvmConfig {
     type Transaction = TransactionSigned;
     type Error = Infallible;
 
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
+    fn fill_tx_env(
+        &self,
+        tx_env: &mut TxEnv,
+        transaction: &TransactionSigned,
+        sender: Address,
+        _: Option<EnvExt<'_>>,
+    ) {
         transaction.fill_tx_env(tx_env, sender);
     }
 

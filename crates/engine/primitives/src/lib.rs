@@ -13,7 +13,7 @@ mod error;
 use core::fmt;
 
 use alloy_consensus::BlockHeader;
-use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadSidecar, PayloadError};
+use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 pub use error::BeaconOnNewPayloadError;
 
 mod forkchoice;
@@ -26,12 +26,14 @@ mod invalid_block_hook;
 pub use invalid_block_hook::InvalidBlockHook;
 
 pub use reth_payload_primitives::{
-    BuiltPayload, EngineApiMessageVersion, EngineObjectValidationError, PayloadOrAttributes,
-    PayloadTypes,
+    BuiltPayload, EngineApiMessageVersion, EngineObjectValidationError, PayloadTypes,
 };
-use reth_payload_primitives::{InvalidPayloadAttributesError, PayloadAttributes};
+use reth_payload_primitives::{
+    InvalidPayloadAttributesError, PayloadAttributes, PayloadOrAttributes,
+};
 use reth_primitives::SealedBlockFor;
 use reth_primitives_traits::Block;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use serde::{de::DeserializeOwned, ser::Serialize};
 
 /// This type defines the versioned types of the engine API.
@@ -97,7 +99,7 @@ pub trait PayloadValidator: fmt::Debug + Send + Sync + Unpin + 'static {
     /// engine-API specification.
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlockFor<Self::Block>, PayloadError>;
 }

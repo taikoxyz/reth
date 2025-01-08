@@ -29,10 +29,11 @@ use reth_primitives::{
 use reth_primitives_traits::SignedTransaction;
 use reth_stages_types::{StageCheckpoint, StageId};
 use reth_storage_api::{
-    DatabaseProviderFactory, HashedPostStateProvider, StageCheckpointReader,
-    StateCommitmentProvider, StateProofProvider, StorageRootProvider,
+    DatabaseProviderFactory, HashedPostStateProvider, L1OriginReader, L1OriginWriter,
+    StageCheckpointReader, StateCommitmentProvider, StateProofProvider, StorageRootProvider,
 };
 use reth_storage_errors::provider::{ConsistentViewError, ProviderError, ProviderResult};
+use reth_taiko_primitives::L1Origin;
 use reth_trie::{
     updates::TrieUpdates, AccountProof, HashedPostState, HashedStorage, MultiProof,
     StorageMultiProof, StorageProof, TrieInput,
@@ -834,5 +835,33 @@ impl StateReader for MockEthProvider {
 
     fn get_state(&self, _block: BlockNumber) -> ProviderResult<Option<ExecutionOutcome>> {
         Ok(None)
+    }
+}
+
+impl L1OriginReader for MockEthProvider {
+    fn get_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        todo!()
+    }
+}
+
+impl L1OriginWriter for MockEthProvider {
+    fn save_l1_origin(
+        &self,
+        _block_number: BlockNumber,
+        _l1_origin: L1Origin,
+    ) -> ProviderResult<()> {
+        todo!()
+    }
+
+    fn delete_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<()> {
+        todo!()
     }
 }

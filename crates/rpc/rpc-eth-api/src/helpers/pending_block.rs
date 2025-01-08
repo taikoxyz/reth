@@ -343,7 +343,7 @@ pub trait LoadPendingBlock:
             let env = Env::boxed(
                 cfg.cfg_env.clone(),
                 block_env.clone(),
-                Self::evm_config(self).tx_env(tx.as_signed(), tx.signer()),
+                Self::evm_config(self).tx_env(tx.as_signed(), tx.signer(), None),
             );
 
             let mut evm = revm::Evm::builder().with_env(env).with_db(&mut db).build();

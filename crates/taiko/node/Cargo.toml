@@ -1,0 +1,45 @@
+[package]
+name = "reth-taiko-node"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# reth
+reth-payload-builder.workspace = true
+reth-basic-payload-builder.workspace = true
+reth-node-builder = { workspace = true }
+reth-tracing.workspace = true
+reth-provider.workspace = true
+reth-transaction-pool.workspace = true
+reth-network.workspace = true
+reth-consensus.workspace = true
+reth-trie-db.workspace = true
+reth-primitives = { workspace = true, features = ["taiko"] }
+reth-rpc.workspace = true
+
+# taiko
+reth-taiko-consensus.workspace = true
+reth-taiko-evm.workspace = true
+reth-taiko-engine-primitives.workspace = true
+reth-taiko-engine-types.workspace = true
+reth-taiko-payload-builder.workspace = true
+reth-taiko-chainspec.workspace = true
+reth-taiko-payload-validator.workspace = true
+reth-taiko-primitives.workspace = true
+
+alloy-rpc-types-engine.workspace = true
+alloy-consensus.workspace = true
+alloy-primitives.workspace = true
+
+reth-evm = { workspace = true, features = ["taiko"] }
+
+# misc
+eyre.workspace = true
+serde.workspace = true

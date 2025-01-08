@@ -1,5 +1,7 @@
 //! CLI definition and entrypoint to executable
 
+pub mod taiko;
+
 use crate::{
     args::LogArgs,
     commands::debug_cmd,
@@ -142,7 +144,7 @@ impl<C: ChainSpecParser<ChainSpec = ChainSpec>, Ext: clap::Args + fmt::Debug> Cl
     {
         // add network name to logs dir
         self.logs.log_file_directory =
-            self.logs.log_file_directory.join(self.chain.chain.to_string());
+            self.logs.log_file_directory.join(self.chain.chain().to_string());
 
         let _guard = self.init_tracing()?;
         info!(target: "reth::cli", "Initialized tracing, debug log directory: {}", self.logs.log_file_directory);

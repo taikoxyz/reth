@@ -84,8 +84,12 @@ where
         V: EngineValidator<N::Engine, Block = BlockTy<N>>,
     {
         let chain_spec = provider.chain_spec();
-        let engine_kind =
+        let mut engine_kind =
             if chain_spec.is_optimism() { EngineApiKind::OpStack } else { EngineApiKind::Ethereum };
+
+        if chain_spec.is_taiko() {
+            engine_kind = EngineApiKind::Taiko
+        }
 
         let persistence_handle =
             PersistenceHandle::<N::Primitives>::spawn_service(provider, pruner, sync_metrics_tx);

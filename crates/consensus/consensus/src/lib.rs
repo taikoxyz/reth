@@ -451,6 +451,25 @@ pub enum ConsensusError {
         /// The block's timestamp.
         timestamp: u64,
     },
+
+    /// Error indicating that the child gas limit is over the maximum allowed limit.
+    ///
+    /// This error occurs when the child gas limit is more than the specified maximum gas limit.
+    #[display(
+        "child gas limit {child_gas_limit} is over the maximum allowed limit ({MINIMUM_GAS_LIMIT})"
+    )]
+    GasLimitInvalidMaximum {
+        /// The child gas limit.
+        child_gas_limit: u64,
+    },
+
+    /// Error when the first transaction in the block is not an anchor transaction.
+    #[display("missing anchor transaction")]
+    AnchorTxMissing,
+
+    /// Error when fetching L1 origin.
+    #[display("failed to load L1 origin")]
+    LoadL1Origin,
 }
 
 impl ConsensusError {

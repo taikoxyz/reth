@@ -220,7 +220,7 @@ pub trait Trace:
                 let env = EnvWithHandlerCfg::new_with_cfg_env(
                     cfg,
                     block_env,
-                    RpcNodeCore::evm_config(&this).tx_env(tx.as_signed(), tx.signer()),
+                    RpcNodeCore::evm_config(&this).tx_env(tx.as_signed(), tx.signer(), None),
                 );
                 let (res, _) =
                     this.inspect(StateCacheDbRefMutWrapper(&mut db), env, &mut inspector)?;
@@ -356,7 +356,7 @@ pub trait Trace:
                             block_number: Some(block_number),
                             base_fee: Some(base_fee),
                         };
-                        let tx_env = this.evm_config().tx_env(tx, *signer);
+                        let tx_env = this.evm_config().tx_env(tx, *signer, None);
                         (tx_info, tx_env)
                     })
                     .peekable();

@@ -11,11 +11,11 @@
 mod payload;
 use std::sync::Arc;
 
-use alloy_rpc_types_engine::{ExecutionPayload, ExecutionPayloadSidecar, PayloadError};
 pub use alloy_rpc_types_engine::{
     ExecutionPayloadEnvelopeV2, ExecutionPayloadEnvelopeV3, ExecutionPayloadEnvelopeV4,
     ExecutionPayloadV1, PayloadAttributes as EthPayloadAttributes,
 };
+use alloy_rpc_types_engine::{ExecutionPayloadSidecar, PayloadError};
 pub use payload::{EthBuiltPayload, EthPayloadBuilderAttributes};
 use reth_chainspec::ChainSpec;
 use reth_engine_primitives::{EngineTypes, EngineValidator, PayloadValidator};
@@ -25,6 +25,7 @@ use reth_payload_primitives::{
 };
 use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{Block, SealedBlock};
+use reth_taiko_engine_types::TaikoExecutionPayload;
 
 /// The types used in the default mainnet ethereum beacon consensus engine.
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
@@ -87,7 +88,7 @@ impl PayloadValidator for EthereumEngineValidator {
 
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlock, PayloadError> {
         self.inner.ensure_well_formed_payload(payload, sidecar)

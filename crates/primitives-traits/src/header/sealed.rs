@@ -6,11 +6,11 @@ use alloy_primitives::{keccak256, BlockHash, Sealable};
 use alloy_rlp::{Decodable, Encodable};
 use bytes::BufMut;
 use core::mem;
-use derive_more::{AsRef, Deref};
+use derive_more::{derive::DerefMut, AsRef, Deref};
 
 /// A [`Header`] that is sealed at a precalculated hash, use [`SealedHeader::unseal()`] if you want
 /// to modify header.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, AsRef, Deref)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, AsRef, Deref, DerefMut)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(any(test, feature = "reth-codec"), reth_codecs::add_arbitrary_tests(rlp))]
 pub struct SealedHeader<H = Header> {
@@ -19,6 +19,7 @@ pub struct SealedHeader<H = Header> {
     /// Locked Header fields.
     #[as_ref]
     #[deref]
+    #[deref_mut]
     header: H,
 }
 

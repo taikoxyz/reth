@@ -42,7 +42,7 @@ use reth::{
     providers::{CanonStateSubscriptions, EthStorage, StateProviderFactory},
     rpc::{
         eth::EthApi,
-        types::engine::{ExecutionPayload, ExecutionPayloadSidecar, PayloadError},
+        types::engine::{ExecutionPayloadSidecar, PayloadError},
     },
     tasks::TaskManager,
     transaction_pool::{PoolTransaction, TransactionPool},
@@ -69,6 +69,7 @@ use reth_payload_builder::{
     EthBuiltPayload, EthPayloadBuilderAttributes, PayloadBuilderError, PayloadBuilderHandle,
     PayloadBuilderService,
 };
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_tracing::{RethTracer, Tracer};
 use reth_trie_db::MerklePatriciaTrie;
 use serde::{Deserialize, Serialize};
@@ -194,7 +195,7 @@ impl PayloadValidator for CustomEngineValidator {
 
     fn ensure_well_formed_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<SealedBlockFor<Self::Block>, PayloadError> {
         self.inner.ensure_well_formed_payload(payload, sidecar)

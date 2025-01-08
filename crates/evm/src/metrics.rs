@@ -177,6 +177,7 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
+                skipped_list: vec![],
             })
         }
         fn execute_with_state_closure<F>(
@@ -192,6 +193,7 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
+                skipped_list: vec![],
             })
         }
         fn execute_with_state_hook<F>(
@@ -210,6 +212,7 @@ mod tests {
                 receipts: vec![],
                 requests: Requests::default(),
                 gas_used: 0,
+                skipped_list: vec![],
             })
         }
     }
@@ -240,6 +243,8 @@ mod tests {
         let input = BlockExecutionInput {
             block: &BlockWithSenders::default(),
             total_difficulty: Default::default(),
+            enable_anchor: false,
+            enable_skip: false,
         };
 
         let (tx, _rx) = mpsc::channel();
@@ -293,6 +298,8 @@ mod tests {
         let input = BlockExecutionInput {
             block: &BlockWithSenders::default(),
             total_difficulty: Default::default(),
+            enable_anchor: false,
+            enable_skip: false,
         };
 
         let (tx, rx) = mpsc::channel();

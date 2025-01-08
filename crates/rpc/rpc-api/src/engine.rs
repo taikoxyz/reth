@@ -7,9 +7,8 @@ use alloy_eips::{eip4844::BlobAndProofV1, eip7685::Requests, BlockId, BlockNumbe
 use alloy_json_rpc::RpcObject;
 use alloy_primitives::{Address, BlockHash, Bytes, B256, U256, U64};
 use alloy_rpc_types_engine::{
-    ClientVersionV1, ExecutionPayloadBodiesV1, ExecutionPayloadInputV2, ExecutionPayloadV1,
-    ExecutionPayloadV3, ForkchoiceState, ForkchoiceUpdated, PayloadId, PayloadStatus,
-    TransitionConfiguration,
+    ClientVersionV1, ExecutionPayloadBodiesV1, ExecutionPayloadV1, ExecutionPayloadV3,
+    ForkchoiceState, ForkchoiceUpdated, PayloadId, PayloadStatus, TransitionConfiguration,
 };
 use alloy_rpc_types_eth::{
     state::StateOverride, transaction::TransactionRequest, BlockOverrides,
@@ -18,6 +17,7 @@ use alloy_rpc_types_eth::{
 use alloy_serde::JsonStorageKey;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use reth_engine_primitives::EngineTypes;
+use reth_taiko_engine_types::TaikoExecutionPayloadInputV2;
 // NOTE: We can't use associated types in the `EngineApi` trait because of jsonrpsee, so we use a
 // generic here. It would be nice if the rpc macro would understand which types need to have serde.
 // By default, if the trait has a generic, the rpc macro will add e.g. `Engine: DeserializeOwned` to
@@ -35,7 +35,10 @@ pub trait EngineApi<Engine: EngineTypes> {
 
     /// See also <https://github.com/ethereum/execution-apis/blob/584905270d8ad665718058060267061ecfd79ca5/src/engine/shanghai.md#engine_newpayloadv2>
     #[method(name = "newPayloadV2")]
-    async fn new_payload_v2(&self, payload: ExecutionPayloadInputV2) -> RpcResult<PayloadStatus>;
+    async fn new_payload_v2(
+        &self,
+        payload: TaikoExecutionPayloadInputV2,
+    ) -> RpcResult<PayloadStatus>;
 
     /// Post Cancun payload handler
     ///

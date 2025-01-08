@@ -12,7 +12,7 @@ use alloy_primitives::{
     BlockNumber, B256, U256,
 };
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
+    ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
     PayloadValidationError,
 };
 use reth_beacon_consensus::{
@@ -47,6 +47,7 @@ use reth_provider::{
 };
 use reth_revm::database::StateProviderDatabase;
 use reth_stages_api::ControlFlow;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_trie::{updates::TrieUpdates, HashedPostState, TrieInput};
 use reth_trie_parallel::root::{ParallelStateRoot, ParallelStateRootError};
 use revm_primitives::EvmState;
@@ -739,7 +740,7 @@ where
     #[instrument(level = "trace", skip_all, fields(block_hash = %payload.block_hash(), block_num = %payload.block_number(),), target = "engine::tree")]
     fn on_new_payload(
         &mut self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<TreeOutcome<PayloadStatus>, InsertBlockFatalError> {
         trace!(target: "engine::tree", "invoked new payload");
@@ -1071,7 +1072,7 @@ where
 
             // For OpStack the proposers are allowed to reorg their own chain at will, so we need to
             // always trigger a new payload job if requested.
-            if self.engine_kind.is_opstack() {
+            if self.engine_kind.is_opstack() || self.engine_kind.is_taiko() {
                 if let Some(attr) = attrs {
                     debug!(target: "engine::tree", head = canonical_header.number(), "handling payload attributes for canonical head");
                     let updated =
@@ -2878,6 +2879,7 @@ mod tests {
                         payload_attrs: None,
                         tx,
                         version: EngineApiMessageVersion::default(),
+                        debug: false,
                     }
                     .into(),
                 ))
@@ -2920,7 +2922,9 @@ mod tests {
             let payload = block_to_payload_v3(block.block.clone());
             self.tree
                 .on_new_payload(
-                    payload.into(),
+                    TaikoExecutionPayload::from(alloy_rpc_types_engine::ExecutionPayload::from(
+                        payload,
+                    )),
                     ExecutionPayloadSidecar::v3(CancunPayloadFields {
                         parent_beacon_block_root: block.parent_beacon_block_root.unwrap(),
                         versioned_hashes: vec![],
@@ -3168,6 +3172,7 @@ mod tests {
                     payload_attrs: None,
                     tx,
                     version: EngineApiMessageVersion::default(),
+                    debug: false,
                 }
                 .into(),
             ))
@@ -3190,7 +3195,12 @@ mod tests {
 
         let outcome = test_harness
             .tree
-            .on_new_payload(payload.into(), ExecutionPayloadSidecar::none())
+            .on_new_payload(
+                TaikoExecutionPayload::from(alloy_rpc_types_engine::ExecutionPayload::from(
+                    payload,
+                )),
+                ExecutionPayloadSidecar::none(),
+            )
             .unwrap();
         assert!(outcome.outcome.is_syncing());
 
@@ -3234,7 +3244,9 @@ mod tests {
             .tree
             .on_engine_message(FromEngine::Request(
                 BeaconEngineMessage::NewPayload {
-                    payload: payload.clone().into(),
+                    payload: TaikoExecutionPayload::from(
+                        alloy_rpc_types_engine::ExecutionPayload::from(payload),
+                    ),
                     sidecar: ExecutionPayloadSidecar::none(),
                     tx,
                 }

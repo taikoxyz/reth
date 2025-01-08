@@ -21,6 +21,9 @@ reth-rpc-types-compat.workspace = true
 alloy-rlp.workspace = true
 reth-chain-state.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # alloy
 alloy-primitives.workspace = true
 alloy-eips.workspace = true

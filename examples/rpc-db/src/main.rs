@@ -16,7 +16,7 @@ use std::{path::Path, sync::Arc};
 
 use reth::{
     api::NodeTypesWithDBAdapter,
-    beacon_consensus::EthBeaconConsensus,
+    beacon_consensus::{BeaconConsensusEngineHandle, EthBeaconConsensus},
     providers::{
         providers::{BlockchainProvider, StaticFileProvider},
         ProviderFactory,
@@ -35,7 +35,7 @@ use reth::rpc::builder::{
 use myrpc_ext::{MyRpcExt, MyRpcExtApiServer};
 use reth::{blockchain_tree::noop::NoopBlockchainTree, tasks::TokioTaskExecutor};
 use reth_node_ethereum::{
-    node::EthereumEngineValidator, EthEvmConfig, EthExecutorProvider, EthereumNode,
+    node::EthereumEngineValidator, EthEngineTypes, EthEvmConfig, EthExecutorProvider, EthereumNode,
 };
 use reth_provider::{test_utils::TestCanonStateSubscriptions, ChainSpecProvider};
 
@@ -63,7 +63,7 @@ async fn main() -> eyre::Result<()> {
     //    disk and don't handle new blocks/live sync etc, which is done by the blockchain tree.
     let provider = BlockchainProvider::new(factory, Arc::new(NoopBlockchainTree::default()))?;
 
-    let rpc_builder = RpcModuleBuilder::default()
+    let rpc_builder = RpcModuleBuilder::<_, _, _, _, _, _, _, _, EthEngineTypes>::default()
         .with_provider(provider.clone())
         // Rest is just noops that do nothing
         .with_noop_pool()
@@ -72,7 +72,8 @@ async fn main() -> eyre::Result<()> {
         .with_evm_config(EthEvmConfig::new(spec.clone()))
         .with_events(TestCanonStateSubscriptions::default())
         .with_block_executor(EthExecutorProvider::ethereum(provider.chain_spec()))
-        .with_consensus(EthBeaconConsensus::new(spec.clone()));
+        .with_consensus(EthBeaconConsensus::new(spec.clone()))
+        .with_beacon_consensus(BeaconConsensusEngineHandle::<EthEngineTypes>::test());
 
     // Pick which namespaces to expose.
     let config = TransportRpcModuleConfig::default().with_http([RethRpcModule::Eth]);

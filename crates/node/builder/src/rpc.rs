@@ -191,7 +191,7 @@ where
 }
 
 /// Helper wrapper type to encapsulate the [`RpcRegistryInner`] over components trait.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[allow(clippy::type_complexity)]
 pub struct RpcRegistry<Node: FullNodeComponents, EthApi: EthApiTypes> {
     pub(crate) registry: RpcRegistryInner<
@@ -203,7 +203,14 @@ pub struct RpcRegistry<Node: FullNodeComponents, EthApi: EthApiTypes> {
         EthApi,
         Node::Executor,
         Node::Consensus,
+        <Node::Types as NodeTypesWithEngine>::Engine,
     >,
+}
+
+impl<Node: FullNodeComponents, EthApi: EthApiTypes> Clone for RpcRegistry<Node, EthApi> {
+    fn clone(&self) -> Self {
+        Self { registry: self.registry.clone() }
+    }
 }
 
 impl<Node, EthApi> Deref for RpcRegistry<Node, EthApi>
@@ -220,6 +227,7 @@ where
         EthApi,
         Node::Executor,
         Node::Consensus,
+        <Node::Types as NodeTypesWithEngine>::Engine,
     >;
 
     fn deref(&self) -> &Self::Target {
@@ -439,7 +447,7 @@ where
         let engine_api = EngineApi::new(
             node.provider().clone(),
             config.chain.clone(),
-            beacon_engine_handle,
+            beacon_engine_handle.clone(),
             PayloadStore::new(node.payload_builder().clone()),
             node.pool().clone(),
             Box::new(node.task_executor().clone()),
@@ -453,21 +461,32 @@ where
         let module_config = config.rpc.transport_rpc_module_config();
         debug!(target: "reth::cli", http=?module_config.http(), ws=?module_config.ws(), "Using RPC module config");
 
-        let (mut modules, mut auth_module, registry) = RpcModuleBuilder::default()
-            .with_provider(node.provider().clone())
-            .with_pool(node.pool().clone())
-            .with_network(node.network().clone())
-            .with_events(node.provider().clone())
-            .with_executor(node.task_executor().clone())
-            .with_evm_config(node.evm_config().clone())
-            .with_block_executor(node.block_executor().clone())
-            .with_consensus(node.consensus().clone())
-            .build_with_auth_server(
-                module_config,
-                engine_api,
-                eth_api_builder,
-                Arc::new(engine_validator),
-            );
+        let (mut modules, mut auth_module, registry) = RpcModuleBuilder::<
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            <N::Types as NodeTypesWithEngine>::Engine,
+        >::default()
+        .with_provider(node.provider().clone())
+        .with_pool(node.pool().clone())
+        .with_network(node.network().clone())
+        .with_events(node.provider().clone())
+        .with_executor(node.task_executor().clone())
+        .with_evm_config(node.evm_config().clone())
+        .with_block_executor(node.block_executor().clone())
+        .with_beacon_consensus(beacon_engine_handle)
+        .with_consensus(node.consensus().clone())
+        .build_with_auth_server(
+            module_config,
+            engine_api,
+            eth_api_builder,
+            Arc::new(engine_validator),
+        );
 
         // in dev mode we generate 20 random dev-signer accounts
         if config.dev.dev {

@@ -18,6 +18,7 @@ use reth_evm::{
     system_calls::{OnStateHook, SystemCaller},
     ConfigureEvm, TxEnvOverrides,
 };
+use reth_execution_types::BlockExecutionInput;
 use reth_optimism_chainspec::OpChainSpec;
 use reth_optimism_consensus::validate_block_post_execution;
 use reth_optimism_forks::OpHardfork;
@@ -161,9 +162,9 @@ where
 
     fn execute_transactions(
         &mut self,
-        block: &BlockWithSenders,
-        total_difficulty: U256,
+        input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
 

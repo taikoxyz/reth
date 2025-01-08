@@ -2,7 +2,7 @@ use alloy_consensus::{BlockHeader, Header};
 use alloy_eips::{merge::EPOCH_SLOTS, BlockNumHash};
 use alloy_primitives::{BlockNumber, B256};
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
+    ExecutionPayloadSidecar, ForkchoiceState, PayloadStatus, PayloadStatusEnum,
     PayloadValidationError,
 };
 use futures::{stream::BoxStream, Future, StreamExt};
@@ -25,13 +25,13 @@ use reth_node_types::{Block, BlockTy, HeaderTy, NodeTypesWithEngine};
 use reth_payload_builder::PayloadBuilderHandle;
 use reth_payload_builder_primitives::PayloadBuilder;
 use reth_payload_primitives::{PayloadAttributes, PayloadBuilderAttributes};
-use reth_payload_validator::ExecutionPayloadValidator;
 use reth_primitives::{EthPrimitives, Head, SealedBlock, SealedHeader};
 use reth_provider::{
     providers::ProviderNodeTypes, BlockIdReader, BlockReader, BlockSource, CanonChainTracker,
     ChainSpecProvider, ProviderError, StageCheckpointReader,
 };
 use reth_stages_api::{ControlFlow, Pipeline, PipelineTarget, StageId};
+use reth_taiko_payload_validator::TaikoExecutionPayloadValidator;
 use reth_tasks::TaskSpawner;
 use reth_tokio_util::EventSender;
 use std::{
@@ -73,6 +73,8 @@ use hooks::{EngineHookContext, EngineHookEvent, EngineHooks, EngineHooksControll
 #[cfg(test)]
 pub mod test_utils;
 
+use reth_taiko_engine_types::TaikoExecutionPayload;
+
 /// The maximum number of invalid headers that can be tracked by the engine.
 const MAX_INVALID_HEADERS: u32 = 512u32;
 
@@ -103,8 +105,12 @@ impl<T> EngineNodeTypes for T where
 /// - The current fork choice state.
 /// - Optional payload attributes specific to the engine type.
 /// - Sender for the result of an oneshot channel, conveying the outcome of the fork choice update.
-type PendingForkchoiceUpdate<PayloadAttributes> =
-    (ForkchoiceState, Option<PayloadAttributes>, oneshot::Sender<RethResult<OnForkChoiceUpdated>>);
+type PendingForkchoiceUpdate<PayloadAttributes> = (
+    ForkchoiceState,
+    Option<PayloadAttributes>,
+    oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
+    EngineApiMessageVersion,
+);
 
 /// The beacon consensus engine is the driver that switches between historical and live sync.
 ///
@@ -199,7 +205,7 @@ where
     /// The payload store.
     payload_builder: PayloadBuilderHandle<N::Engine>,
     /// Validator for execution payloads
-    payload_validator: ExecutionPayloadValidator<N::ChainSpec>,
+    payload_validator: TaikoExecutionPayloadValidator<N::ChainSpec>,
     /// Current blockchain tree action.
     blockchain_tree_action: Option<BlockchainTreeAction<N::Engine>>,
     /// Pending forkchoice update.
@@ -313,7 +319,7 @@ where
         );
         let mut this = Self {
             sync,
-            payload_validator: ExecutionPayloadValidator::new(blockchain.chain_spec()),
+            payload_validator: TaikoExecutionPayloadValidator::new(blockchain.chain_spec()),
             blockchain,
             sync_state_updater,
             engine_message_stream,
@@ -399,6 +405,7 @@ where
         mut attrs: Option<<N::Engine as PayloadTypes>::PayloadAttributes>,
         make_canonical_result: Result<CanonicalOutcome, CanonicalError>,
         elapsed: Duration,
+        version: EngineApiMessageVersion,
     ) -> Result<OnForkChoiceUpdated, CanonicalError> {
         match make_canonical_result {
             Ok(outcome) => {
@@ -431,12 +438,7 @@ where
                 } else if let Some(attrs) = attrs {
                     // the CL requested to build a new payload on top of this new VALID head
                     let head = outcome.into_header().unseal();
-                    self.process_payload_attributes(
-                        attrs,
-                        head,
-                        state,
-                        EngineApiMessageVersion::default(),
-                    )
+                    self.process_payload_attributes(attrs, head, state, version)
                 } else {
                     OnForkChoiceUpdated::valid(PayloadStatus::new(
                         PayloadStatusEnum::Valid,
@@ -479,6 +481,16 @@ where
             return true
         }
 
+        if reth_chainspec::EthChainSpec::is_taiko(&self.blockchain.chain_spec()) {
+            debug!(
+                target: "consensus::engine",
+                fcu_head_num=?header.number,
+                current_head_num=?head.number,
+                "[Taiko] Allowing beacon reorg to old head"
+            );
+            return true;
+        }
+
         // 2. Client software MAY skip an update of the forkchoice state and MUST NOT begin a
         //    payload build process if `forkchoiceState.headBlockHash` references a `VALID` ancestor
         //    of the head of canonical chain, i.e. the ancestor passed payload validation process
@@ -511,6 +523,7 @@ where
         state: ForkchoiceState,
         attrs: Option<<N::Engine as PayloadTypes>::PayloadAttributes>,
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
+        version: EngineApiMessageVersion,
     ) {
         self.metrics.forkchoice_updated_messages.increment(1);
         self.blockchain.on_forkchoice_update_received(&state);
@@ -527,20 +540,25 @@ where
                     // running, since it requires exclusive access to the
                     // database
                     let replaced_pending =
-                        self.pending_forkchoice_update.replace((state, attrs, tx));
+                        self.pending_forkchoice_update.replace((state, attrs, tx, version));
                     warn!(
                         target: "consensus::engine",
                         hook = %hook.name(),
                         head_block_hash = ?state.head_block_hash,
                         safe_block_hash = ?state.safe_block_hash,
                         finalized_block_hash = ?state.finalized_block_hash,
-                        replaced_pending = ?replaced_pending.map(|(state, _, _)| state),
+                        replaced_pending = ?replaced_pending.map(|(state, _, _, _)| state),
                         "Hook is in progress, delaying forkchoice update. \
                         This may affect the performance of your node as a validator."
                     );
                 } else {
                     self.set_blockchain_tree_action(
-                        BlockchainTreeAction::MakeForkchoiceHeadCanonical { state, attrs, tx },
+                        BlockchainTreeAction::MakeForkchoiceHeadCanonical {
+                            state,
+                            attrs,
+                            tx,
+                            version,
+                        },
                     );
                 }
             }
@@ -1090,7 +1108,7 @@ where
     #[instrument(level = "trace", skip(self, payload, sidecar), fields(block_hash = ?payload.block_hash(), block_number = %payload.block_number(), is_pipeline_idle = %self.sync.is_pipeline_idle()), target = "consensus::engine")]
     fn on_new_payload(
         &mut self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<Either<PayloadStatus, SealedBlock>, BeaconOnNewPayloadError> {
         self.metrics.new_payload_messages.increment(1);
@@ -1175,7 +1193,7 @@ where
         //    client software MUST respond with -38003: `Invalid payload attributes` and MUST NOT
         //    begin a payload build process. In such an event, the forkchoiceState update MUST NOT
         //    be rolled back.
-        if attrs.timestamp() <= head.timestamp {
+        if attrs.timestamp() < head.timestamp {
             return OnForkChoiceUpdated::invalid_payload_attributes()
         }
 
@@ -1609,13 +1627,13 @@ where
         action: BlockchainTreeAction<N::Engine>,
     ) -> RethResult<EngineEventOutcome> {
         match action {
-            BlockchainTreeAction::MakeForkchoiceHeadCanonical { state, attrs, tx } => {
+            BlockchainTreeAction::MakeForkchoiceHeadCanonical { state, attrs, tx, version } => {
                 let start = Instant::now();
                 let result = self.blockchain.make_canonical(state.head_block_hash);
                 let elapsed = self.record_make_canonical_latency(start, &result);
-                match self
-                    .on_forkchoice_updated_make_canonical_result(state, attrs, result, elapsed)
-                {
+                match self.on_forkchoice_updated_make_canonical_result(
+                    state, attrs, result, elapsed, version,
+                ) {
                     Ok(on_updated) => {
                         trace!(target: "consensus::engine", status = ?on_updated, ?state, "Returning forkchoice status");
                         let fcu_status = on_updated.forkchoice_status();
@@ -1850,9 +1868,15 @@ where
                 // If the db write hook is no longer active and we have a pending forkchoice update,
                 // process it first.
                 if this.hooks.active_db_write_hook().is_none() {
-                    if let Some((state, attrs, tx)) = this.pending_forkchoice_update.take() {
+                    if let Some((state, attrs, tx, version)) = this.pending_forkchoice_update.take()
+                    {
                         this.set_blockchain_tree_action(
-                            BlockchainTreeAction::MakeForkchoiceHeadCanonical { state, attrs, tx },
+                            BlockchainTreeAction::MakeForkchoiceHeadCanonical {
+                                state,
+                                attrs,
+                                tx,
+                                version,
+                            },
                         );
                         continue
                     }
@@ -1869,9 +1893,9 @@ where
                             state,
                             payload_attrs,
                             tx,
-                            version: _version,
+                            version,
                         } => {
-                            this.on_forkchoice_updated(state, payload_attrs, tx);
+                            this.on_forkchoice_updated(state, payload_attrs, tx, version);
                         }
                         BeaconEngineMessage::NewPayload { payload, sidecar, tx } => {
                             match this.on_new_payload(payload, sidecar) {
@@ -1944,6 +1968,7 @@ enum BlockchainTreeAction<EngineT: EngineTypes> {
     MakeForkchoiceHeadCanonical {
         state: ForkchoiceState,
         attrs: Option<EngineT::PayloadAttributes>,
+        version: EngineApiMessageVersion,
         tx: oneshot::Sender<RethResult<OnForkChoiceUpdated>>,
     },
     InsertNewPayload {

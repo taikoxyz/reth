@@ -88,8 +88,12 @@ where
     where
         V: EngineValidator<N::Engine, Block = BlockTy<N>>,
     {
-        let engine_kind =
+        let mut engine_kind =
             if chain_spec.is_optimism() { EngineApiKind::OpStack } else { EngineApiKind::Ethereum };
+
+        if chain_spec.is_taiko() {
+            engine_kind = EngineApiKind::Taiko
+        }
 
         let downloader = BasicBlockDownloader::new(client, consensus.clone().as_consensus());
 

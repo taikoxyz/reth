@@ -136,6 +136,14 @@ pub enum ProviderError {
     UnifiedStorageWriterError(UnifiedStorageWriterError),
     /// Received invalid output from configured storage implementation.
     InvalidStorageOutput,
+
+    /// L1 origin error
+    #[display("not found")]
+    L1OriginNotFound(BlockNumber),
+
+    /// Head L1 origin error
+    #[display("not found")]
+    HeadL1OriginNotFound,
 }
 
 impl From<DatabaseError> for ProviderError {

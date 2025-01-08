@@ -58,3 +58,6 @@ pub use benchmark_args::BenchmarkArgs;
 
 mod error;
 pub mod types;
+
+mod taiko;
+pub use taiko::TaikoArgs;

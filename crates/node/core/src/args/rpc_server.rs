@@ -21,6 +21,8 @@ use crate::args::{
     GasPriceOracleArgs, RpcStateCacheArgs,
 };
 
+use super::TaikoArgs;
+
 /// Default max number of subscriptions per connection.
 pub(crate) const RPC_DEFAULT_MAX_SUBS_PER_CONN: u32 = 1024;
 
@@ -197,6 +199,10 @@ pub struct RpcServerArgs {
     /// Gas price oracle configuration.
     #[command(flatten)]
     pub gas_price_oracle: GasPriceOracleArgs,
+
+    /// Taiko additional configuration.
+    #[command(flatten)]
+    pub taiko: TaikoArgs,
 }
 
 impl RpcServerArgs {
@@ -332,6 +338,7 @@ impl Default for RpcServerArgs {
             rpc_state_cache: RpcStateCacheArgs::default(),
             rpc_proof_permits: constants::DEFAULT_PROOF_PERMITS,
             builder_disallow: Default::default(),
+            taiko: TaikoArgs::default(),
         }
     }
 }

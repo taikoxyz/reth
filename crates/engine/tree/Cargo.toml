@@ -37,6 +37,9 @@ reth-trie-parallel.workspace = true
 reth-trie-sparse.workspace = true
 reth-trie.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # alloy
 alloy-consensus.workspace = true
 alloy-eips.workspace = true

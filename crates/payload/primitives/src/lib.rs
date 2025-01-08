@@ -9,6 +9,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 mod error;
+use alloy_rpc_types_engine::PayloadId;
 pub use error::{
     EngineObjectValidationError, InvalidPayloadAttributesError, PayloadBuilderError,
     VersionSpecificValidationError,
@@ -37,6 +38,17 @@ pub trait PayloadTypes: Send + Sync + Unpin + core::fmt::Debug + Clone + 'static
     type PayloadBuilderAttributes: PayloadBuilderAttributes<RpcPayloadAttributes = Self::PayloadAttributes>
         + Clone
         + Unpin;
+}
+
+/// Validates the payload ID against the expected payload IDs.
+pub fn validate_payload_id<T: IntoIterator<Item = EngineApiMessageVersion>>(
+    id: PayloadId,
+    expected_vers: T,
+) -> Result<(), EngineObjectValidationError> {
+    if !expected_vers.into_iter().any(|expected_ver| id.0[0] == expected_ver as u8) {
+        return Err(EngineObjectValidationError::UnsupportedFork);
+    }
+    Ok(())
 }
 
 /// Validates the timestamp depending on the version called:

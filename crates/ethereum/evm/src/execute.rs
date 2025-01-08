@@ -21,6 +21,7 @@ use reth_evm::{
     system_calls::{OnStateHook, SystemCaller},
     ConfigureEvm, TxEnvOverrides,
 };
+use reth_execution_types::BlockExecutionInput;
 use reth_primitives::{BlockWithSenders, EthPrimitives, Receipt};
 use reth_revm::db::State;
 use revm_primitives::{
@@ -169,9 +170,9 @@ where
 
     fn execute_transactions(
         &mut self,
-        block: &BlockWithSenders,
-        total_difficulty: U256,
+        input: BlockExecutionInput<'_, BlockWithSenders>,
     ) -> Result<ExecuteOutput<Receipt>, Self::Error> {
+        let BlockExecutionInput { block, total_difficulty, .. } = input;
         let env = self.evm_env_for_block(&block.header, total_difficulty);
         let mut evm = self.evm_config.evm_with_env(&mut self.state, env);
 
@@ -186,10 +187,10 @@ where
                     transaction_gas_limit: transaction.gas_limit(),
                     block_available_gas,
                 }
-                .into())
+                .into());
             }
 
-            self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender);
+            self.evm_config.fill_tx_env(evm.tx_mut(), transaction, *sender, None);
 
             if let Some(tx_env_overrides) = &mut self.tx_env_overrides {
                 tx_env_overrides.apply(evm.tx_mut());
@@ -226,7 +227,7 @@ where
                 },
             );
         }
-        Ok(ExecuteOutput { receipts, gas_used: cumulative_gas_used })
+        Ok(ExecuteOutput { receipts, gas_used: cumulative_gas_used, skipped_list: vec![] })
     }
 
     fn apply_post_execution_changes(

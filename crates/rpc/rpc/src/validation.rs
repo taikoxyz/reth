@@ -350,7 +350,7 @@ where
         let block = self
             .payload_validator
             .ensure_well_formed_payload(
-                ExecutionPayload::V3(request.request.execution_payload),
+                ExecutionPayload::V3(request.request.execution_payload).into(),
                 ExecutionPayloadSidecar::v3(CancunPayloadFields {
                     parent_beacon_block_root: request.parent_beacon_block_root,
                     versioned_hashes: self.validate_blobs_bundle(request.request.blobs_bundle)?,
@@ -375,7 +375,7 @@ where
         let block = self
             .payload_validator
             .ensure_well_formed_payload(
-                ExecutionPayload::V3(request.request.execution_payload),
+                ExecutionPayload::V3(request.request.execution_payload).into(),
                 ExecutionPayloadSidecar::v4(
                     CancunPayloadFields {
                         parent_beacon_block_root: request.parent_beacon_block_root,

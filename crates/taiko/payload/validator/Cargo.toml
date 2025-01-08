@@ -1,0 +1,26 @@
+[package]
+name = "reth-taiko-payload-validator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Payload validation support"
+
+[lints]
+workspace = true
+
+[dependencies]
+# reth
+reth-chainspec.workspace = true
+reth-primitives = { workspace = true, features = ["taiko"] }
+reth-rpc-types-compat.workspace = true
+
+# ethereum
+alloy-rpc-types-engine.workspace = true
+alloy-primitives.workspace = true
+alloy-consensus.workspace = true
+
+# taiko
+reth-taiko-engine-types.workspace = true

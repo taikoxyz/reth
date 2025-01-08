@@ -1,0 +1,113 @@
+//! Taiko related functionality for the block executor.
+
+use alloy_primitives::{uint, Address, TxKind, U256};
+use eyre::{bail, ensure, eyre, OptionExt, Result};
+use once_cell::sync::Lazy;
+use reth_primitives::{Header, TransactionSigned};
+use std::str::FromStr;
+
+/// Anchor tx gas limit
+pub const ANCHOR_GAS_LIMIT: u64 = 250_000;
+
+/// The address calling the anchor transaction
+pub static GOLDEN_TOUCH_ACCOUNT: Lazy<Address> = Lazy::new(|| {
+    Address::from_str("0x0000777735367b36bC9B61C50022d9D0700dB4Ec")
+        .expect("invalid golden touch account")
+});
+static GX1: U256 = uint!(0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798_U256);
+static N: U256 = uint!(0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141_U256);
+static GX1_MUL_PRIVATEKEY: U256 =
+    uint!(0x4341adf5a780b4a87939938fd7a032f6e6664c7da553c121d3b4947429639122_U256);
+static GX2: U256 = uint!(0xc6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5_U256);
+
+/// check the anchor signature with fixed K value
+pub fn check_anchor_signature(anchor: &TransactionSigned) -> Result<()> {
+    let sign = anchor.signature;
+    if sign.r() == GX1 {
+        return Ok(());
+    }
+    let msg_hash = anchor.signature_hash();
+    let msg_hash: U256 = msg_hash.into();
+    if sign.r() == GX2 {
+        // when r == GX2 require s == 0 if k == 1
+        // alias: when r == GX2 require N == msg_hash + *GX1_MUL_PRIVATEKEY
+        if N != msg_hash + GX1_MUL_PRIVATEKEY {
+            bail!(
+                "r == GX2, but N != msg_hash + *GX1_MUL_PRIVATEKEY, N: {}, msg_hash: {msg_hash}, *GX1_MUL_PRIVATEKEY: {}",
+                N, GX1_MUL_PRIVATEKEY
+            );
+        }
+        return Ok(());
+    }
+    Err(eyre!("r != *GX1 && r != GX2, r: {}, *GX1: {}, GX2: {}", sign.r(), GX1, GX2))
+}
+
+use alloy_sol_types::{sol, SolCall};
+
+/// Data required to validate a Taiko Block
+#[derive(Clone, Debug, Default)]
+pub struct TaikoData {
+    /// header
+    pub l1_header: Header,
+    /// parent L1 header
+    pub parent_header: Header,
+    /// L2 contract
+    pub l2_contract: Address,
+}
+
+sol! {
+    /// Anchor call
+    function anchor(
+        /// The L1 hash
+        bytes32 l1Hash,
+        /// The L1 state root
+        bytes32 l1StateRoot,
+        /// The L1 block number
+        uint64 l1BlockId,
+        /// The gas used in the parent block
+        uint32 parentGasUsed
+    )
+        external
+    {}
+}
+
+/// Decode anchor tx data
+pub fn decode_anchor(bytes: &[u8]) -> Result<anchorCall> {
+    anchorCall::abi_decode(bytes, true).map_err(|e| eyre!(e))
+}
+
+/// decodes an ontake block's extradata, returns `basefee_ratio` configurations,
+/// the corresponding encoding function in protocol is `LibProposing._encodeGasConfigs`.
+pub fn decode_ontake_extra_data(extradata: &[u8]) -> u8 {
+    let basefee_ratio = U256::from_be_slice(extradata);
+    let val: u64 = basefee_ratio.try_into().unwrap();
+    val as u8
+}
+
+/// Verifies the anchor tx correctness
+pub fn check_anchor_tx(
+    tx: &TransactionSigned,
+    from: Address,
+    base_fee_per_gas: u64,
+    treasury: Address,
+) -> eyre::Result<()> {
+    use eyre::{bail, ensure, eyre, Context};
+    let anchor = tx.as_eip1559().ok_or_eyre("anchor tx is not an EIP1559 tx")?;
+
+    // Check the signature
+    check_anchor_signature(tx).context(eyre!("failed to check anchor signature"))?;
+
+    // Extract the `to` address
+    let TxKind::Call(to) = anchor.to else { bail!("anchor tx not a smart contract call") };
+    // Check that the L2 contract is being called
+    ensure!(to == treasury, "anchor transaction to mismatch");
+    // Check that it's from the golden touch address
+    ensure!(from == *GOLDEN_TOUCH_ACCOUNT, "anchor transaction from mismatch");
+    // Tx can't have any ETH attached
+    ensure!(anchor.value == U256::from(0), "anchor transaction value mismatch");
+    // Tx needs to have the expected gas limit
+    ensure!(anchor.gas_limit == ANCHOR_GAS_LIMIT, "anchor transaction gas price mismatch");
+    // Check needs to have the base fee set to the block base fee
+    ensure!(anchor.max_fee_per_gas == base_fee_per_gas as u128, "anchor transaction gas mismatch");
+    Ok(())
+}

@@ -22,6 +22,7 @@ use reth::{
     tasks::TaskManager,
 };
 use reth_chainspec::{Chain, ChainSpec};
+use reth_evm::EnvExt;
 use reth_node_api::{ConfigureEvm, ConfigureEvmEnv, FullNodeTypes, NodeTypes};
 use reth_node_core::{args::RpcServerArgs, node_config::NodeConfig};
 use reth_node_ethereum::{
@@ -151,8 +152,14 @@ impl ConfigureEvmEnv for MyEvmConfig {
     type Transaction = TransactionSigned;
     type Error = Infallible;
 
-    fn fill_tx_env(&self, tx_env: &mut TxEnv, transaction: &TransactionSigned, sender: Address) {
-        self.inner.fill_tx_env(tx_env, transaction, sender)
+    fn fill_tx_env(
+        &self,
+        tx_env: &mut TxEnv,
+        transaction: &TransactionSigned,
+        sender: Address,
+        ext: Option<EnvExt<'_>>,
+    ) {
+        self.inner.fill_tx_env(tx_env, transaction, sender, ext)
     }
 
     fn fill_tx_env_system_contract_call(

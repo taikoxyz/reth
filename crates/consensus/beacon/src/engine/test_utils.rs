@@ -38,6 +38,7 @@ use reth_prune::Pruner;
 use reth_prune_types::PruneModes;
 use reth_stages::{sets::DefaultStages, test_utils::TestStages, ExecOutput, Pipeline, StageError};
 use reth_static_file::StaticFileProducer;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_tasks::TokioTaskExecutor;
 use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{oneshot, watch};
@@ -73,7 +74,7 @@ impl<DB> TestEnv<DB> {
         payload: T,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
-        self.engine_handle.new_payload(payload.into(), sidecar).await
+        self.engine_handle.new_payload(TaikoExecutionPayload::from(payload.into()), sidecar).await
     }
 
     /// Sends the `ExecutionPayload` message to the consensus engine and retries if the engine

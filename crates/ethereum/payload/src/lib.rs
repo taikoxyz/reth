@@ -268,7 +268,7 @@ where
         }
 
         // Configure the environment for the tx.
-        *evm.tx_mut() = evm_config.tx_env(tx.as_signed(), tx.signer());
+        *evm.tx_mut() = evm_config.tx_env(tx.as_signed(), tx.signer(), None);
 
         let ResultAndState { result, state } = match evm.transact() {
             Ok(res) => res,

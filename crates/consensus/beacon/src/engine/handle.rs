@@ -2,7 +2,7 @@
 
 use crate::{BeaconConsensusEngineEvent, BeaconForkChoiceUpdateError};
 use alloy_rpc_types_engine::{
-    ExecutionPayload, ExecutionPayloadSidecar, ForkchoiceState, ForkchoiceUpdated, PayloadStatus,
+    ExecutionPayloadSidecar, ForkchoiceState, ForkchoiceUpdated, PayloadStatus,
 };
 use futures::TryFutureExt;
 use reth_engine_primitives::{
@@ -10,6 +10,7 @@ use reth_engine_primitives::{
     OnForkChoiceUpdated,
 };
 use reth_errors::RethResult;
+use reth_taiko_engine_types::TaikoExecutionPayload;
 use reth_tokio_util::{EventSender, EventStream};
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
 
@@ -24,6 +25,14 @@ where
 {
     pub(crate) to_engine: UnboundedSender<BeaconEngineMessage<Engine>>,
     event_sender: EventSender<BeaconConsensusEngineEvent>,
+}
+
+impl<Engine: EngineTypes> BeaconConsensusEngineHandle<Engine> {
+    /// for testing
+    pub fn test() -> Self {
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
+        Self { to_engine: tx, event_sender: Default::default() }
+    }
 }
 
 // === impl BeaconConsensusEngineHandle ===
@@ -45,7 +54,7 @@ where
     /// See also <https://github.com/ethereum/execution-apis/blob/3d627c95a4d3510a8187dd02e0250ecb4331d27e/src/engine/shanghai.md#engine_newpayloadv2>
     pub async fn new_payload(
         &self,
-        payload: ExecutionPayload,
+        payload: TaikoExecutionPayload,
         sidecar: ExecutionPayloadSidecar,
     ) -> Result<PayloadStatus, BeaconOnNewPayloadError> {
         let (tx, rx) = oneshot::channel();

@@ -188,6 +188,7 @@ impl Decode for ClientVersion {
 }
 
 /// Implements compression for Compact type.
+#[macro_export]
 macro_rules! impl_compression_for_compact {
     ($($name:ident$(<$($generic:ident),*>)?),+) => {
         $(

@@ -45,6 +45,7 @@ metrics-util = { workspace = true, features = ["debugging"] }
 
 [features]
 default = ["std"]
+taiko = ["revm/taiko", "revm-primitives/taiko", "reth-revm/taiko"]
 std = [
 	"dep:metrics",
 	"dep:reth-metrics",

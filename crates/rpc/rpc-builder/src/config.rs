@@ -103,6 +103,7 @@ impl RethRpcServerConfig for RpcServerArgs {
             .state_cache(self.state_cache_config())
             .gpo_config(self.gas_price_oracle_config())
             .proof_permits(self.rpc_proof_permits)
+            .preconf_forwarding_server(self.taiko.preconf_forwarding_server.clone())
     }
 
     fn flashbots_config(&self) -> ValidationApiConfig {

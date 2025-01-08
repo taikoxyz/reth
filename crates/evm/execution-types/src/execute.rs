@@ -1,20 +1,25 @@
 use alloy_eips::eip7685::Requests;
 use alloy_primitives::U256;
+use reth_primitives::BlockWithSenders;
 use revm::db::BundleState;
 
 /// A helper type for ethereum block inputs that consists of a block and the total difficulty.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct BlockExecutionInput<'a, Block> {
     /// The block to execute.
     pub block: &'a Block,
     /// The total difficulty of the block.
     pub total_difficulty: U256,
+    /// Enable anchor transaction. Default is true.
+    pub enable_anchor: bool,
+    /// Enable skip invalid transaction.
+    pub enable_skip: bool,
 }
 
 impl<'a, Block> BlockExecutionInput<'a, Block> {
     /// Creates a new input.
     pub const fn new(block: &'a Block, total_difficulty: U256) -> Self {
-        Self { block, total_difficulty }
+        Self { block, total_difficulty, enable_anchor: true, enable_skip: false }
     }
 }
 
@@ -37,4 +42,26 @@ pub struct BlockExecutionOutput<T> {
     pub requests: Requests,
     /// The total gas used by the block.
     pub gas_used: u64,
+    /// The skipped transactions when `BlockExecutionInput::enable_skip`.
+    pub skipped_list: Vec<usize>,
+}
+
+impl<T> BlockExecutionOutput<T> {
+    /// Remote the skipped transactions from the block.
+    pub fn apply_skip(&self, block: &mut BlockWithSenders) {
+        retain_with_index(&mut block.senders, |i, _| !self.skipped_list.contains(&i));
+        retain_with_index(&mut block.body.transactions, |i, _| !self.skipped_list.contains(&i));
+    }
+}
+
+fn retain_with_index<T, F>(slice: &mut Vec<T>, mut f: F)
+where
+    F: FnMut(usize, &T) -> bool,
+{
+    let mut i = 0;
+    slice.retain(|x| {
+        let retain = f(i, x);
+        i += 1;
+        retain
+    });
 }

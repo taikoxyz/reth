@@ -1,0 +1,24 @@
+[package]
+name = "reth-taiko-forks"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Taiko hardforks used in reth-reth"
+
+[lints]
+workspace = true
+
+[dependencies]
+# reth
+reth-ethereum-forks.workspace = true
+
+# ethereum
+alloy-chains.workspace = true
+
+[features]
+std = ["alloy-chains/std", "reth-ethereum-forks/std"]
+default = ["std"]
+serde = ["alloy-chains/serde", "reth-ethereum-forks/serde"]

@@ -20,6 +20,9 @@ reth-chain-state.workspace = true
 
 revm-primitives.workspace = true
 
+# taiko
+reth-taiko-engine-types.workspace = true
+
 # alloy
 alloy-eips.workspace = true
 alloy-primitives.workspace = true

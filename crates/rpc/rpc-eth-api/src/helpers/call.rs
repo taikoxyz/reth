@@ -309,7 +309,7 @@ pub trait EthCall: EstimateCall + Call + LoadPendingBlock + LoadBlock + FullEthA
                         let env = EnvWithHandlerCfg::new_with_cfg_env(
                             cfg.clone(),
                             block_env.clone(),
-                            RpcNodeCore::evm_config(&this).tx_env(tx, *signer),
+                            RpcNodeCore::evm_config(&this).tx_env(tx, *signer, None),
                         );
                         let (res, _) = this.transact(&mut db, env)?;
                         db.commit(res.state);
@@ -642,7 +642,7 @@ pub trait Call:
                 let env = EnvWithHandlerCfg::new_with_cfg_env(
                     cfg,
                     block_env,
-                    RpcNodeCore::evm_config(&this).tx_env(tx.as_signed(), tx.signer()),
+                    RpcNodeCore::evm_config(&this).tx_env(tx.as_signed(), tx.signer(), None),
                 );
 
                 let (res, _) = this.transact(&mut db, env)?;
@@ -684,7 +684,7 @@ pub trait Call:
                 break
             }
 
-            self.evm_config().fill_tx_env(evm.tx_mut(), tx, *sender);
+            self.evm_config().fill_tx_env(evm.tx_mut(), tx, *sender, None);
             evm.transact_commit().map_err(Self::Error::from_evm_err)?;
             index += 1;
         }

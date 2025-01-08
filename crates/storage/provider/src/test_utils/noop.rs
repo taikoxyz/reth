@@ -4,6 +4,15 @@ use std::{
     sync::Arc,
 };
 
+use crate::{
+    providers::StaticFileProvider,
+    traits::{BlockSource, ReceiptProvider},
+    AccountReader, BlockHashReader, BlockIdReader, BlockNumReader, BlockReader, BlockReaderIdExt,
+    ChainSpecProvider, ChangeSetReader, EvmEnvProvider, HeaderProvider, PruneCheckpointReader,
+    ReceiptProviderIdExt, StageCheckpointReader, StateProvider, StateProviderBox,
+    StateProviderFactory, StateRootProvider, StaticFileProviderFactory, TransactionVariant,
+    TransactionsProvider, WithdrawalsProvider,
+};
 use alloy_consensus::Header;
 use alloy_eips::{
     eip4895::{Withdrawal, Withdrawals},
@@ -28,24 +37,16 @@ use reth_primitives::{
 use reth_prune_types::{PruneCheckpoint, PruneSegment};
 use reth_stages_types::{StageCheckpoint, StageId};
 use reth_storage_api::{
-    HashedPostStateProvider, NodePrimitivesProvider, StateProofProvider, StorageRootProvider,
+    HashedPostStateProvider, L1OriginReader, L1OriginWriter, NodePrimitivesProvider,
+    StateProofProvider, StorageRootProvider,
 };
 use reth_storage_errors::provider::ProviderResult;
+use reth_taiko_primitives::L1Origin;
 use reth_trie::{
     updates::TrieUpdates, AccountProof, HashedPostState, HashedStorage, MultiProof, TrieInput,
 };
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg};
 use tokio::sync::{broadcast, watch};
-
-use crate::{
-    providers::StaticFileProvider,
-    traits::{BlockSource, ReceiptProvider},
-    AccountReader, BlockHashReader, BlockIdReader, BlockNumReader, BlockReader, BlockReaderIdExt,
-    ChainSpecProvider, ChangeSetReader, EvmEnvProvider, HeaderProvider, PruneCheckpointReader,
-    ReceiptProviderIdExt, StageCheckpointReader, StateProvider, StateProviderBox,
-    StateProviderFactory, StateRootProvider, StaticFileProviderFactory, TransactionVariant,
-    TransactionsProvider, WithdrawalsProvider,
-};
 
 /// Supports various api interfaces for testing purposes.
 #[derive(Debug, Clone, Default, Copy)]
@@ -593,5 +594,33 @@ impl ForkChoiceSubscriptions for NoopProvider {
     fn subscribe_finalized_block(&self) -> ForkChoiceNotifications {
         let (_, rx) = watch::channel(None);
         ForkChoiceNotifications(rx)
+    }
+}
+
+impl L1OriginReader for NoopProvider {
+    fn get_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+
+    fn get_head_l1_origin(&self) -> ProviderResult<L1Origin> {
+        todo!()
+    }
+
+    fn get_head_l1_origin_number(&self) -> ProviderResult<BlockNumber> {
+        todo!()
+    }
+}
+
+impl L1OriginWriter for NoopProvider {
+    fn save_l1_origin(
+        &self,
+        _block_number: BlockNumber,
+        _l1_origin: L1Origin,
+    ) -> ProviderResult<()> {
+        todo!()
+    }
+
+    fn delete_l1_origin(&self, _block_number: BlockNumber) -> ProviderResult<()> {
+        todo!()
     }
 }
