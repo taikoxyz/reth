@@ -415,7 +415,7 @@ where
                     this.eth_api.tx_resp_builder(),
                 )?;
 
-                let BundleState { state: bundle_state, contracts, .. } = state;
+                let BundleState { state: bundle_state, .. } = state;
 
                 let state = this.eth_api.state_at_block_id(block_hash.into())?;
                 let parent_state = db.db.into_inner();
@@ -437,6 +437,7 @@ where
 
                 let mut account_proofs = vec![];
                 let mut parent_account_proofs = vec![];
+                let mut contracts = HashMap::new();
 
                 for (address, account) in bundle_state {
                     let storage_keys: Vec<B256> =
@@ -453,6 +454,12 @@ where
                         .proof(Default::default(), address, storage_keys.as_slice())
                         .map_err(Eth::Error::from_eth_err)?;
                     account_proofs.push(proof.into_eip1186_response(keys));
+
+                    if let Some(original_info) = account.original_info {
+                        if let Some(code) = original_info.code {
+                            contracts.insert(original_info.code_hash, code.bytes());
+                        }
+                    }
                 }
 
                 Ok(ProvingPreflight {
@@ -460,10 +467,7 @@ where
                     parent_header: rpc_parent_block.header,
                     account_proofs,
                     parent_account_proofs,
-                    contracts: contracts
-                        .into_iter()
-                        .map(|(k, v)| (k, v.original_bytes()))
-                        .collect(),
+                    contracts,
                     ancestor_headers,
                 })
             })
