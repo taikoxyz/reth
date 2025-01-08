@@ -116,3 +116,25 @@ impl L1Origin {
         self.batch_id.is_some()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l1_origin() {
+        let val = L1Origin {
+            block_id: U256::from(1),
+            l2_block_hash: B256::from([2; 32]),
+            l1_block_height: Some(U256::from(3)),
+            l1_block_hash: Some(B256::from([4; 32])),
+            batch_id: None,
+            end_of_block: None,
+            end_of_preconf: None,
+            preconfer: None,
+        };
+        let val_str = serde_json::to_string(&val).unwrap();
+
+        println!("{}", val_str);
+    }
+}

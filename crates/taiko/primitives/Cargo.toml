@@ -18,5 +18,8 @@ bytes.workspace = true
 alloy-rlp.workspace = true
 test-fuzz.workspace = true
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true

@@ -9632,6 +9632,7 @@ dependencies = [
  "reth-codecs",
  "reth-db-api",
  "serde",
+ "serde_json",
  "test-fuzz",
 ]
 
