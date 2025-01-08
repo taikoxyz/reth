@@ -455,9 +455,9 @@ where
                         .map_err(Eth::Error::from_eth_err)?;
                     account_proofs.push(proof.into_eip1186_response(keys));
 
-                    if let Some(original_info) = account.original_info {
-                        if let Some(code) = original_info.code {
-                            contracts.insert(original_info.code_hash, code.bytes());
+                    if let Some(info) = account.info {
+                        if let Some(code) = info.code {
+                            contracts.insert(info.code_hash, code.bytes());
                         }
                     }
                 }
