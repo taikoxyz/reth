@@ -20,16 +20,15 @@ The deployment addresses (`FACTORY_ADDRESS`, `WETH`) below are valid **only if t
 
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/taikoxyz/uniswap-v2-deploy
-2. Switch to the `gwyneth_uniswapV2` branch:
+   git clone https://github.com/taikoxyz/uniswap-v2
+2. Init submodules and build the bindings
    ```bash
-   git checkout gwyneth_uniswapV2
-3. Install dependencies
+   git submodule init
+   forge build
+3. Deploy the contracts
    ```bash
-   npm install
-4. Deploy the contracts
-   ```bash
-   npx hardhat run scripts/deploy.ts --network gwyneth_l1
+   $ forge script script/UniswapDeployer.s.sol --rpc-url http://localhost:32002 --broadcast --legacy
+   $ forge script script/DeployTokens.s.sol --rpc-url http://localhost:32002 --broadcast --legacy
 ## 2. Uniswap SDK
 
 1. Clone the repository and switch to the `gwyneth_uniswapV2` branch:
@@ -42,12 +41,13 @@ The deployment addresses (`FACTORY_ADDRESS`, `WETH`) below are valid **only if t
 > **_NOTE:_** Ensure that the contracts are deployed first before interacting with this repository using the specified private key.
 
 ## 3. Uniswap Interface/UI
+> **_NOTE:_** Ensure that the SDK repository is in the same root directory as one, as it is referenced in `package.json` like this:
+`"@uniswap/sdk": "file:../v2-sdk"`.
 
 1. Clone the repository:  
    ```bash
    git clone https://github.com/adaki2004/interface
-> **_NOTE:_** Ensure that the SDK repository is in the same directory as this repository, as it is referenced in `package.json` like this:
-`"@uniswap/sdk": "file:../../uniswapV2-sdk/v2-sdk"`
+
 2. Switch to the `gwyneth_uniswapV2` branch:
    ```bash
    git checkout gwyneth_uniswapV2
