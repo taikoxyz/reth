@@ -6521,6 +6521,7 @@ dependencies = [
  "alloy-genesis",
  "aquamarine",
  "assert_matches",
+ "bincode",
  "linked_hash_set",
  "metrics 0.23.0",
  "parking_lot 0.12.3",
@@ -9036,7 +9037,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -9068,7 +9069,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -9077,7 +9078,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
 dependencies = [
  "aurora-engine-modexp",
  "blst",
@@ -9096,7 +9097,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#f74ba0aeceafaea49a07bf2bf56d425da8e1f48b"
+source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",

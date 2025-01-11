@@ -44,6 +44,7 @@ aquamarine.workspace = true
 linked_hash_set.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+bincode.workspace = true
 
 [dev-dependencies]
 reth-chainspec.workspace = true
