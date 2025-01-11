@@ -10,6 +10,7 @@ import "../common/EssentialContract.sol";
 import "./TaikoErrors.sol";
 import "./preconfs/ISequencerRegistry.sol";
 import "./TaikoEvents.sol";
+import "../gwyneth/GwynethContract.sol";
 
 /// @title TaikoL1
 contract TaikoL1 is EssentialContract, TaikoEvents, TaikoErrors {
@@ -149,6 +150,13 @@ contract TaikoL1 is EssentialContract, TaikoEvents, TaikoErrors {
         // ) {
         //     revert L1_INVALID_TIMESTAMP();
         // }
+
+        require(_block.timestamp == block.timestamp, "included in an unexpected L1 block");
+
+        // Apply L1 state updates
+        for (uint i = 0; i < _block.l1StateDiff.accounts.length; i++) {
+            GwynethContract(_block.l1StateDiff.accounts[i].addr).applyStateDelta(_block.l1StateDiff.accounts[i].slots);
+        }
 
         emit BlockProposed({ blockId: _block.l2BlockNumber, meta: _block });
     }

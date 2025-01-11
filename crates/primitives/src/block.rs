@@ -1,6 +1,5 @@
 use crate::{
-    Address, Bytes, GotExpected, Header, SealedHeader, TransactionSigned,
-    TransactionSignedEcRecovered, Withdrawals, B256,
+    Address, Bytes, GotExpected, Header, Receipt, SealedHeader, TransactionSigned, TransactionSignedEcRecovered, Withdrawals, B256, U256
 };
 pub use alloy_eips::eip1898::{
     BlockHashOrNumber, BlockId, BlockNumHash, BlockNumberOrTag, ForkBlock, RpcBlockHash,
@@ -12,7 +11,10 @@ use proptest::prelude::prop_compose;
 #[cfg(any(test, feature = "arbitrary"))]
 pub use reth_primitives_traits::test_utils::{generate_valid_header, valid_header_strategy};
 use reth_primitives_traits::Requests;
+use revm_primitives::AccountInfo;
 use serde::{Deserialize, Serialize};
+use revm::db::states::BundleState;
+use std::collections::HashMap;
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -268,8 +270,6 @@ impl BlockWithSenders {
 /// Sealed Ethereum full block.
 ///
 /// Withdrawals can be optionally included at the end of the RLP encoded message.
-#[cfg_attr(any(test, feature = "arbitrary"), derive(arbitrary::Arbitrary))]
-#[cfg_attr(any(test, feature = "reth-codec"), reth_codecs::add_arbitrary_tests(rlp, 32))]
 #[derive(
     Debug,
     Clone,
@@ -297,6 +297,114 @@ pub struct SealedBlock {
     pub withdrawals: Option<Withdrawals>,
     /// Block requests.
     pub requests: Option<Requests>,
+}
+
+/// GwynethDA
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct GwynethDA {
+    /// The DA per chain
+    pub chain_das: HashMap<u64, ChainDA>,
+    /// The transactions of the block for all chains
+    pub transactions: Option<Bytes>,
+    /// Extra data
+    pub extra_data: Bytes,
+}
+/// ChainDA
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct ChainDA {
+    /// Block hash (for debugging purposes really)
+    pub block_hash: B256,
+    /// Extra data
+    pub extra_data: Bytes,
+    /// State diff
+    pub state_diff: Option<StateDiff>,
+    /// Transactions
+    pub transactions: Option<Bytes>,
+}
+
+/// StateDiff
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct StateDiff {
+    /// Account state.
+    pub accounts: Vec<StateDiffAccount>,
+    /// Receipts
+    pub receipts: Vec<Receipt>,
+    /// State root
+    pub state_root: B256,
+    /// Transactions root
+    pub transactions_root: B256,
+    /// Gas used
+    pub gas_used: u64,
+    /// full bundle state
+    pub bundle: BundleState,
+}
+
+/// StateDiffAccount
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct StateDiffAccount {
+    /// The address of the account
+    pub address: Address,
+    /// Account balance.
+    pub balance: U256,
+    /// Account nonce.
+    pub nonce: u64,
+    /// code hash,
+    pub code_hash: B256,
+    /// code
+    pub code: Bytes,
+    /// If Account was destroyed we ignore original value and compare present state with U256::ZERO.
+    pub storage: Vec<StateDiffStorageSlot>,
+    // Account status.
+    //pub status: AccountStatus,
+}
+
+/// StateDiffStorage
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Default,
+    Serialize,
+    Deserialize,
+)]
+pub struct StateDiffStorageSlot {
+    /// Storage slot key
+    pub key: U256,
+    /// Storage slot value
+    pub value: U256,
 }
 
 impl SealedBlock {

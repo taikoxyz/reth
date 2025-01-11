@@ -492,8 +492,12 @@ where
         execution_outcome: ExecutionOutcome,
         is_value_known: OriginalValuesKnown,
     ) -> ProviderResult<()> {
+        println!("write_to_storage");
         let (plain_state, reverts) =
             execution_outcome.bundle.into_plain_state_and_reverts(is_value_known);
+
+        println!("plain state: {:?}", plain_state);
+        println!("reverts: {:?}", reverts);
 
         self.database().write_state_reverts(reverts, execution_outcome.first_block)?;
 

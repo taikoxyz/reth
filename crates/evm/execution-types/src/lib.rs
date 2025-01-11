@@ -19,3 +19,6 @@ pub use execute::*;
 
 mod execution_outcome;
 pub use execution_outcome::*;
+
+mod state_diff;
+pub use state_diff::*;

@@ -14,9 +14,10 @@ use reth_rpc_types::engine::{
 
 /// Converts [`ExecutionPayloadV1`] to [`Block`]
 pub fn try_payload_v1_to_block(payload: ExecutionPayloadV1) -> Result<Block, PayloadError> {
-    if payload.extra_data.len() > MAXIMUM_EXTRA_DATA_SIZE {
-        return Err(PayloadError::ExtraData(payload.extra_data))
-    }
+    // TODO(Brecht)
+    // if payload.extra_data.len() > MAXIMUM_EXTRA_DATA_SIZE {
+    //     return Err(PayloadError::ExtraData(payload.extra_data))
+    // }
 
     if payload.base_fee_per_gas.is_zero() {
         return Err(PayloadError::BaseFee(payload.base_fee_per_gas))

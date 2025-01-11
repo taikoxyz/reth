@@ -40,7 +40,7 @@ pub mod transaction;
 pub use block::{generate_valid_header, valid_header_strategy};
 pub use block::{
     Block, BlockBody, BlockHashOrNumber, BlockId, BlockNumHash, BlockNumberOrTag, BlockWithSenders,
-    ForkBlock, RpcBlockHash, SealedBlock, SealedBlockWithSenders,
+    ForkBlock, RpcBlockHash, SealedBlock, SealedBlockWithSenders, GwynethDA, ChainDA, StateDiff, StateDiffAccount, StateDiffStorageSlot,
 };
 #[cfg(feature = "reth-codec")]
 pub use compression::*;

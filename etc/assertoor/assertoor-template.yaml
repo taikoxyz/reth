@@ -7,7 +7,7 @@ participants:
 - el_type: reth
   el_image: ghcr.io/paradigmxyz/reth
   cl_type: teku
-  cl_image: consensys/teku:latest
+  cl_image: sigp/lighthouse:latest
   count: 1
 - el_type: reth
   el_image: ghcr.io/paradigmxyz/reth

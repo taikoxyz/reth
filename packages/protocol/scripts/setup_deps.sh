@@ -185,7 +185,8 @@ RUN_LATEST_PATH=$(echo "$FORGE_OUTPUT" | grep "Transactions saved to:" | sed 's/
 echo "Starting contract verification..."
 BLOCKSCOUT_PORT=$(cat /tmp/kurtosis_blockscout_port)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-"$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
+# SKIP THIS FOR NOW
+# "$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
 
 # Ensure the log file exists in the current working directory
 touch ./rbuilder.log

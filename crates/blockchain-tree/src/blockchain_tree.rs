@@ -21,7 +21,7 @@ use reth_primitives::{
 use reth_provider::{
     BlockExecutionWriter, BlockNumReader, BlockWriter, CanonStateNotification,
     CanonStateNotificationSender, CanonStateNotifications, ChainSpecProvider, ChainSplit,
-    ChainSplitTarget, DisplayBlocksChain, HeaderProvider, ProviderError, StaticFileProviderFactory,
+    ChainSplitTarget, DisplayBlocksChain, HeaderProvider, ProviderError, StaticFileProviderFactory, NODES,
 };
 use reth_prune_types::PruneModes;
 use reth_stages_api::{MetricEvent, MetricEventsSender};
@@ -648,6 +648,7 @@ where
                         return None;
                     };
 
+                    println!("insert_unwound_chain");
                     debug!(target: "blockchain_tree",
                         unwound_block= ?block.num_hash(),
                         chain_id = ?chain_id,
@@ -1281,25 +1282,6 @@ where
 
         provider_rw.commit()?;
         recorder.record_relative(MakeCanonicalAction::CommitCanonicalChainToDatabase);
-
-        Ok(())
-    }
-
-    /// Unwind tables and put it inside state
-    pub fn unwind(&mut self, unwind_to: BlockNumber) -> Result<(), CanonicalError> {
-        // nothing to be done if unwind_to is higher then the tip
-        if self.block_indices().canonical_tip().number <= unwind_to {
-            return Ok(())
-        }
-        // revert `N` blocks from current canonical chain and put them inside BlockchainTree
-        let old_canon_chain = self.revert_canonical_from_database(unwind_to)?;
-
-        // check if there is block in chain
-        if let Some(old_canon_chain) = old_canon_chain {
-            self.state.block_indices.unwind_canonical_chain(unwind_to);
-            // insert old canonical chain to BlockchainTree.
-            self.insert_unwound_chain(AppendableChain::new(old_canon_chain));
-        }
 
         Ok(())
     }

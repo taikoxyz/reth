@@ -66,6 +66,7 @@ thiserror.workspace = true
 tracing.workspace = true
 jsonrpsee.workspace = true
 revm.workspace = true
+bincode.workspace = true
 
 # alloy
 alloy-sol-types = { workspace = true, features = ["json"] }

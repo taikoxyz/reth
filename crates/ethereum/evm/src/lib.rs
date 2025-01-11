@@ -74,8 +74,11 @@ impl ConfigureEvmEnv for EthEvmConfig {
         contract: Address,
         data: Bytes,
     ) {
+        print!("fill_tx_env_system_contract_call: 1");
         #[allow(clippy::needless_update)] // side-effect of optimism fields
         let chain_id = env.cfg.chain_id;
+
+        print!("Dani Chain id:{:?}", chain_id);
         let tx = TxEnv {
             caller: ChainAddress(chain_id, caller),
             transact_to: TransactTo::Call(ChainAddress(chain_id, contract)),
@@ -88,7 +91,7 @@ impl ConfigureEvmEnv for EthEvmConfig {
             // call, and that the call will not count against the block's gas limit
             gas_price: U256::ZERO,
             // The chain ID check is not relevant here and is disabled if set to None
-            chain_id: None,
+            chain_ids: None,
             // Setting the gas priority fee to None ensures the effective gas price is derived from
             // the `gas_price` field, which we need to be zero
             gas_priority_fee: None,
@@ -100,6 +103,8 @@ impl ConfigureEvmEnv for EthEvmConfig {
             ..Default::default()
         };
         env.tx = tx;
+
+        print!("fill_tx_env_system_contract_call: 2");
 
         // ensure the block gas limit is >= the tx
         env.block.gas_limit = U256::from(env.tx.gas_limit);

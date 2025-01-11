@@ -395,6 +395,7 @@ where
                             .await?;
                         return Ok(frame)
                     }
+                    _ => unimplemented!(),
                 },
                 #[cfg(not(feature = "js-tracer"))]
                 GethDebugTracerType::JsTracer(_) => {

@@ -2,6 +2,7 @@
 //! methods.
 
 use core::sync;
+use std::collections::HashMap;
 
 use crate::{AsEthApiError, FromEthApiError, FromEvmError, IntoEthApiError};
 use futures::{io::Chain, Future};
@@ -15,7 +16,9 @@ use reth_primitives::{
     transaction::AccessListResult,
     Bytes, TransactionSignedEcRecovered, TxKind, B256, U256,
 };
-use reth_provider::{ChainSpecProvider, StateProvider};
+
+use reth_primitives::constants::{BASE_CHAIN_ID, NUM_L2_CHAINS, L1_CHAIN_ID};
+use reth_provider::{BlockNumReader, ChainSpecProvider, DatabaseProviderFactory, StateProvider, NODES};
 use reth_revm::{
     database::{CachedDBSyncStateProvider, StateProviderDatabase, SyncStateProviderDatabase},
     db::CacheDB,
@@ -598,10 +601,34 @@ pub trait Call: LoadState + SpawnBlocking {
         // Configure the evm env
         let mut env = self.build_call_evm_env(cfg, block, request)?;
         // FIX(Cecilia): hack to get the write db
-        let mut sync_db = CachedDBSyncStateProvider::new(SyncStateProviderDatabase::new(
-            Some(chain_id),
-            StateProviderDatabase::new(state),
-        ));
+        // Brecht
+        //let boxed: Box<dyn StateProvider> = Box::new(StateProviderDatabase::new(state));
+        //let mut super_db = SyncStateProviderDatabase::new(
+        //    Some(chain_id),
+        //    boxed,
+        //);
+
+        let mut super_db = SyncStateProviderDatabase { 0: HashMap::default() };
+
+        let providers = NODES.lock().unwrap();
+        for (&chain_id, chain_provider) in providers.iter() {
+            println!("Brecht executed: Adding db for chain_id: {}", chain_id);
+
+            let state_provider = chain_provider
+                .database_provider_ro()
+                .unwrap();
+            let last_block_number = state_provider.last_block_number().unwrap();
+            let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+
+            //let chain_provider = BundleStateProvider::new(state_provider, bundle_state_data_provider);
+            //chain_providers.push(chain_provider);
+
+            //let boxed: Box<dyn StateProvider> = Box::new(state_provider);
+            //let state_provider = StateProviderDatabase::new(boxed);
+            super_db.add_db(chain_id, StateProviderDatabase::new(state_provider));
+        }
+
+        let mut sync_db = CachedDBSyncStateProvider::new(super_db);
 
         // Apply any state overrides if specified.
         if let Some(state_override) = state_override {
@@ -889,7 +916,7 @@ pub trait Call: LoadState + SpawnBlocking {
             ..
         } = request;
 
-        let chain_id_inner = chain_id.unwrap_or(ETHEREUM_CHAIN_ID);
+        let chain_id_inner = chain_id.expect("chain id unknown");
         let CallFees { max_priority_fee_per_gas, gas_price, max_fee_per_blob_gas } =
             CallFees::ensure_fees(
                 gas_price.map(U256::from),
@@ -919,7 +946,10 @@ pub trait Call: LoadState + SpawnBlocking {
                 .try_into_unique_input()
                 .map_err(Self::Error::from_eth_err)?
                 .unwrap_or_default(),
-            chain_id,
+            chain_ids: Some(std::iter::once(L1_CHAIN_ID)
+                .chain((0..NUM_L2_CHAINS)
+                .map(|i| BASE_CHAIN_ID + i))
+                .collect::<Vec<u64>>()),
             access_list: access_list.unwrap_or_default().into(),
             // EIP-4844 fields
             blob_hashes: blob_versioned_hashes.unwrap_or_default(),
@@ -942,6 +972,13 @@ pub trait Call: LoadState + SpawnBlocking {
         block: BlockEnv,
         request: TransactionRequest,
     ) -> Result<EnvWithHandlerCfg, Self::Error> {
+        let mut request = request;
+
+        // set chain_id to the config chain id if unknown
+        if request.chain_id == None {
+            request.chain_id = Some(cfg.chain_id);
+        }
+
         let tx = self.create_txn_env(&block, request)?;
         Ok(EnvWithHandlerCfg::new_with_cfg_env(cfg, block, tx))
     }
