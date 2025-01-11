@@ -36,6 +36,18 @@ contract xERC20 is GwynethContract {
         return value;
     }
 
+    function xTransfer(uint256 fromChain, uint256 toChain, address to, uint256 value) public returns (uint256) {
+        EVM.xCallOptions(fromChain);
+        return this._xTransfer(msg.sender, toChain, to, value);
+    }
+
+    function _xTransfer(address from, uint256 chain, address to, uint256 value) external returns (uint256) {
+        require(msg.sender == address(this), "Only contract itself can call this function");
+        balanceOf[from] -= value;
+        EVM.xCallOptions(chain);
+        return this._mint(to, value);
+    }
+
     function xTransfer(uint256 chain, address to, uint256 value) public returns (uint256) {
         balanceOf[msg.sender] -= value;
         EVM.xCallOptions(chain);

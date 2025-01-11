@@ -19,24 +19,20 @@ contract XTransfer is Script {
     function setUp() public {}
 
     function run() public {
-        address alice = vm.addr(ALICE_PK);
+        address bob = vm.addr(BOB_PK);
 
         vm.startBroadcast();
         // Sending 1 ETH
-        (bool success, ) = alice.call{value: 1 ether}("");
+        (bool success, ) = bob.call{value: 1 ether}("");
         require(success, "Failed to send Ether");
         vm.stopBroadcast();
 
         console.log("\n=== Before Transfer ===");
-        //checkBalances(); -> EXPLORER
 
-        vm.startBroadcast(ALICE_PK);
+        vm.startBroadcast(BOB_PK);
 
-        // Deposit 999 tokens to L2A (chainId: 167010)
-        xERC20(TOKEN_ADDRESS).xTransfer(160010, 167010, ALICE, 999);
-
-        // Transfer 666 tokens to Bob on L2B (chainId: 167011)
-        xERC20(TOKEN_ADDRESS).xTransfer(167011, BOB, 666);
+        // Withdraw some tokens to L1
+        xERC20(TOKEN_ADDRESS).xTransfer(160010, CHARLIE, 222);
 
         vm.stopBroadcast();
 

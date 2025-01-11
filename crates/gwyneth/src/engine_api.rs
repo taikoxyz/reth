@@ -11,8 +11,7 @@ use reth_provider::CanonStateNotificationStream;
 use reth_rpc_api::EngineApiClient;
 use reth_rpc_layer::AuthClientService;
 use reth_rpc_types::{
-    engine::{ForkchoiceState, PayloadStatusEnum},
-    ExecutionPayloadV3,
+    engine::{ForkchoiceState, PayloadStatusEnum}, BlockNumberOrTag, ExecutionPayloadV3
 };
 use std::{marker::PhantomData, net::Ipv4Addr};
 use reth_rpc_builder::constants;
