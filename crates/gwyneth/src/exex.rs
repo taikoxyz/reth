@@ -219,7 +219,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 let parrent_beacon_block_root =
                     builder_attrs.inner.parent_beacon_block_root.unwrap();
 
-                println!("payload_id: {} {}", node_idx, payload_id);
+                //println!("payload_id: {} {}", node_idx, payload_id);
 
                 // trigger new payload building draining the pool
                 self.nodes[node_idx].payload_builder.new_payload(builder_attrs).await.unwrap();

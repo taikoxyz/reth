@@ -600,7 +600,6 @@ pub trait Call: LoadState + SpawnBlocking {
 
         // Configure the evm env
         let mut env = self.build_call_evm_env(cfg, block, request)?;
-        // FIX(Cecilia): hack to get the write db
         // Brecht
         //let boxed: Box<dyn StateProvider> = Box::new(StateProviderDatabase::new(state));
         //let mut super_db = SyncStateProviderDatabase::new(
@@ -612,7 +611,7 @@ pub trait Call: LoadState + SpawnBlocking {
 
         let providers = NODES.lock().unwrap();
         for (&chain_id, chain_provider) in providers.iter() {
-            println!("Brecht executed: Adding db for chain_id: {}", chain_id);
+            //println!("Brecht executed: Adding db for chain_id: {}", chain_id);
 
             let state_provider = chain_provider
                 .database_provider_ro()

@@ -82,7 +82,7 @@ where
         ..
     } = config;
 
-    println!("[{}] Build 1", chain_spec.chain().id());
+    println!("[{}] Build", chain_spec.chain().id());
 
     let state_provider = client.state_by_block_hash(parent_block.hash())?;
     let state = StateProviderDatabase::new(state_provider);
@@ -90,7 +90,7 @@ where
 
     // Add all external state dependencies
     for (&chain_id, provider) in attributes.providers.iter() {
-        println!("Adding db for chain_id: {}", chain_id);
+        //println!("Adding db for chain_id: {}", chain_id);
         let boxed: Box<dyn StateProvider> = Box::new(provider);
         let state_provider = StateProviderDatabase::new(boxed);
         sync_state.add_db(chain_id, state_provider);
@@ -352,15 +352,17 @@ where
         requests_root: None,
     };
 
-    println!("header: {:?}", header);
+    //println!("header: {:?}", header);
 
-    println!("[{}-{}] receipts: {:?}", chain_spec.chain().id(), header.number, state_diff.receipts);
+    //println!("[{}-{}] receipts: {:?}", chain_spec.chain().id(), header.number, state_diff.receipts);
 
-    println!("extra_data: {}", attributes.chain_da.extra_data);
+    //println!("extra_data: {}", attributes.chain_da.extra_data);
 
     if state_diff.state_root != state_root {
         println!("State root mismatch! {} {}", state_diff.state_root, state_root);
     }
+
+    println!("reverts: {:?}", state_diff.bundle.reverts);
 
     // seal the block
     let block = Block { header, body: executed_txs, ommers: vec![], withdrawals: Some(Withdrawals::default()), requests: Some(Requests::default()) };
@@ -368,9 +370,9 @@ where
     let sealed_block = block.seal_slow();
     //sealed_block.state_diff = Some(execution_outcome_to_state_diff(&execution_outcome));
 
-    println!("block hash: {:?}", sealed_block.hash());
+    //println!("block hash: {:?}", sealed_block.hash());
 
-    println!("[{}] execution outcome: {:?}", chain_spec.chain.id(), execution_outcome);
+    //println!("[{}] execution outcome: {:?}", chain_spec.chain.id(), execution_outcome);
 
     //assert_eq!(state_diff, attributes.chain_da.state_diff.unwrap());
 
