@@ -1660,8 +1660,6 @@ impl<TX: DbTxMut + DbTx> DatabaseProvider<TX> {
         T: Table<Value = BlockNumberList>,
     {
         for (partial_key, indices) in index_updates {
-            println!("indices: {:?}", indices);
-
             let last_shard = self.take_shard::<T>(sharded_key_factory(partial_key, u64::MAX))?;
             // chunk indices and insert them in shards of N size.
             let indices = last_shard.iter().chain(indices.iter());
@@ -1679,7 +1677,6 @@ impl<TX: DbTxMut + DbTx> DatabaseProvider<TX> {
                     // Insert last list with u64::MAX
                     u64::MAX
                 };
-                println!("list: {:?}", list);
                 self.tx.put::<T>(
                     sharded_key_factory(partial_key, highest_block_number),
                     BlockNumberList::new_pre_sorted(list),
@@ -2720,8 +2717,6 @@ impl<TX: DbTxMut + DbTx> StateChangeWriter for DatabaseProvider<TX> {
         changes.storage.par_sort_by_key(|a| a.address);
         changes.contracts.par_sort_by_key(|a| a.0);
 
-        println!("changes: {:?}", changes);
-
         // Write new account state
         tracing::trace!(len = changes.accounts.len(), "Writing new account state");
         let mut accounts_cursor = self.tx_ref().cursor_write::<tables::PlainAccountState>()?;
@@ -3217,15 +3212,6 @@ impl<TX: DbTxMut + DbTx> HistoryWriter for DatabaseProvider<TX> {
         // storage history stage
         {
             let mut indices = self.changed_storages_and_blocks_with_range(range)?;
-            // TODO(Brecht): hack
-            for set in indices.values_mut() {
-                let original_set = set.clone();
-                let mut seen = HashSet::new();
-                set.retain(|x| seen.insert(*x));
-                if original_set.len() > set.len() {
-                    println!("Brecht: hack applied");
-                }
-            }
             self.insert_storage_history_index(indices)?;
         }
 

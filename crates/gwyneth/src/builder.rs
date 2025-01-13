@@ -269,7 +269,7 @@ where
 
     // merge all transitions into bundle state, this would apply the withdrawal balance changes
     // and 4788 contract call
-    sync_db.merge_transitions(BundleRetention::PlainState);
+    //sync_db.merge_transitions(BundleRetention::PlainState);
 
     // let execution_outcome = ExecutionOutcome::new(
     //     Some(chain_spec.chain().id()),
@@ -304,6 +304,8 @@ where
     //let state_diff = execution_outcome_to_state_diff(&execution_outcome, state_root, cumulative_gas_used);
 
     let state_diff = attributes.chain_da.state_diff.clone().unwrap();
+
+    //assert!(state_diff.bundle.reverts.len() <= 1, "reverts need to be per block");
 
     // let execution_output_state_diff = state_diff_to_block_execution_output(chain_spec.chain().id(), &attributes.chain_da.state_diff.unwrap());
     // let state_root_2 = {
@@ -362,7 +364,7 @@ where
         println!("State root mismatch! {} {}", state_diff.state_root, state_root);
     }
 
-    println!("reverts: {:?}", state_diff.bundle.reverts);
+    //println!("reverts: {:?}", state_diff.bundle.reverts);
 
     // seal the block
     let block = Block { header, body: executed_txs, ommers: vec![], withdrawals: Some(Withdrawals::default()), requests: Some(Requests::default()) };
