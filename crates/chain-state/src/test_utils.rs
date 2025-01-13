@@ -8,7 +8,7 @@ use rand::{thread_rng, Rng};
 use reth_chainspec::{ChainSpec, EthereumHardfork};
 use reth_execution_types::{Chain, ExecutionOutcome};
 use reth_primitives::{
-    constants::{EIP1559_INITIAL_BASE_FEE, EMPTY_ROOT_HASH},
+    constants::{EIP1559_INITIAL_BASE_FEE, EMPTY_ROOT_HASH, ETHEREUM_CHAIN_ID},
     proofs::{calculate_receipt_root, calculate_transaction_root, calculate_withdrawals_root},
     Address, BlockNumber, Header, Receipt, Receipts, Requests, SealedBlock, SealedBlockWithSenders,
     Signature, Transaction, TransactionSigned, TransactionSignedEcRecovered, TxEip1559, B256, U256,
@@ -210,7 +210,7 @@ impl TestBlockBuilder {
             Arc::new(block_with_senders.block.clone()),
             Arc::new(block_with_senders.senders),
             Arc::new(ExecutionOutcome::new(
-                None,
+                ETHEREUM_CHAIN_ID,
                 BundleState::default(),
                 receipts,
                 block_number,
@@ -285,7 +285,7 @@ impl TestBlockBuilder {
         }
 
         let execution_outcome = ExecutionOutcome::new(
-            None,
+            self.chain_spec.chain.id(),
             bundle_state_builder.build(),
             vec![vec![None]].into(),
             block.number,
