@@ -305,7 +305,7 @@ where
 
     let state_diff = attributes.chain_da.state_diff.clone().unwrap();
 
-    //assert!(state_diff.bundle.reverts.len() <= 1, "reverts need to be per block");
+    assert!(state_diff.bundle.reverts.len() <= 1, "reverts need to be per block");
 
     // let execution_output_state_diff = state_diff_to_block_execution_output(chain_spec.chain().id(), &attributes.chain_da.state_diff.unwrap());
     // let state_root_2 = {
@@ -323,7 +323,7 @@ where
     let executed_txs = attributes.transactions.iter().cloned().map(|tx| tx.1.try_into_ecrecovered().unwrap().into_signed()).collect::<Vec<_>>();
 
     // create the block header
-    let transactions_root = proofs::calculate_transaction_root(&executed_txs);
+    //let transactions_root = proofs::calculate_transaction_root(&executed_txs);
 
     // Put the state diff into the extra bytes of the block
     //let extra_data = Bytes::from(serde_json::to_string(&state_diff).unwrap().into_bytes());
@@ -334,7 +334,7 @@ where
         ommers_hash: EMPTY_OMMER_ROOT_HASH,
         beneficiary: initialized_block_env.coinbase.1,
         state_root: state_diff.state_root,
-        transactions_root,
+        transactions_root: state_diff.transactions_root,
         receipts_root,
         withdrawals_root: Some(B256::from(hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))),
         logs_bloom,

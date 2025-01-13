@@ -65,7 +65,7 @@ pub fn state_diff_to_block_execution_output(chain_id: u64, state_diff: &StateDif
         gas_used: state_diff.gas_used,
     };
 
-    block_execution_output.state.reverts = merge_reverts(&block_execution_output.state.reverts);
+    //block_execution_output.state.reverts = merge_reverts(&block_execution_output.state.reverts);
     // for account in state_diff.accounts.iter() {
     //     let mut new_account = BundleAccount {
     //         info: Some(AccountInfo {
