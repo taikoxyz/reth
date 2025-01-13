@@ -366,7 +366,7 @@ where
     state.merge_transitions(BundleRetention::PlainState);
 
     let outcome = ExecutionOutcome::new(
-        None,
+        chain_spec.chain().id(),
         state.take_bundle(),
         Receipts::from(vec![receipts]),
         reorg_target.number,

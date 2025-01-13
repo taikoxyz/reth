@@ -512,7 +512,7 @@ where
     db.merge_transitions(BundleRetention::PlainState);
 
     let execution_outcome = ExecutionOutcome::new(
-        Some(chain_spec.chain.id()),
+        chain_spec.chain.id(),
         db.take_bundle(),
         vec![receipts].into(),
         block_number,

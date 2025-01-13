@@ -281,7 +281,7 @@ where
     // .filter_current_chain();
 
     let execution_outcome = ExecutionOutcome::new(
-        Some(chain_spec.chain().id()),
+        chain_spec.chain().id(),
         attributes.chain_da.state_diff.clone().unwrap().bundle.clone(),
         vec![attributes.chain_da.state_diff.clone().unwrap().receipts.iter().map(|r| Some(r.clone())).collect::<Vec<_>>()].into(),
         block_number,
