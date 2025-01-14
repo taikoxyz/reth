@@ -499,12 +499,12 @@ impl AppendableChain {
             // let executor = externals.executor_factory.executor(super_db);
             // let state_execution = executor.execute((&block, U256::MAX).into())?;
 
-            let mut state_execution_diff = state_diff_to_block_execution_output(chain_id, state_diff);
-            state_execution_diff.state = state_diff.bundle.clone();
-            state_execution_diff.receipts = state_diff.receipts.clone();
+            let state_execution_diff = state_diff_to_block_execution_output(chain_id, state_diff);
+            //state_execution_diff.state = state_diff.bundle.clone();
+            //state_execution_diff.receipts = state_diff.receipts.clone();
 
             for (tx, receipt) in block.transactions().zip(state_diff.receipts.iter()) {
-                println!("{} [BBB] tx: {}: {:?}", chain_id, tx.hash(), receipt);
+                println!("{} [Applying] tx: {}: {:?}", chain_id, tx.hash(), receipt);
             }
 
             //println!("ori: {:?}", state_execution);
@@ -539,7 +539,7 @@ impl AppendableChain {
             // execution_outcome_diff.bundle.reverts_size = execution_outcome_execution.bundle.reverts_size;
             // execution_outcome_diff.bundle.reverts = execution_outcome_execution.bundle.reverts.clone();
 
-            println!("new: {:?}", execution_outcome_diff);
+            // println!("new: {:?}", execution_outcome_diff);
 
             //let hashed_state_execution = execution_outcome_execution.hash_state_slow();
             //let hashed_state_diff = execution_outcome_diff.hash_state_slow();

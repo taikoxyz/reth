@@ -9037,7 +9037,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
+source = "git+https://github.com/taikoxyz/revm.git?branch=changeset#7e3953c0ef54f87643c1117a3b45c78a4a018772"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -9051,7 +9051,7 @@ dependencies = [
 [[package]]
 name = "revm-inspectors"
 version = "0.6.0"
-source = "git+https://github.com/taikoxyz/revm-inspectors.git?branch=main-rbuilder#95bcbfb09cfb7011cf0c3e360e3d7258bc8a8f84"
+source = "git+https://github.com/taikoxyz/revm-inspectors.git?branch=main-rbuilder#c00d618ed1425308484564a75b07dfa3c45a4fd8"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-rpc-types-eth",
@@ -9069,7 +9069,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
+source = "git+https://github.com/taikoxyz/revm.git?branch=changeset#7e3953c0ef54f87643c1117a3b45c78a4a018772"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -9078,7 +9078,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
+source = "git+https://github.com/taikoxyz/revm.git?branch=changeset#7e3953c0ef54f87643c1117a3b45c78a4a018772"
 dependencies = [
  "aurora-engine-modexp",
  "blst",
@@ -9097,7 +9097,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.1"
-source = "git+https://github.com/taikoxyz/revm.git?branch=gwyneth-debug-shit#6f16de431c7389ae21c3d3e15c3779f26a890815"
+source = "git+https://github.com/taikoxyz/revm.git?branch=changeset#7e3953c0ef54f87643c1117a3b45c78a4a018772"
 dependencies = [
  "alloy-eips",
  "alloy-primitives 0.8.14",

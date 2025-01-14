@@ -452,7 +452,7 @@ where
 
     fn finalize(mut self) -> Self::Output {
         ExecutionOutcome::new(
-            Some(self.executor.executor.chain_spec.chain().id()),
+            self.executor.executor.chain_spec.chain().id(),
             self.executor.state.take_bundle(),
             self.batch_record.take_receipts(),
             self.batch_record.first_block().unwrap_or_default(),

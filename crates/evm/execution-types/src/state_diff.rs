@@ -7,7 +7,7 @@ use reth_primitives::{
 //use reth_revm::database::{StateProviderDatabase, SyncStateProviderDatabase};
 //use reth_transaction_pool::{BestTransactionsAttributes, TransactionPool};
 use revm::{
-    db::{states::bundle_state::BundleRetention, BundleAccount, BundleState, State},
+    db::{states::{bundle_state::BundleRetention, reverts::Reverts}, AccountRevert, BundleAccount, BundleState, State},
     primitives::{AccountInfo, Bytecode, EVMError, EnvWithHandlerCfg, ResultAndState},
     DatabaseCommit, SyncDatabase,
 };
@@ -59,31 +59,54 @@ pub fn to_state_diff(bundle_state: &BundleState, receipts: &Vec<Receipt>, state_
 
 pub fn state_diff_to_block_execution_output(chain_id: u64, state_diff: &StateDiff) -> BlockExecutionOutput<Receipt> {
     let mut block_execution_output = BlockExecutionOutput::<Receipt> {
-        state: BundleState::default(),
+        state: state_diff.bundle.clone(),
         receipts: state_diff.receipts.clone(),
         requests: Vec::new(),
         gas_used: state_diff.gas_used,
     };
-    for account in state_diff.accounts.iter() {
-        let mut new_account = BundleAccount {
-            info: Some(AccountInfo {
-                balance: account.balance,
-                nonce: account.nonce,
-                code_hash: account.code_hash,
-                code: Some(Bytecode::new_raw_checked(account.code.clone()).unwrap()),
-            }),
-            original_info: None,
-            storage: HashMap::new(),
-            status: AccountStatus::Changed,
-        };
-        for storage_slot in account.storage.iter() {
-            new_account.storage.insert(storage_slot.key, StorageSlot {
-                previous_or_original_value: storage_slot.value,
-                present_value: storage_slot.value,
-            });
-        }
 
-        block_execution_output.state.state.insert(ChainAddress(chain_id, account.address), new_account);
-    }
+    //block_execution_output.state.reverts = merge_reverts(&block_execution_output.state.reverts);
+    // for account in state_diff.accounts.iter() {
+    //     let mut new_account = BundleAccount {
+    //         info: Some(AccountInfo {
+    //             balance: account.balance,
+    //             nonce: account.nonce,
+    //             code_hash: account.code_hash,
+    //             code: Some(Bytecode::new_raw_checked(account.code.clone()).unwrap()),
+    //         }),
+    //         original_info: None,
+    //         storage: HashMap::new(),
+    //         status: AccountStatus::Changed,
+    //     };
+    //     for storage_slot in account.storage.iter() {
+    //         new_account.storage.insert(storage_slot.key, StorageSlot {
+    //             previous_or_original_value: storage_slot.value,
+    //             present_value: storage_slot.value,
+    //         });
+    //     }
+
+    //     block_execution_output.state.state.insert(ChainAddress(chain_id, account.address), new_account);
+    // }
     block_execution_output
+}
+
+pub fn merge_reverts(reverts: &Reverts) -> Reverts {
+    let mut merged_reverts = HashMap::<ChainAddress, AccountRevert>::new();
+    for reverts in reverts.iter() {
+        for revert in reverts.iter() {
+            if merged_reverts.contains_key(&revert.0) {
+                let merged_revert = merged_reverts.get_mut(&revert.0).unwrap();
+                for storage in revert.1.storage.iter() {
+                    if !merged_revert.storage.contains_key(storage.0) {
+                        merged_revert.storage.insert(*storage.0, storage.1.clone());
+                    }
+                }
+            } else {
+                merged_reverts.insert(revert.0, revert.1.clone());
+            }
+        }
+    }
+    println!("original reverts: {:?}", reverts);
+    println!("new reverts: {:?}", merged_reverts);
+    Reverts::new(vec![merged_reverts.into_iter().collect()])
 }

@@ -74,13 +74,12 @@ impl ExecutionOutcome {
     /// This constructor initializes a new `ExecutionOutcome` instance with the provided
     /// bundle state, receipts, first block number, and EIP-7685 requests.
     pub fn new(
-        chain_id: Option<u64>,
+        chain_id: u64,
         bundle: BundleState,
         receipts: Receipts,
         first_block: BlockNumber,
         requests: Vec<Requests>,
     ) -> Self {
-        let chain_id = chain_id.unwrap_or(ETHEREUM_CHAIN_ID);
         Self { chain_id, bundle, receipts, first_block, requests }
     }
 
@@ -89,7 +88,7 @@ impl ExecutionOutcome {
     /// This constructor initializes a new `ExecutionOutcome` instance using detailed
     /// initialization parameters.
     pub fn new_init(
-        chain_id: Option<u64>,
+        chain_id: u64,
         state_init: BundleStateInit,
         revert_init: RevertsInit,
         contracts_init: Vec<(B256, Bytecode)>,
@@ -97,7 +96,6 @@ impl ExecutionOutcome {
         first_block: BlockNumber,
         requests: Vec<Requests>,
     ) -> Self {
-        let chain_id = chain_id.unwrap_or(ETHEREUM_CHAIN_ID);
         // sort reverts by block number
         let mut reverts = revert_init.into_iter().collect::<Vec<_>>();
         reverts.sort_unstable_by_key(|a| a.0);
@@ -510,7 +508,7 @@ mod tests {
         // Assert that creating a new ExecutionOutcome using the constructor matches exec_res
         assert_eq!(
             ExecutionOutcome::new(
-                Some(CHAIN_ID),
+                CHAIN_ID,
                 bundle,
                 receipts.clone(),
                 first_block,
@@ -536,7 +534,7 @@ mod tests {
         // exec_res
         assert_eq!(
             ExecutionOutcome::new_init(
-                Some(CHAIN_ID),
+                CHAIN_ID,
                 state_init,
                 revert_init,
                 vec![],

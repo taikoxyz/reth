@@ -191,7 +191,7 @@ fn block1(number: BlockNumber) -> (SealedBlockWithSenders, ExecutionOutcome) {
     let info = AccountInfo { nonce: 1, balance: U256::from(10), ..Default::default() };
 
     let execution_outcome = ExecutionOutcome::new(
-        None,
+        ETHEREUM_CHAIN_ID,
         BundleState::builder(number..=number)
             .state_present_account_info(account1, info.clone())
             .revert_account_info(number, account1, Some(None))
@@ -246,7 +246,7 @@ fn block2(
     let slot = U256::from(5);
 
     let execution_outcome = ExecutionOutcome::new(
-        None,
+        ETHEREUM_CHAIN_ID,
         BundleState::builder(number..=number)
             .state_present_account_info(
                 account,
@@ -329,7 +329,7 @@ fn block3(
             .revert_storage(number, address, Vec::new());
     }
     let execution_outcome = ExecutionOutcome::new(
-        None,
+        ETHEREUM_CHAIN_ID,
         bundle_state_builder.build(),
         vec![vec![Some(Receipt {
             tx_type: TxType::Eip1559,
@@ -421,7 +421,7 @@ fn block4(
             );
     }
     let execution_outcome = ExecutionOutcome::new(
-        None,
+        ETHEREUM_CHAIN_ID,
         bundle_state_builder.build(),
         vec![vec![Some(Receipt {
             tx_type: TxType::Eip1559,
@@ -508,7 +508,7 @@ fn block5(
         };
     }
     let execution_outcome = ExecutionOutcome::new(
-        None,
+        ETHEREUM_CHAIN_ID,
         bundle_state_builder.build(),
         vec![vec![Some(Receipt {
             tx_type: TxType::Eip1559,

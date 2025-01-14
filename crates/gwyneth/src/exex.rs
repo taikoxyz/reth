@@ -145,8 +145,10 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
 
                 let chain_da = da.chain_das.get(&node_chain_id);
                 if chain_da.is_none() {
-                    println!("skipping: {}", node_chain_id);
+                    println!("No block for {}", node_chain_id);
                     continue;
+                } else {
+                    println!("New block for {}!", node_chain_id);
                 }
                 let default_chain_da = ChainDA {
                     block_hash: B256::default(),
@@ -155,7 +157,7 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                     transactions: None,
                 };
                 let chain_da = chain_da.unwrap_or(&default_chain_da);
-                println!("chain_da: {:?}", chain_da);
+                //println!("chain_da: {:?}", chain_da);
 
                 // let filtered_transactions: Vec<TransactionSigned> = all_transactions
                 //     .into_iter()
@@ -195,31 +197,31 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 builder_attrs.providers.insert(self.ctx.config.chain.chain().id(), Arc::new(l1_state_provider));
 
                 // Add all other L2 dbs for now as well until dependencies are broken
-                for node in self.nodes.iter() {
-                    let chain_id = node.config.chain.chain().id();
-                    println!("other chain_id: {}", chain_id);
-                    if chain_id != node_chain_id {
-                        println!("Adding chain_id: {}", chain_id);
-                        let state_provider = node
-                            .provider
-                            .database_provider_ro()
-                            .unwrap();
-                        //let last_block_number = state_provider.last_block_number()?;
-                        //let last_block_number = *last_block_number.get(&chain_id).unwrap();
-                        //println!("last block number: {} -> {}", chain_id, last_block_number);
-                        let last_block_number = self.num_l2_blocks / self.nodes.len() as u64;
-                        println!("exex executing against {}", last_block_number);
-                        let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
+                // for node in self.nodes.iter() {
+                //     let chain_id = node.config.chain.chain().id();
+                //     println!("other chain_id: {}", chain_id);
+                //     if chain_id != node_chain_id {
+                //         println!("Adding chain_id: {}", chain_id);
+                //         let state_provider = node
+                //             .provider
+                //             .database_provider_ro()
+                //             .unwrap();
+                //         //let last_block_number = state_provider.last_block_number()?;
+                //         //let last_block_number = *last_block_number.get(&chain_id).unwrap();
+                //         //println!("last block number: {} -> {}", chain_id, last_block_number);
+                //         let last_block_number = self.num_l2_blocks / self.nodes.len() as u64;
+                //         println!("exex executing against {}", last_block_number);
+                //         let state_provider = state_provider.state_provider_by_block_number(last_block_number).unwrap();
 
-                        builder_attrs.providers.insert(chain_id, Arc::new(state_provider));
-                    }
-                }
+                //         builder_attrs.providers.insert(chain_id, Arc::new(state_provider));
+                //     }
+                // }
 
                 let payload_id = builder_attrs.inner.payload_id();
                 let parrent_beacon_block_root =
                     builder_attrs.inner.parent_beacon_block_root.unwrap();
 
-                println!("payload_id: {} {}", node_idx, payload_id);
+                //println!("payload_id: {} {}", node_idx, payload_id);
 
                 // trigger new payload building draining the pool
                 self.nodes[node_idx].payload_builder.new_payload(builder_attrs).await.unwrap();
@@ -272,21 +274,21 @@ impl<Node: reth_node_api::FullNodeComponents> Rollup<Node> {
                 // trigger forkchoice update via engine api to commit the block to the blockchain
                 self.engine_apis[node_idx].update_forkchoice(block_hash, block_hash).await?;
 
-                loop {
-                    // wait for the block to commit
-                    tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-                    if let Some(latest_block) =
-                        self.nodes[node_idx].provider.block_by_number_or_tag(BlockNumberOrTag::Latest)?
-                    {
-                        if latest_block.number == payload.block().number {
-                            // make sure the block hash we submitted via FCU engine api is the new latest
-                            // block using an RPC call
-                            assert_eq!(latest_block.hash_slow(), block_hash);
-                            break
-                        }
-                    }
-                    println!("waiting on L2 block for {}: {}", node_chain_id, payload.block().number)
-                }
+                // loop {
+                //     // wait for the block to commit
+                //     tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+                //     if let Some(latest_block) =
+                //         self.nodes[node_idx].provider.block_by_number_or_tag(BlockNumberOrTag::Latest)?
+                //     {
+                //         if latest_block.number == payload.block().number {
+                //             // make sure the block hash we submitted via FCU engine api is the new latest
+                //             // block using an RPC call
+                //             assert_eq!(latest_block.hash_slow(), block_hash);
+                //             break
+                //         }
+                //     }
+                //     println!("waiting on L2 block for {}: {}", node_chain_id, payload.block().number)
+                // }
 
                 println!("[L1 block {}] Done with block {}: {}", block.number, node_chain_id, payload.block().number);
 

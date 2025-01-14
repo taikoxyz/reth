@@ -1412,10 +1412,7 @@ where
                 .accounts
                 .into_iter()
                 .flatten()
-                .map(|(address, info)| AccountBeforeTx {
-                    address: address.1,
-                    info: info.map(Into::into),
-                })
+                .map(|(address, info)| AccountBeforeTx { address, info: info.map(Into::into) })
                 .collect();
             Ok(changesets)
         } else {
@@ -1478,7 +1475,7 @@ mod tests {
         self, random_block, random_block_range, random_changeset_range, random_eoa_accounts,
         random_receipt, BlockParams, BlockRangeParams,
     };
-    use revm::{db::BundleState, primitives::ChainAddress};
+    use revm::db::BundleState;
     use std::ops::Bound;
 
     const TEST_BLOCKS_COUNT: usize = 5;

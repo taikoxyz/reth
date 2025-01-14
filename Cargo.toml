@@ -255,9 +255,7 @@ lto = "thin"
 [profile.release]
 opt-level = 1
 lto = "thin"
-debug = "line-tables-only"
-strip = true
-panic = "unwind"
+debug = true
 codegen-units = 8
 
 # Use the `--profile profiling` flag to show symbols in release mode.
@@ -567,10 +565,10 @@ tempfile = "3.8"
 test-fuzz = "5"
 
 [patch.crates-io]
-revm = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
-revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
-revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
-revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "gwyneth-debug-shit" }
+revm = { git = "https://github.com/taikoxyz/revm.git", branch = "changeset" }
+revm-primitives = { git = "https://github.com/taikoxyz/revm.git", branch = "changeset" }
+revm-interpreter = { git = "https://github.com/taikoxyz/revm.git", branch = "changeset" }
+revm-precompile = { git = "https://github.com/taikoxyz/revm.git", branch = "changeset" }
 
 #revm = { path = "../../revm-gwyneth/revm/crates/revm" }
 #revm-primitives = { path = "../../revm-gwyneth/revm/crates/primitives" }

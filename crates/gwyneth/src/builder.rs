@@ -82,7 +82,7 @@ where
         ..
     } = config;
 
-    println!("[{}] Build 1", chain_spec.chain().id());
+    println!("[{}] Build", chain_spec.chain().id());
 
     let state_provider = client.state_by_block_hash(parent_block.hash())?;
     let state = StateProviderDatabase::new(state_provider);
@@ -90,7 +90,7 @@ where
 
     // Add all external state dependencies
     for (&chain_id, provider) in attributes.providers.iter() {
-        println!("Adding db for chain_id: {}", chain_id);
+        //println!("Adding db for chain_id: {}", chain_id);
         let boxed: Box<dyn StateProvider> = Box::new(provider);
         let state_provider = StateProviderDatabase::new(boxed);
         sync_state.add_db(chain_id, state_provider);
@@ -269,7 +269,7 @@ where
 
     // merge all transitions into bundle state, this would apply the withdrawal balance changes
     // and 4788 contract call
-    sync_db.merge_transitions(BundleRetention::PlainState);
+    //sync_db.merge_transitions(BundleRetention::PlainState);
 
     // let execution_outcome = ExecutionOutcome::new(
     //     Some(chain_spec.chain().id()),
@@ -281,7 +281,7 @@ where
     // .filter_current_chain();
 
     let execution_outcome = ExecutionOutcome::new(
-        Some(chain_spec.chain().id()),
+        chain_spec.chain().id(),
         attributes.chain_da.state_diff.clone().unwrap().bundle.clone(),
         vec![attributes.chain_da.state_diff.clone().unwrap().receipts.iter().map(|r| Some(r.clone())).collect::<Vec<_>>()].into(),
         block_number,
@@ -305,6 +305,8 @@ where
 
     let state_diff = attributes.chain_da.state_diff.clone().unwrap();
 
+    assert!(state_diff.bundle.reverts.len() <= 1, "reverts need to be per block");
+
     // let execution_output_state_diff = state_diff_to_block_execution_output(chain_spec.chain().id(), &attributes.chain_da.state_diff.unwrap());
     // let state_root_2 = {
     //     let state_provider = sync_db.database.0.inner.borrow_mut();
@@ -321,7 +323,7 @@ where
     let executed_txs = attributes.transactions.iter().cloned().map(|tx| tx.1.try_into_ecrecovered().unwrap().into_signed()).collect::<Vec<_>>();
 
     // create the block header
-    let transactions_root = proofs::calculate_transaction_root(&executed_txs);
+    //let transactions_root = proofs::calculate_transaction_root(&executed_txs);
 
     // Put the state diff into the extra bytes of the block
     //let extra_data = Bytes::from(serde_json::to_string(&state_diff).unwrap().into_bytes());
@@ -332,7 +334,7 @@ where
         ommers_hash: EMPTY_OMMER_ROOT_HASH,
         beneficiary: initialized_block_env.coinbase.1,
         state_root: state_diff.state_root,
-        transactions_root,
+        transactions_root: state_diff.transactions_root,
         receipts_root,
         withdrawals_root: Some(B256::from(hex!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"))),
         logs_bloom,
@@ -352,15 +354,17 @@ where
         requests_root: None,
     };
 
-    println!("header: {:?}", header);
+    //println!("header: {:?}", header);
 
-    println!("[{}-{}] receipts: {:?}", chain_spec.chain().id(), header.number, state_diff.receipts);
+    //println!("[{}-{}] receipts: {:?}", chain_spec.chain().id(), header.number, state_diff.receipts);
 
-    println!("extra_data: {}", attributes.chain_da.extra_data);
+    //println!("extra_data: {}", attributes.chain_da.extra_data);
 
     if state_diff.state_root != state_root {
         println!("State root mismatch! {} {}", state_diff.state_root, state_root);
     }
+
+    //println!("reverts: {:?}", state_diff.bundle.reverts);
 
     // seal the block
     let block = Block { header, body: executed_txs, ommers: vec![], withdrawals: Some(Withdrawals::default()), requests: Some(Requests::default()) };
@@ -368,9 +372,9 @@ where
     let sealed_block = block.seal_slow();
     //sealed_block.state_diff = Some(execution_outcome_to_state_diff(&execution_outcome));
 
-    println!("block hash: {:?}", sealed_block.hash());
+    //println!("block hash: {:?}", sealed_block.hash());
 
-    println!("[{}] execution outcome: {:?}", chain_spec.chain.id(), execution_outcome);
+    //println!("[{}] execution outcome: {:?}", chain_spec.chain.id(), execution_outcome);
 
     //assert_eq!(state_diff, attributes.chain_da.state_diff.unwrap());
 
