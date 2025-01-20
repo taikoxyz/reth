@@ -10,6 +10,39 @@ is_docker_running() {
     docker info >/dev/null 2>&1
 }
 
+check_dependencies() {
+    local missing_deps=()
+    
+    # List of required commands
+    local required_commands=(
+        "docker"
+        "jq"
+        "sed"
+        "grep"
+        "awk"
+        "curl"
+        "forge"
+    )
+
+    echo "Checking required dependencies..."
+    
+    for cmd in "${required_commands[@]}"; do
+        if ! command_exists "$cmd"; then
+            missing_deps+=("$cmd")
+        fi
+    done
+
+    if [ ${#missing_deps[@]} -ne 0 ]; then
+        echo "Missing required dependencies: ${missing_deps[*]}"
+        echo "Please install the missing dependencies."
+        echo "For Ubuntu, you can install jq with: sudo apt-get install jq"
+        echo "For macOS, you can install jq with: brew install jq"
+        exit 1
+    fi
+
+    echo "All required dependencies are installed."
+}
+
 # Check for Docker installation and daemon status
 if ! command_exists docker; then
     echo "Docker is not installed. Please install Docker first."
@@ -20,6 +53,8 @@ elif ! is_docker_running; then
 else
     echo "Docker is installed and running."
 fi
+
+check_dependencies
 
 # Check if the taiko_reth image exists
 # if ! docker image inspect taiko_reth >/dev/null 2>&1; then
@@ -84,8 +119,8 @@ fi
 
 # Run the Kurtosis command and capture its output
 echo "Running Kurtosis command..."
-KURTOSIS_OUTPUT=$(kurtosis run github.com/adaki2004/ethereum-package --args-file ./scripts/confs/network_params.yaml)
-
+KURTOSIS_OUTPUT=$(kurtosis run github.com/adaki2004/ethereum-package@update_with_upstream --args-file ./scripts/confs/network_params.yaml)
+echo "$KURTOSIS_OUTPUT"
 # Extract the Blockscout port
 BLOCKSCOUT_PORT=$(echo "$KURTOSIS_OUTPUT" | grep -A 5 "^[a-f0-9]\+ *blockscout " | grep "http:" | sed -E 's/.*-> http:\/\/127\.0\.0\.1:([0-9]+).*/\1/' | head -n 1)
 
@@ -185,8 +220,7 @@ RUN_LATEST_PATH=$(echo "$FORGE_OUTPUT" | grep "Transactions saved to:" | sed 's/
 echo "Starting contract verification..."
 BLOCKSCOUT_PORT=$(cat /tmp/kurtosis_blockscout_port)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-# SKIP THIS FOR NOW
-# "$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
+"$SCRIPT_DIR/verify_contracts.sh" "$BLOCKSCOUT_PORT" "$RUN_LATEST_PATH"
 
 # Ensure the log file exists in the current working directory
 touch ./rbuilder.log
