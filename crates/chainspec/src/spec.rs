@@ -165,6 +165,13 @@ pub static TAIKO_DEV: Lazy<Arc<ChainSpec>> = Lazy::new(|| {
                     std::env::var("DEV_ONTAKE_HEIGHT").map_or(2000, |h| h.parse().unwrap_or(2000)),
                 ),
             ),
+            #[cfg(feature = "taiko")]
+            (
+                Hardfork::Pacaya,
+                ForkCondition::Block(
+                    std::env::var("DEV_PACAYA_HEIGHT").map_or(0, |h| h.parse().unwrap_or(0)),
+                ),
+            ),
         ]),
         deposit_contract: None,
         ..Default::default()
